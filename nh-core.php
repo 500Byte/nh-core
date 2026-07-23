@@ -3,7 +3,7 @@
  * Plugin Name: NH Core
  * Plugin URI: https://www.normahana.com
  * Description: Plugin site-specific que centraliza la lógica de negocio, tracking y widgets custom de Elementor para Norma Hana.
- * Version: 1.0.0
+ * Version: 1.0.2
  * Author: Diego Navarro
  * Text Domain: nh-core
  * Requires at least: 6.0
@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 // Plugin version constant
-define( 'NH_CORE_VERSION', '1.0.0' );
+define( 'NH_CORE_VERSION', '1.0.2' );
 
 // Cargar orquestador modular del plugin
 require_once plugin_dir_path( __FILE__ ) . 'inc/class-nh-core-loader.php';
