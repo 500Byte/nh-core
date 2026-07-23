@@ -87,7 +87,8 @@ class NH_Core_Updater {
 
         $current_version = defined( 'NH_CORE_VERSION' ) ? NH_CORE_VERSION : '1.0.0';
         if ( version_compare( $remote_version, $current_version, '>' ) ) {
-            $transient->response[ $this->plugin_file ] = (object) array(
+            $plugin_key = $this->slug . '/' . basename( $this->plugin_file );
+            $transient->response[ $plugin_key ] = (object) array(
                 'new_version' => $remote_version,
                 'url'         => "https://github.com/{$this->github_repo}",
                 'package'     => $this->get_download_url( $remote_version ),
