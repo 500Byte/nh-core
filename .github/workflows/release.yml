@@ -1,0 +1,38 @@
+name: Create Release
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate version tag
+        run: |
+          TAG="${GITHUB_REF#refs/tags/v}"
+          if ! [[ "$TAG" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "❌ Invalid version format: $TAG (expected X.Y.Z)"
+            exit 1
+          fi
+          echo "✅ Valid version: $TAG"
+
+      - name: Build plugin ZIP
+        run: |
+          TAG="${GITHUB_REF#refs/tags/v}"
+          git archive --format=zip --prefix=nh-core/ HEAD -o "nh-core-${TAG}.zip"
+          echo "📦 Built nh-core-${TAG}.zip"
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: "nh-core v${{ github.ref_name }}"
+          files: "nh-core-*.zip"
+          generate_release_notes: true
+          draft: false
+          prerelease: false
