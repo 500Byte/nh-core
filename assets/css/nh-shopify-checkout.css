@@ -1,0 +1,393 @@
+/* ==========================================================================
+   NORMA HANA — SHOPIFY-STYLE CHECKOUT WIDGET STYLESHEET
+   ========================================================================== */
+
+.nh-shopify-checkout-wrapper {
+    font-family: var(--font-body, 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif);
+    color: #111111;
+    background-color: #FFFFFF;
+    width: 100%;
+    min-height: 100vh;
+    box-sizing: border-box;
+}
+
+.nh-shopify-checkout-wrapper *,
+.nh-shopify-checkout-wrapper *::before,
+.nh-shopify-checkout-wrapper *::after {
+    box-sizing: border-box;
+}
+
+/* ─── Layout Dividido 2 Columnas Estilo Shopify ─── */
+.nh-shopify-checkout-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 460px;
+    min-height: 100vh;
+}
+
+/* ─── Columna Izquierda: Información de Formulario (Blanca) ─── */
+.nh-shopify-main-col {
+    padding: 40px 60px;
+    display: flex;
+    flex-direction: column;
+    gap: 28px;
+    background-color: #FFFFFF;
+}
+
+.nh-shopify-logo-bar {
+    margin-bottom: 8px;
+}
+
+.nh-shopify-brand-name {
+    font-family: var(--font-headings, 'Playfair Display', serif);
+    font-size: 24px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    color: #111111;
+    text-transform: uppercase;
+    text-decoration: none;
+    display: inline-block;
+}
+
+/* Breadcrumbs / Breadcrumb Steps */
+.nh-shopify-breadcrumbs {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    color: #707070;
+}
+
+.nh-shopify-breadcrumbs a {
+    color: #111111;
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.nh-shopify-breadcrumbs .current {
+    font-weight: 700;
+    color: #111111;
+}
+
+/* Express Checkout Section */
+.nh-shopify-express-checkout {
+    border: 1px solid #E3E3E3;
+    border-radius: 8px;
+    padding: 16px 20px;
+    background-color: #FAF9F6;
+    text-align: center;
+}
+
+.nh-shopify-express-title {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: #707070;
+    margin-bottom: 12px;
+}
+
+.nh-shopify-express-btns {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+}
+
+.nh-shopify-express-btn {
+    flex: 1;
+    height: 44px;
+    border-radius: 6px;
+    border: none;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    transition: opacity 0.15s ease;
+}
+
+.nh-shopify-express-btn.nequi { background-color: #FF005C; color: #FFFFFF; }
+.nh-shopify-express-btn.bancolombia { background-color: #FDDA24; color: #000000; }
+.nh-shopify-express-btn.wompi { background-color: #002D72; color: #FFFFFF; }
+
+.nh-shopify-divider {
+    display: flex;
+    align-items: center;
+    text-align: center;
+    color: #888888;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin: 8px 0;
+}
+
+.nh-shopify-divider::before,
+.nh-shopify-divider::after {
+    content: '';
+    flex: 1;
+    border-bottom: 1px solid #E3E3E3;
+}
+
+.nh-shopify-divider span {
+    padding: 0 14px;
+}
+
+/* Secciones de Formulario */
+.nh-shopify-section-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: #111111;
+    margin: 0 0 14px 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.nh-shopify-section-title a {
+    font-size: 12px;
+    color: #676765;
+    font-weight: 400;
+    text-decoration: underline;
+}
+
+/* Inputs & Form Fields Shopify Style */
+.nh-shopify-main-col .form-row {
+    margin-bottom: 12px;
+}
+
+.nh-shopify-main-col label {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #555555;
+    margin-bottom: 4px;
+    display: block;
+}
+
+.nh-shopify-main-col input.input-text,
+.nh-shopify-main-col select,
+.nh-shopify-main-col textarea {
+    width: 100% !important;
+    height: 44px !important;
+    padding: 10px 14px !important;
+    border: 1px solid #D9D9D9 !important;
+    border-radius: 6px !important;
+    font-size: 13px !important;
+    background-color: #FFFFFF !important;
+    color: #111111 !important;
+    outline: none !important;
+    box-shadow: none !important;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease !important;
+}
+
+.nh-shopify-main-col input.input-text:focus,
+.nh-shopify-main-col select:focus {
+    border-color: #111111 !important;
+    box-shadow: 0 0 0 1px #111111 !important;
+}
+
+/* ─── Columna Derecha: Sidebar Resumen (Gris Claro #F5F5F5) ─── */
+.nh-shopify-sidebar-col {
+    background-color: #FAF9F6;
+    border-left: 1px solid #E5E5E5;
+    padding: 40px 48px;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    overflow-y: auto;
+}
+
+/* Lista de Productos Shopify con Thumbnail + Badge Flotante */
+.nh-shopify-product-list {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+.nh-shopify-product-item {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.nh-shopify-thumb-wrapper {
+    position: relative;
+    width: 64px;
+    height: 64px;
+    border-radius: 8px;
+    border: 1px solid #E3E3E3;
+    background-color: #FFFFFF;
+    flex-shrink: 0;
+    overflow: visible;
+}
+
+.nh-shopify-thumb-wrapper img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 7px;
+}
+
+.nh-shopify-qty-badge {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    background-color: #676765;
+    color: #FFFFFF;
+    font-size: 11px;
+    font-weight: 700;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-mono, 'JetBrains Mono', monospace);
+}
+
+.nh-shopify-product-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.nh-shopify-product-title {
+    font-family: var(--font-headings, 'Playfair Display', serif);
+    font-size: 14px;
+    font-weight: 600;
+    color: #111111;
+    line-height: 1.3;
+}
+
+.nh-shopify-product-meta {
+    font-size: 11px;
+    color: #707070;
+}
+
+.nh-shopify-product-price {
+    font-family: var(--font-mono, 'JetBrains Mono', monospace);
+    font-weight: 600;
+    font-size: 13px;
+    color: #111111;
+}
+
+/* Formulario de Cupón Shopify */
+.nh-shopify-coupon-box {
+    display: flex;
+    gap: 8px;
+    padding-top: 16px;
+    padding-bottom: 20px;
+    border-top: 1px solid #E5E5E5;
+    border-bottom: 1px solid #E5E5E5;
+    margin-bottom: 20px;
+}
+
+.nh-shopify-coupon-input {
+    flex: 1;
+    height: 42px !important;
+    padding: 8px 12px !important;
+    border: 1px solid #D9D9D9 !important;
+    border-radius: 6px !important;
+    font-size: 13px !important;
+    background-color: #FFFFFF !important;
+}
+
+.nh-shopify-coupon-btn {
+    height: 42px;
+    padding: 0 18px;
+    background-color: #C2B280;
+    color: #FFFFFF;
+    border: none;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: background-color 0.15s ease;
+}
+
+.nh-shopify-coupon-btn:hover {
+    background-color: #B0A170;
+}
+
+/* Filas de Subtotal & Total */
+.nh-shopify-summary-rows {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    font-size: 13px;
+    margin-bottom: 20px;
+}
+
+.nh-shopify-summary-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    color: #555555;
+}
+
+.nh-shopify-summary-row span:last-child {
+    font-family: var(--font-mono, 'JetBrains Mono', monospace);
+    font-weight: 600;
+    color: #111111;
+}
+
+.nh-shopify-total-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 14px;
+    border-top: 1.5px solid #111111;
+    font-size: 17px;
+    font-weight: 700;
+    color: #111111;
+}
+
+.nh-shopify-total-price {
+    font-family: var(--font-mono, 'JetBrains Mono', monospace);
+    font-size: 20px;
+    font-weight: 700;
+}
+
+/* Botón de Pago Principal */
+.nh-shopify-submit-btn {
+    width: 100%;
+    height: 52px;
+    background-color: #202020;
+    color: #FFFFFF;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: background-color 0.15s ease;
+    margin-top: 20px;
+}
+
+.nh-shopify-submit-btn:hover {
+    background-color: #000000;
+}
+
+/* ─── Responsive ─── */
+@media (max-width: 991px) {
+    .nh-shopify-checkout-grid {
+        grid-template-columns: 1fr;
+    }
+    .nh-shopify-sidebar-col {
+        position: static;
+        height: auto;
+        border-left: none;
+        border-top: 1px solid #E5E5E5;
+        padding: 30px 24px;
+        order: -1; /* Muestra resumen arriba en móviles como en Shopify! */
+    }
+    .nh-shopify-main-col {
+        padding: 30px 24px;
+    }
+}

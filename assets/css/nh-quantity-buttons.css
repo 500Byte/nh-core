@@ -1,0 +1,192 @@
+/* Custom Premium Quantity Selector (.quantity) — DS v2 — Product + Cart (not side-cart) */
+.elementor-add-to-cart .quantity,
+.nh-custom-add-to-cart-wrapper .quantity,
+.woocommerce-cart-form .quantity,
+.woocommerce div.product form.cart div.quantity {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    border: 2px solid var(--nh-gray-200) !important;
+    border-radius: var(--radius-sm) !important;
+    overflow: visible !important;
+    background: transparent !important;
+    width: fit-content !important;
+    min-width: 130px !important;
+    height: 42px !important;
+    padding: 0 !important;
+    transition: border-color var(--transition-fast), box-shadow var(--transition-fast) !important;
+}
+
+.elementor-add-to-cart .quantity:hover,
+.nh-custom-add-to-cart-wrapper .quantity:hover,
+.woocommerce-cart-form .quantity:hover,
+.woocommerce div.product form.cart div.quantity:hover {
+    border-color: var(--nh-gray-300) !important;
+}
+
+.elementor-add-to-cart .quantity:focus-within,
+.nh-custom-add-to-cart-wrapper .quantity:focus-within,
+.woocommerce-cart-form .quantity:focus-within,
+.woocommerce div.product form.cart div.quantity:focus-within {
+    border-color: var(--nh-primary) !important;
+    box-shadow: 0 0 0 3px rgba(103,103,101,0.12) !important;
+}
+
+/* Quantity Input Field — Product + Cart */
+.elementor-add-to-cart .quantity .qty,
+.nh-custom-add-to-cart-wrapper .quantity .qty,
+.woocommerce-cart-form .quantity .qty,
+.woocommerce div.product form.cart div.quantity .qty {
+    flex: 1 1 auto !important;
+    width: 46px !important;
+    height: 100% !important;
+    padding: 0 !important;
+    text-align: center !important;
+    border: none !important;
+    background: transparent !important;
+    color: var(--nh-text) !important;
+    font-family: var(--font-body) !important;
+    font-size: 15px !important;
+    font-weight: 500 !important;
+    line-height: 42px !important;
+    outline: none !important;
+    box-shadow: none !important;
+    -moz-appearance: textfield !important;
+}
+
+.elementor-add-to-cart .quantity .qty:focus,
+.nh-custom-add-to-cart-wrapper .quantity .qty:focus,
+.woocommerce-cart-form .quantity .qty:focus {
+    background: transparent !important;
+}
+
+.elementor-add-to-cart .quantity .qty::-webkit-outer-spin-button,
+.elementor-add-to-cart .quantity .qty::-webkit-inner-spin-button,
+.nh-custom-add-to-cart-wrapper .quantity .qty::-webkit-outer-spin-button,
+.nh-custom-add-to-cart-wrapper .quantity .qty::-webkit-inner-spin-button,
+.woocommerce-cart-form .quantity .qty::-webkit-outer-spin-button,
+.woocommerce-cart-form .quantity .qty::-webkit-inner-spin-button {
+    -webkit-appearance: none !important;
+    margin: 0 !important;
+}
+
+/* Custom Buttons (.nh-qty-btn) — DS v2 — Product + Cart */
+.elementor-add-to-cart .nh-qty-btn,
+.nh-custom-add-to-cart-wrapper .nh-qty-btn,
+.woocommerce-cart-form .nh-qty-btn {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    flex: 0 0 auto !important;
+    width: 42px !important;
+    height: 42px !important;
+    background: transparent !important;
+    border: none !important;
+    border-left: 2px solid var(--nh-gray-200) !important;
+    cursor: pointer !important;
+    font-family: var(--font-body) !important;
+    font-size: 18px !important;
+    font-weight: 500 !important;
+    color: var(--nh-text) !important;
+    transition: background var(--transition-fast), color var(--transition-fast), opacity var(--transition-fast), transform var(--transition-fast) !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    box-sizing: border-box !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+    -webkit-user-select: none !important;
+    user-select: none !important;
+}
+
+.elementor-add-to-cart .nh-qty-minus,
+.nh-custom-add-to-cart-wrapper .nh-qty-minus,
+.woocommerce-cart-form .nh-qty-minus {
+    border-left: none !important;
+    border-right: 2px solid var(--nh-gray-200) !important;
+}
+
+.elementor-add-to-cart .nh-qty-plus,
+.nh-custom-add-to-cart-wrapper .nh-qty-plus,
+.woocommerce-cart-form .nh-qty-plus {
+    border-left: 2px solid var(--nh-gray-200) !important;
+    border-right: none !important;
+}
+
+.elementor-add-to-cart .nh-qty-btn:hover,
+.nh-custom-add-to-cart-wrapper .nh-qty-btn:hover,
+.woocommerce-cart-form .nh-qty-btn:hover {
+    background: var(--nh-text) !important;
+    color: var(--nh-white) !important;
+}
+
+.elementor-add-to-cart .nh-qty-btn:active,
+.nh-custom-add-to-cart-wrapper .nh-qty-btn:active,
+.woocommerce-cart-form .nh-qty-btn:active {
+    background: var(--nh-text) !important;
+    color: var(--nh-white) !important;
+    transform: scale(0.95) !important;
+}
+
+.elementor-add-to-cart .nh-qty-btn:focus-visible,
+.nh-custom-add-to-cart-wrapper .nh-qty-btn:focus-visible,
+.woocommerce-cart-form .nh-qty-btn:focus-visible {
+    outline: 2px solid var(--nh-primary) !important;
+    outline-offset: -2px !important;
+}
+
+.elementor-add-to-cart .nh-qty-btn.nh-qty-disabled,
+.nh-custom-add-to-cart-wrapper .nh-qty-btn.nh-qty-disabled,
+.woocommerce-cart-form .nh-qty-btn.nh-qty-disabled {
+    opacity: 0.35 !important;
+    cursor: not-allowed !important;
+    pointer-events: none !important;
+}
+
+/* Premium Add to Cart Button (.single_add_to_cart_button) — DS v2 */
+.woocommerce div.product form.cart .button,
+.woocommerce div.product form.cart .single_add_to_cart_button,
+.nh-custom-add-to-cart-wrapper .single_add_to_cart_button {
+    background-color: var(--nh-gray-900) !important;
+    color: var(--nh-white) !important;
+    font-family: var(--font-body) !important;
+    font-size: 14px !important;
+    font-weight: 500 !important;
+    letter-spacing: 0.05em !important;
+    text-transform: uppercase !important;
+    padding: 0 32px !important;
+    height: 42px !important;
+    line-height: 42px !important;
+    border: none !important;
+    border-radius: var(--radius-sm) !important;
+    transition: background-color var(--transition-fast), transform var(--transition-fast), opacity var(--transition-fast) !important;
+    cursor: pointer !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    box-sizing: border-box !important;
+}
+
+.woocommerce div.product form.cart .button:hover,
+.woocommerce div.product form.cart .single_add_to_cart_button:hover,
+.nh-custom-add-to-cart-wrapper .single_add_to_cart_button:hover {
+    background-color: var(--nh-primary) !important;
+    color: var(--nh-white) !important;
+}
+
+.woocommerce div.product form.cart .button:active,
+.woocommerce div.product form.cart .single_add_to_cart_button:active,
+.nh-custom-add-to-cart-wrapper .single_add_to_cart_button:active {
+    background-color: var(--nh-primary-hover) !important;
+    transform: scale(0.98) !important;
+}
+
+.woocommerce div.product form.cart .button:disabled,
+.woocommerce div.product form.cart .single_add_to_cart_button:disabled,
+.woocommerce div.product form.cart .button:disabled[disabled],
+.nh-custom-add-to-cart-wrapper .single_add_to_cart_button:disabled {
+    background-color: var(--nh-gray-200) !important;
+    color: var(--nh-gray-500) !important;
+    cursor: not-allowed !important;
+    opacity: 0.6 !important;
+    transform: none !important;
+}

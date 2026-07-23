@@ -1,0 +1,28 @@
+# Dependencies
+node_modules/
+vendor/
+
+# Build artifacts
+*.zip
+*.tar.gz
+
+# Environment
+.env
+.env.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Tests (if added later)
+tests/
+phpunit.xml

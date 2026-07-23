@@ -1,0 +1,76 @@
+.nh-price-filter-container {
+    padding: 10px 0;
+}
+.nh-filter-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-bottom: 15px;
+    color: #333;
+}
+.nh-price-inputs {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 15px;
+}
+.nh-price-field {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+}
+.nh-price-field span {
+    font-size: 0.75rem;
+    color: #666;
+    margin-bottom: 4px;
+}
+.nh-price-field input {
+    width: 100%;
+    height: 38px;
+    border: 1px solid #dcdcdc;
+    border-radius: 4px;
+    padding: 0 10px;
+    font-size: 0.9rem;
+    outline: none;
+    box-sizing: border-box;
+    transition: border-color 0.2s;
+}
+.nh-price-field input:focus {
+    border-color: #000;
+}
+.nh-price-separator {
+    color: #aaa;
+    margin-top: 18px;
+}
+.nh-filter-actions {
+    display: flex;
+    gap: 8px;
+}
+.nh-filter-btn {
+    flex: 2;
+    height: 38px;
+    background-color: #000;
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    font-weight: 500;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+.nh-filter-btn:hover {
+    background-color: #333;
+}
+.nh-filter-clear-btn {
+    flex: 1;
+    height: 38px;
+    background-color: #f5f5f7;
+    color: #333;
+    border: 1px solid #dcdcdc;
+    border-radius: 4px;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+.nh-filter-clear-btn:hover {
+    background-color: #e5e5e7;
+}

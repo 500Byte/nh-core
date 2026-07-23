@@ -1,0 +1,98 @@
+/* ===== NH MARQUEE WIDGET ===== */
+
+.nh-marquee-world {
+    perspective: 1000px;
+    overflow: hidden;
+    display: block;
+    width: 100%;
+}
+
+.nh-marquee-stage {
+    transform-style: preserve-3d;
+    transform: rotateX(var(--rotate-x, 0deg)) rotateY(var(--rotate-y, 0deg));
+    transition: transform 0.3s ease;
+}
+
+.nh-marquee-container {
+    overflow: hidden;
+    white-space: nowrap;
+    width: 100%;
+    display: block;
+}
+
+.nh-marquee-track {
+    display: flex;
+    width: max-content;
+    animation: nh-marquee-scroll var(--nh-marquee-duration, 25s) linear infinite;
+    will-change: transform;
+}
+
+.nh-marquee-group {
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+.nh-marquee-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+    font-family: inherit;
+    font-size: inherit;
+    font-weight: inherit;
+    line-height: inherit;
+    letter-spacing: inherit;
+}
+
+.nh-marquee-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+    flex-shrink: 0;
+}
+
+.nh-marquee-icon i,
+.nh-marquee-icon svg {
+    display: inline-block;
+    vertical-align: middle;
+}
+
+.nh-marquee-icon svg {
+    width: 1em;
+    height: 1em;
+}
+
+.nh-marquee-text {
+    display: inline;
+    white-space: nowrap;
+    font-family: inherit;
+    font-size: inherit;
+    font-weight: inherit;
+    line-height: inherit;
+    letter-spacing: inherit;
+}
+
+.nh-marquee-separator {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 24px;
+    flex-shrink: 0;
+    line-height: 1;
+}
+
+@keyframes nh-marquee-scroll {
+    0% {
+        transform: translateX(0);
+    }
+    100% {
+        transform: translateX(-50%);
+    }
+}
+
+/* Pausar animación al hacer hover (opcional) */
+.nh-marquee-container:hover .nh-marquee-track {
+    animation-play-state: paused;
+}
