@@ -28,6 +28,9 @@ class NH_Core_Loader {
         require_once NH_CORE_PATH . 'inc/class-nh-core-tracking.php';
         \NH_Core_Tracking::get_instance();
 
+        // Template parts compartidos (Cart + Checkout)
+        require_once NH_CORE_PATH . 'inc/nh-template-parts.php';
+
         // Carga de submódulo de WooCommerce (si WooCommerce está activo)
         if ( class_exists( 'WooCommerce' ) ) {
             require_once NH_CORE_PATH . 'inc/class-nh-core-woocommerce.php';

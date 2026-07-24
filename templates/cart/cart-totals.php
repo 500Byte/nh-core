@@ -20,17 +20,17 @@ $cart = WC()->cart;
 	<div class="nh-cart-summary-rows">
 
 		<!-- Subtotal -->
-		<div class="nh-cart-summary-row cart-subtotal">
-			<span class="nh-row-label"><?php esc_html_e( 'Subtotal', 'woocommerce' ); ?></span>
-			<span class="nh-row-value"><?php wc_cart_totals_subtotal_html(); ?></span>
-		</div>
+		<?php nh_render_summary_row( __( 'Subtotal', 'woocommerce' ), nh_capture_wc_output( 'wc_cart_totals_subtotal_html' ), 'cart-subtotal' ); ?>
 
 		<!-- Cupones Aplicados -->
 		<?php foreach ( $cart->get_coupons() as $code => $coupon ) : ?>
-			<div class="nh-cart-summary-row nh-cart-discount coupon-<?php echo esc_attr( sanitize_title( $code ) ); ?>">
-				<span class="nh-row-label"><?php wc_cart_totals_coupon_label( $coupon ); ?></span>
-				<span class="nh-row-value"><?php wc_cart_totals_coupon_html( $coupon ); ?></span>
-			</div>
+			<?php 
+			$coupon_label = wc_cart_totals_coupon_label( $coupon, false );
+			$coupon_html  = nh_capture_wc_output( function() use ( $coupon ) {
+				wc_cart_totals_coupon_html( $coupon );
+			} );
+			nh_render_summary_row( $coupon_label, $coupon_html, 'nh-cart-discount coupon-' . esc_attr( sanitize_title( $code ) ) ); 
+			?>
 		<?php endforeach; ?>
 
 		<!-- Envío -->
@@ -41,18 +41,17 @@ $cart = WC()->cart;
 			</div>
 			<?php do_action( 'woocommerce_cart_totals_after_shipping' ); ?>
 		<?php elseif ( $cart->needs_shipping() && 'yes' === get_option( 'woocommerce_enable_shipping_calc' ) ) : ?>
-			<div class="nh-cart-summary-row shipping-calculator-row">
-				<span class="nh-row-label"><?php esc_html_e( 'Envío', 'woocommerce' ); ?></span>
-				<span class="nh-row-value"><?php woocommerce_shipping_calculator(); ?></span>
-			</div>
+			<?php nh_render_summary_row( __( 'Envío', 'woocommerce' ), nh_capture_wc_output( 'woocommerce_shipping_calculator' ), 'shipping-calculator-row' ); ?>
 		<?php endif; ?>
 
 		<!-- Tarifas / Fees -->
 		<?php foreach ( $cart->get_fees() as $fee ) : ?>
-			<div class="nh-cart-summary-row fee">
-				<span class="nh-row-label"><?php echo esc_html( $fee->name ); ?></span>
-				<span class="nh-row-value"><?php wc_cart_totals_fee_html( $fee ); ?></span>
-			</div>
+			<?php 
+			$fee_html = nh_capture_wc_output( function() use ( $fee ) {
+				wc_cart_totals_fee_html( $fee );
+			} );
+			nh_render_summary_row( esc_html( $fee->name ), $fee_html, 'fee' ); 
+			?>
 		<?php endforeach; ?>
 
 		<!-- Impuestos -->
@@ -68,20 +67,10 @@ $cart = WC()->cart;
 
 			if ( 'itemized' === get_option( 'woocommerce_tax_total_display' ) ) {
 				foreach ( $cart->get_tax_totals() as $code => $tax ) {
-					?>
-					<div class="nh-cart-summary-row tax-rate tax-rate-<?php echo esc_attr( sanitize_title( $code ) ); ?>">
-						<span class="nh-row-label"><?php echo esc_html( $tax->label ) . $estimated_text; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?></span>
-						<span class="nh-row-value"><?php echo wp_kses_post( $tax->formatted_amount ); ?></span>
-					</div>
-					<?php
+					nh_render_summary_row( esc_html( $tax->label ) . $estimated_text, wp_kses_post( $tax->formatted_amount ), 'tax-rate tax-rate-' . esc_attr( sanitize_title( $code ) ) );
 				}
 			} else {
-				?>
-				<div class="nh-cart-summary-row tax-total">
-					<span class="nh-row-label"><?php echo esc_html( WC()->countries->tax_or_vat() ) . $estimated_text; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?></span>
-					<span class="nh-row-value"><?php wc_cart_totals_taxes_total_html(); ?></span>
-				</div>
-				<?php
+				nh_render_summary_row( esc_html( WC()->countries->tax_or_vat() ) . $estimated_text, nh_capture_wc_output( 'wc_cart_totals_taxes_total_html' ), 'tax-total' );
 			}
 		}
 		?>
@@ -89,10 +78,7 @@ $cart = WC()->cart;
 		<?php do_action( 'woocommerce_cart_totals_before_order_total' ); ?>
 
 		<!-- Total Final -->
-		<div class="nh-cart-summary-row order-total">
-			<span class="nh-row-label"><?php esc_html_e( 'Total', 'woocommerce' ); ?></span>
-			<span class="nh-row-value"><?php wc_cart_totals_order_total_html(); ?></span>
-		</div>
+		<?php nh_render_summary_row( __( 'Total', 'woocommerce' ), nh_capture_wc_output( 'wc_cart_totals_order_total_html' ), 'order-total' ); ?>
 
 		<?php do_action( 'woocommerce_cart_totals_after_order_total' ); ?>
 
@@ -106,20 +92,8 @@ $cart = WC()->cart;
 	<!-- Sellos de Garantía y Confianza -->
 	<?php
 	$trust_pills = apply_filters( 'nh_cart_payment_pills', [ 'Visa', 'Mastercard', 'PSE', 'Wompi', 'Addi', 'Efectivo' ] );
-	if ( ! empty( $trust_pills ) ) :
+	nh_render_trust_box( __( 'Pago 100% Seguro con Cifrado SSL', 'nh-core' ), $trust_pills, 'nh-trust-box' );
 	?>
-		<div class="nh-cart-ssl-box">
-			<div class="nh-trust-badge-item">
-				<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-				<span><?php esc_html_e( 'Pago 100% Seguro con Cifrado SSL', 'nh-core' ); ?></span>
-			</div>
-			<div class="nh-trust-payment-icons">
-				<?php foreach ( $trust_pills as $pill_name ) : ?>
-					<span class="nh-trust-pill"><?php echo esc_html( trim( $pill_name ) ); ?></span>
-				<?php endforeach; ?>
-			</div>
-		</div>
-	<?php endif; ?>
 
 	<?php do_action( 'woocommerce_after_cart_totals' ); ?>
 

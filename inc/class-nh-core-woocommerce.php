@@ -22,6 +22,7 @@ class NH_Core_Woocommerce {
         add_shortcode( 'addi_widget', [ $this, 'addi_widget_shortcode' ] );
         add_action( 'pre_get_posts', [ $this, 'apply_price_filter_to_all_queries' ], 99 );
         add_action( 'wp_enqueue_scripts', [ $this, 'register_assets' ] );
+        add_action( 'wp_enqueue_scripts', [ $this, 'dequeue_conflicting_styles' ], 999 );
         add_filter( 'woocommerce_locate_template', [ $this, 'locate_quantity_input_template' ], 10, 3 );
         add_filter( 'woocommerce_get_stock_html', [ $this, 'custom_backorder_stock_html' ], 10, 2 );
         
@@ -77,6 +78,26 @@ class NH_Core_Woocommerce {
             '1.0.0',
             true
         );
+    }
+
+    /**
+     * Dequeue WooCommerce core CSS on cart/checkout pages.
+     * Our nh-woocommerce.css replaces these entirely.
+     * Priority 999 to run after all other enqueues.
+     */
+    public function dequeue_conflicting_styles() {
+        if ( ! is_cart() && ! is_checkout() && ! is_wc_endpoint_url() ) {
+            return;
+        }
+
+        // WooCommerce core styles — our BEM CSS replaces them
+        wp_dequeue_style( 'woocommerce-general' );
+        wp_dequeue_style( 'woocommerce-layout' );
+        wp_dequeue_style( 'woocommerce-smallscreen' );
+
+        // Variation Swatches plugin — conflicts with our product image sizing
+        wp_dequeue_style( 'wc-swatches-style' );
+        wp_dequeue_style( 'wc-swatches-front' );
     }
 
     public function locate_quantity_input_template( $template, $template_name, $template_path ) {

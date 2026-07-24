@@ -65,27 +65,8 @@ do_action( 'woocommerce_before_cart' ); ?>
 
 									<?php do_action( 'woocommerce_after_cart_item_name', $cart_item, $cart_item_key ); ?>
 
-									<!-- Atributos y Variaciones en Pills -->
-									<div class="nh-cart-product-variation-pills">
-										<?php
-										if ( ! empty( $cart_item['variation'] ) ) {
-											foreach ( $cart_item['variation'] as $attr_key => $attr_value ) {
-												if ( '' === $attr_value ) continue;
-												$taxonomy    = str_replace( 'attribute_', '', $attr_key );
-												$label       = wc_attribute_label( $taxonomy, $_product );
-												$term        = get_term_by( 'slug', $attr_value, $taxonomy );
-												$display_val = $term ? $term->name : ucfirst( $attr_value );
-												printf(
-													'<span class="nh-cart-variation-pill"><span class="nh-variation-label">%s:</span> <span class="nh-variation-val">%s</span></span>',
-													esc_html( $label ),
-													esc_html( $display_val )
-												);
-											}
-										} else {
-											echo wc_get_formatted_cart_item_data( $cart_item ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-										}
-										?>
-									</div>
+								<!-- Atributos y Variaciones en Pills -->
+								<?php nh_render_variation_pills( $cart_item, $_product, 'nh-pill-group', 'nh-pill' ); ?>
 
 									<!-- Notificación Backorder -->
 									<?php
@@ -166,12 +147,12 @@ do_action( 'woocommerce_before_cart' ); ?>
 				<?php if ( wc_coupons_enabled() ) { ?>
 					<div class="nh-cart-coupon coupon">
 						<input type="text" name="coupon_code" class="nh-cart-coupon-input input-text" id="coupon_code" value="" placeholder="<?php esc_attr_e( 'Código de cupón', 'woocommerce' ); ?>" />
-						<button type="submit" class="button nh-cart-coupon-btn" name="apply_coupon" value="<?php esc_attr_e( 'Aplicar cupón', 'woocommerce' ); ?>"><?php esc_html_e( 'Aplicar', 'woocommerce' ); ?></button>
+						<button type="submit" class="nh-btn nh-btn-secondary nh-cart-coupon-btn" name="apply_coupon" value="<?php esc_attr_e( 'Aplicar cupón', 'woocommerce' ); ?>"><?php esc_html_e( 'Aplicar', 'woocommerce' ); ?></button>
 						<?php do_action( 'woocommerce_cart_coupon' ); ?>
 					</div>
 				<?php } ?>
 
-				<button type="submit" class="button nh-cart-update-btn" name="update_cart" value="<?php esc_attr_e( 'Actualizar carrito', 'woocommerce' ); ?>"><?php esc_html_e( 'Actualizar carrito', 'woocommerce' ); ?></button>
+				<button type="submit" class="nh-btn nh-btn-secondary nh-cart-update-btn" name="update_cart" value="<?php esc_attr_e( 'Actualizar carrito', 'woocommerce' ); ?>"><?php esc_html_e( 'Actualizar carrito', 'woocommerce' ); ?></button>
 
 				<?php wp_nonce_field( 'woocommerce-cart', 'woocommerce-cart-nonce' ); ?>
 			</div>

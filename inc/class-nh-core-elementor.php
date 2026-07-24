@@ -46,9 +46,10 @@ class NH_Core_Elementor {
         add_action( 'wp_enqueue_scripts', [ $this, 'cart_register_scripts' ] );
 
         // ===== Registrar assets de NH Checkout v2 =====
-        add_action( 'elementor/frontend/after_enqueue_styles', [ $this, 'checkout_register_assets' ] );
-        add_action( 'elementor/editor/after_enqueue_styles', [ $this, 'checkout_register_assets' ] );
-        add_action( 'wp_enqueue_scripts', [ $this, 'checkout_register_assets' ] );
+        // CSS already loaded by cart_register_styles on every Elementor page — only enqueue JS here
+        add_action( 'elementor/frontend/after_enqueue_styles', [ $this, 'checkout_register_scripts_only' ] );
+        add_action( 'elementor/editor/after_enqueue_styles', [ $this, 'checkout_register_scripts_only' ] );
+        add_action( 'wp_enqueue_scripts', [ $this, 'checkout_register_scripts_only' ] );
 
         // ===== Registrar assets de NH Shopify Checkout =====
         add_action( 'elementor/frontend/after_enqueue_styles', [ $this, 'shopify_checkout_register_assets' ] );
@@ -160,11 +161,13 @@ class NH_Core_Elementor {
             [],
             null
         );
+        $css_file = NH_CORE_PATH . 'assets/css/nh-woocommerce.css';
+        $version = file_exists( $css_file ) ? filemtime( $css_file ) : '2.1.0';
         wp_enqueue_style(
-            'nh-cart-widget',
-            NH_CORE_URL . 'assets/css/nh-checkout.css',
+            'nh-woocommerce-styles',
+            NH_CORE_URL . 'assets/css/nh-woocommerce.css',
             [ 'nh-google-fonts' ],
-            '2.0.0'
+            $version
         );
     }
 
@@ -183,13 +186,33 @@ class NH_Core_Elementor {
         ] );
     }
 
-    public function checkout_register_assets() {
-        wp_enqueue_style(
+    /**
+     * Checkout page: enqueue only JS (CSS is shared via nh-cart-widget handle).
+     */
+    public function checkout_register_scripts_only() {
+        wp_enqueue_script(
             'nh-checkout-widget',
-            NH_CORE_URL . 'assets/css/nh-checkout.css',
-            [ 'nh-google-fonts' ],
-            time()
+            NH_CORE_URL . 'assets/js/nh-checkout.js',
+            [ 'jquery' ],
+            '2.1.0',
+            true
         );
+    }
+
+    /**
+     * @deprecated Use checkout_register_scripts_only(). Kept for backward compat.
+     */
+    public function checkout_register_assets() {
+        if ( ! wp_style_is( 'nh-woocommerce-styles', 'enqueued' ) ) {
+            $css_file = NH_CORE_PATH . 'assets/css/nh-woocommerce.css';
+            $version = file_exists( $css_file ) ? filemtime( $css_file ) : '2.1.0';
+            wp_enqueue_style(
+                'nh-woocommerce-styles',
+                NH_CORE_URL . 'assets/css/nh-woocommerce.css',
+                [ 'nh-google-fonts' ],
+                $version
+            );
+        }
         wp_enqueue_script(
             'nh-checkout-widget',
             NH_CORE_URL . 'assets/js/nh-checkout.js',
@@ -253,7 +276,7 @@ class NH_Core_Elementor {
 
                 $pills_html = '';
                 if ( ! empty( $cart_item['variation'] ) ) {
-                    $pills_html .= '<div class="nh-cart-product-variation-pills">';
+                    $pills_html .= '<div class="nh-pill-group">';
                     foreach ( $cart_item['variation'] as $attr_key => $attr_value ) {
                         if ( '' === $attr_value ) continue;
                         $taxonomy = str_replace( 'attribute_', '', $attr_key );
@@ -261,7 +284,7 @@ class NH_Core_Elementor {
                         $term = get_term_by( 'slug', $attr_value, $taxonomy );
                         $display_val = $term ? $term->name : ucfirst( $attr_value );
                         $pills_html .= sprintf(
-                            '<span class="nh-cart-variation-pill"><span class="nh-variation-label">%s:</span> <span class="nh-variation-val">%s</span></span>',
+                            '<span class="nh-pill"><span class="nh-pill-label">%s:</span> <span class="nh-pill-value">%s</span></span>',
                             esc_html( $label ),
                             esc_html( $display_val )
                         );

@@ -49,22 +49,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 								</div>
 								<div class="nh-checkout-item-info">
 									<span class="nh-checkout-item-title"><?php echo esc_html( $base_title ); ?></span>
-									<?php if ( ! empty( $cart_item['variation'] ) ) : ?>
-										<div class="nh-cart-product-variation-pills">
-											<?php foreach ( $cart_item['variation'] as $attr_key => $attr_value ) :
-												if ( '' === $attr_value ) continue;
-												$taxonomy = str_replace( 'attribute_', '', $attr_key );
-												$label = wc_attribute_label( $taxonomy, $_product );
-												$term = get_term_by( 'slug', $attr_value, $taxonomy );
-												$display_val = $term ? $term->name : ucfirst( $attr_value );
-											?>
-												<span class="nh-cart-variation-pill">
-													<span class="nh-variation-label"><?php echo esc_html( $label ); ?>:</span>
-													<span class="nh-variation-val"><?php echo esc_html( $display_val ); ?></span>
-												</span>
-											<?php endforeach; ?>
-										</div>
-									<?php endif; ?>
+								<?php nh_render_variation_pills( $cart_item, $_product ); ?>
 								</div>
 							</div>
 							<div class="nh-checkout-item-subtotal">
@@ -83,10 +68,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 		<!-- Cupón de Descuento (Fuera del Acordeón) -->
 		<?php if ( wc_coupons_enabled() ) : ?>
 			<div class="nh-checkout-coupon-card">
-				<div class="nh-coupon-input-group">
-					<input type="text" id="nh_summary_coupon_code" class="input-text" placeholder="Código de descuento" />
-					<button type="button" id="nh_summary_apply_coupon_btn" class="button"><?php esc_html_e( 'Aplicar', 'woocommerce' ); ?></button>
-				</div>
+				<?php nh_render_coupon_box( 'nh_summary_coupon_code', 'nh_summary_apply_coupon_btn', 'nh-coupon-box' ); ?>
 			</div>
 		<?php endif; ?>
 
@@ -98,16 +80,16 @@ if ( ! defined( 'ABSPATH' ) ) {
 			$percent = min( 100, round( ( $subtotal / $free_shipping_threshold ) * 100 ) );
 			$remaining = max( 0, $free_shipping_threshold - $subtotal );
 		?>
-			<div class="nh-checkout-free-shipping-progress">
-				<div class="nh-free-shipping-text">
+			<div class="nh-shipping-bar">
+				<div class="nh-shipping-bar__text">
 					<?php if ( $remaining > 0 ) : ?>
 						<?php printf( esc_html__( '¡Añade %s más para obtener Envío Gratis!', 'nh-core' ), wc_price( $remaining ) ); ?>
 					<?php else : ?>
 						<strong><?php esc_html_e( '¡Felicidades! Tienes Envío Gratis en este pedido 🎉', 'nh-core' ); ?></strong>
 					<?php endif; ?>
 				</div>
-				<div class="nh-free-shipping-bar-track">
-					<div class="nh-free-shipping-bar-fill" style="width: <?php echo (int) $percent; ?>%;"></div>
+				<div class="nh-shipping-bar__track">
+					<div class="nh-shipping-bar__fill" style="width: <?php echo (int) $percent; ?>%;"></div>
 				</div>
 			</div>
 		<?php endif; ?>
@@ -115,17 +97,17 @@ if ( ! defined( 'ABSPATH' ) ) {
 		<!-- Desglose de Totales y Envío -->
 		<div class="nh-checkout-order-summary-rows">
 			<!-- Subtotal -->
-			<div class="nh-checkout-summary-row cart-subtotal">
-				<span class="nh-summary-label"><?php esc_html_e( 'Subtotal', 'woocommerce' ); ?></span>
-				<span class="nh-summary-value"><?php wc_cart_totals_subtotal_html(); ?></span>
-			</div>
+			<?php nh_render_summary_row( __( 'Subtotal', 'woocommerce' ), nh_capture_wc_output( 'wc_cart_totals_subtotal_html' ), 'cart-subtotal' ); ?>
 
 			<!-- Cupones aplicados -->
 			<?php foreach ( WC()->cart->get_coupons() as $code => $coupon ) : ?>
-				<div class="nh-checkout-summary-row coupon-<?php echo esc_attr( sanitize_title( $code ) ); ?>">
-					<span class="nh-summary-label"><?php wc_cart_totals_coupon_label( $coupon ); ?></span>
-					<span class="nh-summary-value"><?php wc_cart_totals_coupon_html( $coupon ); ?></span>
-				</div>
+				<?php 
+				$coupon_label = wc_cart_totals_coupon_label( $coupon, false );
+				$coupon_html  = nh_capture_wc_output( function() use ( $coupon ) {
+					wc_cart_totals_coupon_html( $coupon );
+				} );
+				nh_render_summary_row( $coupon_label, $coupon_html, 'coupon-' . esc_attr( sanitize_title( $code ) ) ); 
+				?>
 			<?php endforeach; ?>
 
 			<!-- Opciones de Envío -->
@@ -139,17 +121,16 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 			<!-- Cargos adicionales -->
 			<?php foreach ( WC()->cart->get_fees() as $fee ) : ?>
-				<div class="nh-checkout-summary-row fee">
-					<span class="nh-summary-label"><?php echo esc_html( $fee->name ); ?></span>
-					<span class="nh-summary-value"><?php wc_cart_totals_fee_html( $fee ); ?></span>
-				</div>
+				<?php 
+				$fee_html = nh_capture_wc_output( function() use ( $fee ) {
+					wc_cart_totals_fee_html( $fee );
+				} );
+				nh_render_summary_row( esc_html( $fee->name ), $fee_html, 'fee' ); 
+				?>
 			<?php endforeach; ?>
 
 			<!-- Total final -->
-			<div class="nh-checkout-summary-row order-total">
-				<span class="nh-summary-label"><?php esc_html_e( 'Total', 'woocommerce' ); ?></span>
-				<span class="nh-summary-value"><?php wc_cart_totals_order_total_html(); ?></span>
-			</div>
+			<?php nh_render_summary_row( __( 'Total', 'woocommerce' ), nh_capture_wc_output( 'wc_cart_totals_order_total_html' ), 'order-total' ); ?>
 		</div>
 	</div>
 
