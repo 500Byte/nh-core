@@ -54,17 +54,18 @@ do_action( 'woocommerce_before_cart' ); ?>
 								<div class="nh-cart-product-details">
 									<span class="nh-cart-product-name">
 										<?php
+										$product_title = $_product->get_title();
 										if ( ! $product_permalink ) {
-											echo wp_kses_post( apply_filters( 'woocommerce_cart_item_name', $_product->get_name(), $cart_item, $cart_item_key ) . '&nbsp;' );
+											echo esc_html( $product_title );
 										} else {
-											echo wp_kses_post( apply_filters( 'woocommerce_cart_item_name', sprintf( '<a href="%s">%s</a>', esc_url( $product_permalink ), $_product->get_name() ), $cart_item, $cart_item_key ) );
+											printf( '<a href="%s">%s</a>', esc_url( $product_permalink ), esc_html( $product_title ) );
 										}
 										?>
 									</span>
 
 									<?php do_action( 'woocommerce_after_cart_item_name', $cart_item, $cart_item_key ); ?>
 
-									<!-- Atributos y Variaciones -->
+									<!-- Atributos y Variaciones en Pills -->
 									<div class="nh-cart-product-variation-pills">
 										<?php
 										if ( ! empty( $cart_item['variation'] ) ) {
@@ -117,7 +118,7 @@ do_action( 'woocommerce_before_cart' ); ?>
 										'input_value'  => $cart_item['quantity'],
 										'max_value'    => $max_quantity,
 										'min_value'    => $min_quantity,
-										'product_name' => $_product->get_name(),
+										'product_name' => $_product->get_title(),
 									),
 									$_product,
 									false
@@ -184,12 +185,11 @@ do_action( 'woocommerce_before_cart' ); ?>
 	<!-- COLUMNA DERECHA: TARJETA RESUMEN DE COMPRA -->
 	<div class="nh-cart-summary">
 		<?php
-		/**
-		 * Cart totals template hook.
-		 *
-		 * @hooked woocommerce_cart_totals - 10
-		 */
-		do_action( 'woocommerce_cart_collateral' );
+		if ( function_exists( 'woocommerce_cart_totals' ) ) {
+			woocommerce_cart_totals();
+		} else {
+			do_action( 'woocommerce_cart_collateral' );
+		}
 		?>
 	</div>
 
