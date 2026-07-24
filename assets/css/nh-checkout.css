@@ -1650,3 +1650,286 @@
         bottom: 80px !important;
     }
 }
+
+/* ==========================================================================
+   NORMA HANA — UNIFIED E-COMMERCE CART STYLES
+   ========================================================================== */
+.nh-cart-widget {
+    font-family: var(--font-body);
+    color: var(--nh-text);
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+    box-sizing: border-box;
+}
+
+.nh-cart-header {
+    text-align: center;
+    margin-bottom: 24px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--nh-border);
+}
+
+.nh-cart-checkout-steps {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    font-size: 13px;
+    color: var(--nh-text-muted);
+}
+
+.nh-cart-step {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-weight: 500;
+    padding: 4px 8px;
+    border-radius: var(--nh-radius);
+    transition: var(--nh-transition);
+}
+
+.nh-cart-step.active {
+    color: var(--nh-headings);
+    font-weight: 700;
+    border-bottom: 2px solid var(--nh-headings);
+    padding-bottom: 2px;
+}
+
+.nh-cart-step-separator {
+    color: var(--nh-border);
+    font-size: 12px;
+}
+
+.nh-cart-layout {
+    display: grid;
+    grid-template-columns: 1fr 380px;
+    gap: 28px;
+    align-items: start;
+}
+
+@media (max-width: 991px) {
+    .nh-cart-layout {
+        grid-template-columns: 1fr !important;
+    }
+}
+
+.nh-cart-products {
+    background: var(--nh-white);
+    border: 1px solid var(--nh-border);
+    border-radius: var(--nh-radius-lg);
+    overflow: hidden;
+    box-shadow: var(--nh-shadow-sm);
+}
+
+.nh-cart-table-header {
+    display: grid;
+    grid-template-columns: 2.5fr 1fr 1fr 1fr 40px;
+    gap: 12px;
+    padding: 14px 20px;
+    background-color: var(--nh-surface);
+    border-bottom: 1px solid var(--nh-border);
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: var(--nh-text-secondary);
+}
+
+.nh-cart-item {
+    display: grid;
+    grid-template-columns: 2.5fr 1fr 1fr 1fr 40px;
+    gap: 12px;
+    padding: 16px 20px;
+    align-items: center;
+    border-bottom: 1px solid var(--nh-border);
+    transition: var(--nh-transition);
+}
+
+.nh-cart-item:last-child {
+    border-bottom: none;
+}
+
+.nh-cart-product-info {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    min-width: 0;
+}
+
+.nh-cart-product-img {
+    width: 60px;
+    height: 68px;
+    object-fit: cover;
+    border-radius: var(--nh-radius);
+    border: 1px solid var(--nh-border);
+    flex-shrink: 0;
+}
+
+.nh-cart-product-details {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+}
+
+.nh-cart-product-name,
+.nh-cart-product-name a {
+    font-family: var(--font-headings);
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--nh-headings);
+    text-decoration: none;
+}
+
+.nh-cart-product-variation-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 6px;
+    margin-top: 2px;
+}
+
+.nh-cart-variation-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    font-size: 11px;
+    background-color: var(--nh-surface);
+    border: 1px solid var(--nh-border);
+    padding: 2px 8px;
+    border-radius: 99px;
+    color: var(--nh-text-secondary);
+}
+
+.nh-variation-label {
+    color: var(--nh-text-muted);
+    font-weight: 500;
+}
+
+.nh-variation-val {
+    font-weight: 600;
+    color: var(--nh-headings);
+}
+
+.nh-cart-product-price,
+.nh-cart-product-subtotal {
+    font-family: var(--font-body);
+    font-size: 14px;
+    color: var(--nh-text);
+}
+
+.nh-cart-product-subtotal {
+    font-weight: 700;
+    color: var(--nh-headings);
+}
+
+.nh-cart-product-qty {
+    display: inline-flex;
+    align-items: center;
+    border: 1px solid var(--nh-border);
+    border-radius: var(--nh-radius);
+    background: var(--nh-white);
+    overflow: hidden;
+}
+
+.nh-cart-qty-btn {
+    width: 28px;
+    height: 30px;
+    border: none;
+    background: transparent;
+    color: var(--nh-text-secondary);
+    cursor: pointer;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.nh-cart-qty-input {
+    width: 34px;
+    height: 30px;
+    text-align: center;
+    border: none;
+    border-left: 1px solid var(--nh-border);
+    border-right: 1px solid var(--nh-border);
+    font-family: var(--font-body);
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--nh-headings);
+    background: transparent;
+}
+
+.nh-cart-remove {
+    width: 28px;
+    height: 28px;
+    border: 1px solid var(--nh-border);
+    background: var(--nh-white);
+    color: var(--nh-text-muted);
+    cursor: pointer;
+    border-radius: var(--nh-radius);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: var(--nh-transition);
+    text-decoration: none;
+    font-size: 14px;
+}
+
+.nh-cart-remove:hover {
+    border-color: #DC2626;
+    background-color: #DC2626;
+    color: #FFFFFF;
+}
+
+.nh-cart-empty-container {
+    text-align: center;
+    padding: 60px 20px;
+    background: var(--nh-white);
+    border: 1px solid var(--nh-border);
+    border-radius: var(--nh-radius-lg);
+    max-width: 540px;
+    margin: 40px auto;
+}
+
+.nh-cart-empty-icon {
+    width: 72px;
+    height: 72px;
+    margin: 0 auto 20px;
+    background: var(--nh-surface);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--nh-text-muted);
+}
+
+.nh-cart-empty-title {
+    font-family: var(--font-headings);
+    font-size: 24px;
+    color: var(--nh-headings);
+    margin: 0 0 10px 0;
+}
+
+.nh-cart-empty-text {
+    font-size: 14px;
+    color: var(--nh-text-secondary);
+    margin-bottom: 24px;
+}
+
+.nh-cart-empty-btn {
+    display: inline-flex;
+    padding: 12px 24px;
+    background-color: #18181B;
+    color: #FFFFFF !important;
+    border-radius: var(--nh-radius);
+    font-size: 13px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    text-decoration: none;
+    transition: var(--nh-transition);
+}
+
+.nh-cart-empty-btn:hover {
+    background-color: #27272A;
+}

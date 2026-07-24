@@ -162,7 +162,7 @@ class NH_Core_Elementor {
         );
         wp_enqueue_style(
             'nh-cart-widget',
-            NH_CORE_URL . 'assets/css/nh-cart.css',
+            NH_CORE_URL . 'assets/css/nh-checkout.css',
             [ 'nh-google-fonts' ],
             '2.0.0'
         );
