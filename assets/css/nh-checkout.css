@@ -1388,3 +1388,117 @@
         position: static !important;
     }
 }
+
+/* ─── Trust Badges en Pasarela (SSL & Métodos de Pago) ─── */
+.nh-checkout-trust-badges {
+    margin-top: 14px !important;
+    padding: 12px 14px !important;
+    background-color: #FAFAFA !important;
+    border: 1px solid var(--nh-border) !important;
+    border-radius: var(--nh-radius-sm) !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 8px !important;
+}
+
+.nh-trust-badge-item {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 6px !important;
+    font-size: 11.5px !important;
+    font-weight: 600 !important;
+    color: #166534 !important;
+}
+
+.nh-trust-badge-item svg {
+    color: #16A34A !important;
+    flex-shrink: 0 !important;
+}
+
+.nh-trust-payment-icons {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 4px !important;
+}
+
+.nh-trust-pill {
+    display: inline-flex !important;
+    align-items: center !important;
+    padding: 2px 7px !important;
+    background: #FFFFFF !important;
+    border: 1px solid #E4E4E7 !important;
+    border-radius: 4px !important;
+    font-size: 10.5px !important;
+    font-weight: 600 !important;
+    color: #3F3F46 !important;
+    letter-spacing: 0.2px !important;
+}
+
+/* ─── Mobile Accordion & Sticky Order Button ─── */
+.nh-checkout-mobile-summary-toggle {
+    display: none !important;
+}
+
+@media (max-width: 767px) {
+    .nh-desktop-only-title {
+        display: none !important;
+    }
+
+    .nh-checkout-mobile-summary-toggle {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: space-between !important;
+        padding: 12px 14px !important;
+        background: #FAF9F6 !important;
+        border: 1.5px solid var(--nh-border) !important;
+        border-radius: var(--nh-radius-sm) !important;
+        cursor: pointer !important;
+        margin-bottom: 12px !important;
+        user-select: none !important;
+    }
+
+    .nh-mobile-toggle-left {
+        display: flex !important;
+        align-items: center !important;
+        gap: 8px !important;
+        font-size: 13px !important;
+        font-weight: 600 !important;
+        color: var(--nh-headings) !important;
+    }
+
+    .nh-mobile-toggle-right .nh-mobile-summary-total {
+        font-size: 14px !important;
+        font-weight: 700 !important;
+        color: var(--nh-headings) !important;
+    }
+
+    .nh-checkout-collapsible-content {
+        display: none;
+    }
+
+    .nh-checkout-collapsible-content.is-open {
+        display: block !important;
+    }
+
+    /* Sticky Button en Celulares */
+    .nh-checkout-widget #place_order,
+    .nh-checkout-widget .nh-checkout-place-order-btn,
+    .nh-checkout-widget button[name="woocommerce_checkout_place_order"] {
+        position: fixed !important;
+        bottom: 12px !important;
+        left: 12px !important;
+        right: 12px !important;
+        width: calc(100% - 24px) !important;
+        z-index: 99999 !important;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25) !important;
+        height: 50px !important;
+        margin-top: 0 !important;
+    }
+
+    body.woocommerce-checkout {
+        padding-bottom: 74px !important;
+    }
+}
