@@ -29,7 +29,7 @@ class NH_Cart_Widget extends \Elementor\Widget_Base {
     }
 
     public function get_style_depends() {
-        return [ 'nh-cart-widget' ];
+        return [ 'nh-cart-widget', 'nh-checkout-widget' ];
     }
 
     public function get_script_depends() {
@@ -388,7 +388,6 @@ class NH_Cart_Widget extends \Elementor\Widget_Base {
 
             <?php if ( 'yes' === $settings['show_header_steps'] ) : ?>
             <div class="nh-cart-header">
-                <h1 class="nh-cart-brand-title"><?php esc_html_e( 'NORMA HANA', 'nh-core' ); ?></h1>
                 <div class="nh-cart-checkout-steps">
                     <span class="nh-cart-step active">1. <?php esc_html_e( 'Carrito', 'nh-core' ); ?></span>
                     <span class="nh-cart-step-separator">→</span>

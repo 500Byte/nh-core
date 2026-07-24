@@ -71,7 +71,7 @@ class NH_Checkout_Widget extends \Elementor\Widget_Base {
             [
                 'label' => esc_html__( 'Título de Marca', 'nh-core' ),
                 'type' => \Elementor\Controls_Manager::TEXT,
-                'default' => 'NORMA HANA',
+                'default' => '',
                 'condition' => [
                     'show_header_steps' => 'yes',
                 ],
@@ -451,7 +451,9 @@ class NH_Checkout_Widget extends \Elementor\Widget_Base {
             
             <?php if ( 'yes' === $settings['show_header_steps'] ) : ?>
             <div class="nh-checkout-header">
-                <h1 class="nh-checkout-brand-title"><?php echo esc_html( $settings['brand_title'] ); ?></h1>
+                <?php if ( ! empty( $settings['brand_title'] ) ) : ?>
+                    <h1 class="nh-checkout-brand-title"><?php echo esc_html( $settings['brand_title'] ); ?></h1>
+                <?php endif; ?>
                 <div class="nh-checkout-steps">
                     <span class="nh-checkout-step"><span class="nh-checkout-step-num">1</span> <?php echo esc_html( ! empty( $settings['step_1_text'] ) ? $settings['step_1_text'] : 'Carrito' ); ?></span>
                     <span class="nh-checkout-step-separator">→</span>

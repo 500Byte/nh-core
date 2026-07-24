@@ -105,7 +105,7 @@
 }
 
 .nh-checkout-reservation-timer strong {
-    font-family: var(--font-mono) !important;
+    font-family: var(--font-body) !important;
     font-weight: 700 !important;
     color: #7F1D1D !important;
 }
@@ -660,7 +660,7 @@
 }
 
 .nh-checkout-item-subtotal {
-    font-family: var(--font-mono) !important;
+    font-family: var(--font-body) !important;
     font-size: 14.5px !important;
     font-weight: 600 !important;
     color: var(--nh-headings) !important;
@@ -691,7 +691,7 @@
 }
 
 .nh-summary-value {
-    font-family: var(--font-mono) !important;
+    font-family: var(--font-body) !important;
     font-weight: 600;
     color: var(--nh-headings);
 }
@@ -715,7 +715,7 @@
 }
 
 .nh-checkout-summary-row.order-total .nh-summary-value {
-    font-family: var(--font-mono) !important;
+    font-family: var(--font-body) !important;
     font-size: 20px !important;
     font-weight: 700 !important;
     color: var(--nh-headings) !important;
@@ -919,7 +919,7 @@
 
 .nh-checkout-widget table.shop_table tbody tr.cart_item td.product-total {
     text-align: right !important;
-    font-family: var(--font-mono) !important;
+    font-family: var(--font-body) !important;
     font-size: 14px !important;
     font-weight: 600 !important;
     color: var(--nh-headings) !important;
@@ -977,7 +977,7 @@
 
 .nh-checkout-widget table.shop_table tfoot td {
     text-align: right !important;
-    font-family: var(--font-mono) !important;
+    font-family: var(--font-body) !important;
     font-weight: 600 !important;
     color: var(--nh-headings) !important;
 }

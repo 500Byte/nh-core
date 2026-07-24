@@ -158,13 +158,13 @@
 .nh-cart-free-shipping-text .amount,
 .nh-cart-free-shipping-text bdi,
 .nh-cart-free-shipping-text .woocommerce-Price-amount {
-    font-family: var(--font-mono);
+    font-family: var(--font-body);
     font-weight: 600;
     color: var(--nh-headings);
 }
 
 .nh-cart-free-shipping-text .woocommerce-Price-currencySymbol {
-    font-family: var(--font-mono);
+    font-family: var(--font-body);
     font-weight: 600;
 }
 
@@ -334,7 +334,7 @@
 /* ─── Product Price ─── */
 .nh-cart-product-price,
 .nh-cart-product-subtotal {
-    font-family: var(--font-mono);
+    font-family: var(--font-body);
     font-size: 14px;
     color: var(--nh-text);
 }
@@ -345,7 +345,7 @@
 .nh-cart-product-subtotal .amount,
 .nh-cart-product-subtotal bdi,
 .nh-cart-product-subtotal .woocommerce-Price-amount {
-    font-family: var(--font-mono);
+    font-family: var(--font-body);
 }
 
 .nh-cart-product-subtotal {
@@ -405,7 +405,7 @@
     border: none;
     border-left: 1px solid var(--nh-border);
     border-right: 1px solid var(--nh-border);
-    font-family: var(--font-mono);
+    font-family: var(--font-body);
     font-size: 13px;
     font-weight: 600;
     color: var(--nh-headings);
@@ -580,13 +580,13 @@
 .nh-cart-summary-row .amount,
 .nh-cart-summary-row bdi,
 .nh-cart-summary-row .woocommerce-Price-amount {
-    font-family: var(--font-mono);
+    font-family: var(--font-body);
     font-weight: 600;
     color: var(--nh-text);
 }
 
 .nh-cart-summary-row .woocommerce-Price-currencySymbol {
-    font-family: var(--font-mono);
+    font-family: var(--font-body);
 }
 
 /* ─── Discount Row ─── */
@@ -620,7 +620,7 @@
 .nh-cart-coupon-applied .amount,
 .nh-cart-coupon-applied bdi,
 .nh-cart-coupon-applied .woocommerce-Price-amount {
-    font-family: var(--font-mono);
+    font-family: var(--font-body);
     color: var(--nh-moss);
     font-weight: 700;
 }
@@ -879,7 +879,7 @@
 .nh-cart-fee span:last-child,
 .nh-cart-fee .amount,
 .nh-cart-fee bdi {
-    font-family: var(--font-mono);
+    font-family: var(--font-body);
     color: var(--nh-text);
 }
 
@@ -900,7 +900,7 @@
 .nh-cart-total .amount,
 .nh-cart-total bdi,
 .nh-cart-total .woocommerce-Price-amount {
-    font-family: var(--font-mono);
+    font-family: var(--font-body);
     font-size: 18px;
     font-weight: 700;
     color: var(--nh-headings);
@@ -911,7 +911,7 @@
 }
 
 .nh-cart-total .woocommerce-Price-currencySymbol {
-    font-family: var(--font-mono);
+    font-family: var(--font-body);
     font-size: 18px;
 }
 
@@ -1053,7 +1053,7 @@
 }
 
 .nh-cart-cross-sells .product .price {
-    font-family: var(--font-mono);
+    font-family: var(--font-body);
     font-size: 13px;
     color: var(--nh-text);
     padding: 0 12px 12px;
