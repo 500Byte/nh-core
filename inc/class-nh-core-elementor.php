@@ -299,6 +299,12 @@ class NH_Core_Elementor {
                 return $custom_template;
             }
         }
+        if ( 'checkout/payment.php' === $template_name ) {
+            $custom_template = NH_CORE_PATH . 'templates/checkout/payment.php';
+            if ( file_exists( $custom_template ) ) {
+                return $custom_template;
+            }
+        }
         return $template;
     }
 }
