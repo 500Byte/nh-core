@@ -90,6 +90,28 @@ if ( ! defined( 'ABSPATH' ) ) {
 			</div>
 		<?php endif; ?>
 
+		<!-- Barra de Progreso Envío Gratis -->
+		<?php
+		$free_shipping_threshold = (float) apply_filters( 'nh_checkout_free_shipping_threshold', 280000 );
+		$subtotal = (float) WC()->cart->get_subtotal();
+		if ( $free_shipping_threshold > 0 && $subtotal > 0 ) :
+			$percent = min( 100, round( ( $subtotal / $free_shipping_threshold ) * 100 ) );
+			$remaining = max( 0, $free_shipping_threshold - $subtotal );
+		?>
+			<div class="nh-checkout-free-shipping-progress">
+				<div class="nh-free-shipping-text">
+					<?php if ( $remaining > 0 ) : ?>
+						<?php printf( esc_html__( '¡Añade %s más para obtener Envío Gratis!', 'nh-core' ), wc_price( $remaining ) ); ?>
+					<?php else : ?>
+						<strong><?php esc_html_e( '¡Felicidades! Tienes Envío Gratis en este pedido 🎉', 'nh-core' ); ?></strong>
+					<?php endif; ?>
+				</div>
+				<div class="nh-free-shipping-bar-track">
+					<div class="nh-free-shipping-bar-fill" style="width: <?php echo (int) $percent; ?>%;"></div>
+				</div>
+			</div>
+		<?php endif; ?>
+
 		<!-- Desglose de Totales y Envío -->
 		<div class="nh-checkout-order-summary-rows">
 			<!-- Subtotal -->

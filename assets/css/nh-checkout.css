@@ -83,6 +83,113 @@
     text-align: center !important;
 }
 
+/* ─── Banner de Reserva de Stock (Urgencia) ─── */
+.nh-checkout-reservation-timer {
+    background-color: #FEF2F2 !important;
+    border: 1px solid #FCA5A5 !important;
+    border-radius: var(--nh-radius-sm) !important;
+    padding: 10px 14px !important;
+    margin-bottom: 24px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 8px !important;
+    font-size: 13px !important;
+    color: #991B1B !important;
+    text-align: center !important;
+}
+
+.nh-checkout-reservation-timer svg {
+    color: #DC2626 !important;
+    flex-shrink: 0 !important;
+}
+
+.nh-checkout-reservation-timer strong {
+    font-family: var(--font-mono) !important;
+    font-weight: 700 !important;
+    color: #7F1D1D !important;
+}
+
+/* ─── Barra de Progreso Envío Gratis ─── */
+.nh-checkout-free-shipping-progress {
+    background-color: #FAFAFA !important;
+    border: 1px solid var(--nh-border) !important;
+    border-radius: var(--nh-radius-sm) !important;
+    padding: 12px 14px !important;
+    margin: 14px 0 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 8px !important;
+}
+
+.nh-free-shipping-text {
+    font-size: 12.5px !important;
+    color: var(--nh-headings) !important;
+    text-align: center !important;
+}
+
+.nh-free-shipping-bar-track {
+    width: 100% !important;
+    height: 6px !important;
+    background-color: #E4E4E7 !important;
+    border-radius: 99px !important;
+    overflow: hidden !important;
+}
+
+.nh-free-shipping-bar-fill {
+    height: 100% !important;
+    background: linear-gradient(90deg, #10B981 0%, #059669 100%) !important;
+    border-radius: 99px !important;
+    transition: width 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+/* ─── Tarjeta de Soporte WhatsApp en Resumen ─── */
+.nh-checkout-whatsapp-card {
+    background-color: #F0FDF4 !important;
+    border: 1px solid #BBF7D0 !important;
+    border-radius: var(--nh-radius-sm) !important;
+    padding: 12px 14px !important;
+    margin-top: 16px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 12px !important;
+}
+
+.nh-wa-card-left {
+    display: flex !important;
+    align-items: center !important;
+    gap: 10px !important;
+    font-size: 12.5px !important;
+    color: #166534 !important;
+    font-weight: 500 !important;
+    line-height: 1.35 !important;
+}
+
+.nh-wa-card-left svg {
+    flex-shrink: 0 !important;
+}
+
+.nh-wa-card-btn {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    padding: 6px 12px !important;
+    background-color: #22C55E !important;
+    color: #FFFFFF !important;
+    border-radius: 6px !important;
+    font-size: 12px !important;
+    font-weight: 600 !important;
+    text-decoration: none !important;
+    white-space: nowrap !important;
+    transition: background-color 0.15s ease !important;
+}
+
+.nh-wa-card-btn:hover {
+    background-color: #16A34A !important;
+    color: #FFFFFF !important;
+}
+
 .nh-checkout-brand-title {
     font-family: var(--font-headings);
     font-size: 28px;

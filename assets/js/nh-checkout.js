@@ -8,6 +8,29 @@
             this.bindEvents();
             this.updatePaymentRadioCards();
             this.updateShippingRadioCards();
+            this.initReservationTimer();
+        },
+
+        initReservationTimer: function() {
+            const $timer = $('#nh_checkout_timer_count');
+            if (!$timer.length) return;
+
+            let endTime = sessionStorage.getItem('nh_checkout_timer_end');
+            if (!endTime) {
+                endTime = Date.now() + (15 * 60 * 1000);
+                sessionStorage.setItem('nh_checkout_timer_end', endTime);
+            }
+
+            const updateTimer = function() {
+                const now = Date.now();
+                const diff = Math.max(0, Math.floor((endTime - now) / 1000));
+                const mins = String(Math.floor(diff / 60)).padStart(2, '0');
+                const secs = String(diff % 60).padStart(2, '0');
+                $timer.text(mins + ':' + secs);
+            };
+
+            updateTimer();
+            setInterval(updateTimer, 1000);
         },
 
         bindEvents: function() {
