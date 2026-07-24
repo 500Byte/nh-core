@@ -293,18 +293,18 @@ class NH_Core_Elementor {
     }
 
     public function locate_checkout_templates( $template, $template_name, $template_path ) {
-        if ( 'checkout/review-order.php' === $template_name ) {
-            $custom_template = NH_CORE_PATH . 'templates/checkout/review-order.php';
-            if ( file_exists( $custom_template ) ) {
-                return $custom_template;
-            }
+        $overrides = [
+            'checkout/review-order.php' => NH_CORE_PATH . 'templates/checkout/review-order.php',
+            'checkout/payment.php'      => NH_CORE_PATH . 'templates/checkout/payment.php',
+            'cart/cart.php'             => NH_CORE_PATH . 'templates/cart/cart.php',
+            'cart/cart-totals.php'      => NH_CORE_PATH . 'templates/cart/cart-totals.php',
+            'cart/cart-empty.php'       => NH_CORE_PATH . 'templates/cart/cart-empty.php',
+        ];
+
+        if ( isset( $overrides[ $template_name ] ) && file_exists( $overrides[ $template_name ] ) ) {
+            return $overrides[ $template_name ];
         }
-        if ( 'checkout/payment.php' === $template_name ) {
-            $custom_template = NH_CORE_PATH . 'templates/checkout/payment.php';
-            if ( file_exists( $custom_template ) ) {
-                return $custom_template;
-            }
-        }
+
         return $template;
     }
 }

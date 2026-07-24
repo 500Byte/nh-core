@@ -365,23 +365,18 @@ class NH_Cart_Widget extends \Elementor\Widget_Base {
             return;
         }
 
-        WC()->cart->calculate_shipping();
-        WC()->cart->calculate_totals();
-
         $settings = $this->get_settings_for_display();
-        $cart = WC()->cart;
-        $cart_items = $cart->get_cart();
-        $cart_total = floatval( $cart->get_subtotal() );
-        $threshold = $this->get_free_shipping_threshold();
-        $missing = max( 0, $threshold - $cart_total );
-        $percentage = ( $threshold > 0 ) ? min( 100, ( $cart_total / $threshold ) * 100 ) : 100;
+        $is_editor_preview = 'yes' === $settings['preview_empty_state'];
 
-        $is_editor_preview = \Elementor\Plugin::$instance->editor->is_edit_mode() && 'yes' === $settings['preview_empty_state'];
-
-        if ( empty( $cart_items ) || $is_editor_preview ) {
-            $this->render_empty_cart();
+        if ( ! is_admin() && ( WC()->cart->is_empty() || $is_editor_preview ) ) {
+            wc_get_template( 'cart/cart-empty.php' );
             return;
         }
+
+        // Registrar filtros dinámicos del widget para las plantillas de carrito
+        add_filter( 'nh_cart_payment_pills', function() use ( $settings ) {
+            return [ 'Visa', 'Mastercard', 'PSE', 'Wompi', 'Addi', 'Efectivo' ];
+        } );
 
         ?>
         <div class="nh-cart-widget">
@@ -389,7 +384,6 @@ class NH_Cart_Widget extends \Elementor\Widget_Base {
             if ( function_exists( 'woocommerce_output_all_notices' ) ) {
                 woocommerce_output_all_notices();
             }
-            do_action( 'woocommerce_before_cart' );
             ?>
 
             <?php if ( 'yes' === $settings['show_header_steps'] ) : ?>
@@ -405,235 +399,11 @@ class NH_Cart_Widget extends \Elementor\Widget_Base {
             </div>
             <?php endif; ?>
 
-            <?php if ( 'yes' === $settings['show_free_shipping'] ) : ?>
-            <div class="nh-cart-free-shipping">
-                <div class="nh-cart-free-shipping-track"></div>
-                <div class="nh-cart-free-shipping-bar" style="width: <?php echo esc_attr( $percentage ); ?>%;"></div>
-                <div class="nh-cart-free-shipping-text">
-                    <?php if ( $missing > 0 ) : ?>
-                        <?php 
-                        $message = str_replace( 
-                            [ '{missing}', '{threshold}' ], 
-                            [ wc_price( $missing ), wc_price( $threshold ) ], 
-                            $settings['free_shipping_progress'] 
-                        );
-                        echo wp_kses_post( $message );
-                        ?>
-                    <?php else : ?>
-                        <?php echo esc_html( $settings['free_shipping_success'] ); ?>
-                    <?php endif; ?>
-                </div>
-            </div>
-            <?php endif; ?>
+            <?php 
+            // Delegar a la plantilla modular del carrito
+            wc_get_template( 'cart/cart.php' ); 
+            ?>
 
-            <div class="nh-cart-layout">
-                <!-- Columna Izquierda: Productos -->
-                <div class="nh-cart-products">
-                    <?php do_action( 'woocommerce_before_cart_table' ); ?>
-
-                    <div class="nh-cart-table-header">
-                        <span><?php esc_html_e( 'Producto', 'nh-core' ); ?></span>
-                        <span><?php esc_html_e( 'Precio', 'nh-core' ); ?></span>
-                        <span><?php esc_html_e( 'Cantidad', 'nh-core' ); ?></span>
-                        <span><?php esc_html_e( 'Subtotal', 'nh-core' ); ?></span>
-                        <span></span>
-                    </div>
-                    
-                    <?php foreach ( $cart_items as $cart_item_key => $cart_item ) : 
-                        $product = $cart_item['data'];
-                        if ( ! $product || ! $product->exists() ) {
-                            continue;
-                        }
-                        $quantity = $cart_item['quantity'];
-                        $product_permalink = $product->is_visible() ? $product->get_permalink( $cart_item ) : '';
-                        $is_sold_individually = $product->is_sold_individually();
-                    ?>
-                    <div class="nh-cart-item" data-key="<?php echo esc_attr( $cart_item_key ); ?>">
-                        <div class="nh-cart-product-info">
-                            <?php if ( 'yes' === $settings['show_product_image'] ) : ?>
-                                <?php if ( $product_permalink ) : ?>
-                                    <a href="<?php echo esc_url( $product_permalink ); ?>">
-                                        <?php echo wp_kses_post( $product->get_image( 'thumbnail', [ 'class' => 'nh-cart-product-img' ] ) ); ?>
-                                    </a>
-                                <?php else : ?>
-                                    <?php echo wp_kses_post( $product->get_image( 'thumbnail', [ 'class' => 'nh-cart-product-img' ] ) ); ?>
-                                <?php endif; ?>
-                            <?php endif; ?>
-                            <div class="nh-cart-product-details">
-                                <span class="nh-cart-product-name">
-                                    <?php if ( $product_permalink ) : ?>
-                                        <a href="<?php echo esc_url( $product_permalink ); ?>"><?php echo esc_html( $product->get_title() ); ?></a>
-                                    <?php else : ?>
-                                        <?php echo esc_html( $product->get_title() ); ?>
-                                    <?php endif; ?>
-                                </span>
-                                <?php do_action( 'woocommerce_after_cart_item_name', $cart_item, $cart_item_key ); ?>
-                                <?php if ( 'yes' === $settings['show_variations'] && ! empty( $cart_item['variation'] ) ) : ?>
-                                    <div class="nh-cart-product-variation-pills">
-                                        <?php foreach ( $cart_item['variation'] as $attr_key => $attr_value ) : 
-                                            if ( '' === $attr_value ) continue;
-                                            $taxonomy = str_replace( 'attribute_', '', $attr_key );
-                                            $label = wc_attribute_label( $taxonomy, $product );
-                                            $term = get_term_by( 'slug', $attr_value, $taxonomy );
-                                            $display_val = $term ? $term->name : ucfirst( $attr_value );
-                                        ?>
-                                            <span class="nh-cart-variation-pill">
-                                                <span class="nh-variation-label"><?php echo esc_html( $label ); ?>:</span>
-                                                <span class="nh-variation-val"><?php echo esc_html( $display_val ); ?></span>
-                                            </span>
-                                        <?php endforeach; ?>
-                                    </div>
-                                <?php elseif ( 'yes' === $settings['show_variations'] ) : ?>
-                                    <div class="nh-cart-product-variation">
-                                        <?php echo wc_get_formatted_cart_item_data( $cart_item ); ?>
-                                    </div>
-                                <?php endif; ?>
-                                <?php if ( $product->backorders_require_notification() && $product->is_on_backorder( $quantity ) ) : ?>
-                                    <p class="backorder_notification"><?php esc_html_e( 'Disponible en reserva', 'nh-core' ); ?></p>
-                                <?php endif; ?>
-                            </div>
-                        </div>
-                        
-                        <div class="nh-cart-product-price">
-                            <?php echo wp_kses_post( $product->get_price_html() ); ?>
-                        </div>
-                        
-                        <div class="nh-cart-product-qty">
-                            <?php if ( $is_sold_individually ) : ?>
-                                <input type="number" class="nh-cart-qty-input" value="1" min="1" max="1" readonly disabled data-key="<?php echo esc_attr( $cart_item_key ); ?>">
-                            <?php else : ?>
-                                <button class="nh-cart-qty-btn nh-cart-qty-minus" data-key="<?php echo esc_attr( $cart_item_key ); ?>">-</button>
-                                <input type="number" class="nh-cart-qty-input" value="<?php echo esc_attr( $quantity ); ?>" min="1" data-key="<?php echo esc_attr( $cart_item_key ); ?>">
-                                <button class="nh-cart-qty-btn nh-cart-qty-plus" data-key="<?php echo esc_attr( $cart_item_key ); ?>">+</button>
-                            <?php endif; ?>
-                        </div>
-                        
-                        <div class="nh-cart-product-subtotal">
-                            <?php echo wp_kses_post( WC()->cart->get_product_subtotal( $product, $quantity ) ); ?>
-                        </div>
-                        
-                        <button class="nh-cart-remove" data-key="<?php echo esc_attr( $cart_item_key ); ?>" title="<?php esc_attr_e( 'Eliminar producto', 'nh-core' ); ?>">
-                            <i class="eicon-close"></i>
-                        </button>
-                    </div>
-                    <?php endforeach; ?>
-
-                    <?php do_action( 'woocommerce_after_cart_table' ); ?>
-
-                    <?php if ( 'yes' === $settings['show_coupon_form'] ) : ?>
-                    <div class="nh-cart-coupon-section">
-                        <div class="nh-cart-coupon">
-                            <input type="text" class="nh-cart-coupon-input" placeholder="<?php esc_attr_e( 'Código de cupón', 'nh-core' ); ?>">
-                            <button class="nh-cart-coupon-btn"><?php esc_html_e( 'Aplicar', 'nh-core' ); ?></button>
-                        </div>
-                    </div>
-                    <?php endif; ?>
-                </div>
-
-                <!-- Columna Derecha: Tarjeta de Resumen Sticky -->
-                <div class="nh-cart-summary">
-                    <?php do_action( 'woocommerce_before_cart_totals' ); ?>
-
-                    <h3><?php esc_html_e( 'Resumen de Compra', 'nh-core' ); ?></h3>
-                    
-                    <div class="nh-cart-summary-row">
-                        <span><?php esc_html_e( 'Subtotal', 'nh-core' ); ?></span>
-                        <span><?php wc_cart_totals_subtotal_html(); ?></span>
-                    </div>
-                    
-                    <?php if ( $cart->has_discount() ) : ?>
-                    <div class="nh-cart-summary-row nh-cart-discount">
-                        <span><?php esc_html_e( 'Descuento', 'nh-core' ); ?></span>
-                        <span>-<?php echo wp_kses_post( wc_price( $cart->get_discount_total() ) ); ?></span>
-                    </div>
-                    <?php foreach ( $cart->get_coupons() as $code => $coupon ) : ?>
-                    <div class="nh-cart-coupon-applied">
-                        <span><?php wc_cart_totals_coupon_label( $coupon ); ?></span>
-                        <span><?php echo wp_kses_post( $coupon->get_amount_html() ); ?></span>
-                        <button class="nh-cart-remove-coupon" data-coupon="<?php echo esc_attr( $code ); ?>" title="<?php esc_attr_e( 'Eliminar cupón', 'nh-core' ); ?>">×</button>
-                    </div>
-                    <?php endforeach; ?>
-                    <?php endif; ?>
-
-                    <?php if ( $cart->needs_shipping() ) : ?>
-                        <?php do_action( 'woocommerce_cart_totals_before_shipping' ); ?>
-
-                        <div class="nh-cart-shipping-block">
-                            <table class="nh-cart-shipping-table">
-                                <tbody>
-                                    <?php if ( $cart->show_shipping() ) : ?>
-                                        <?php wc_cart_totals_shipping_html(); ?>
-                                    <?php else : ?>
-                                        <tr class="shipping">
-                                            <th><?php esc_html_e( 'Envío', 'nh-core' ); ?></th>
-                                            <td data-title="<?php esc_attr_e( 'Envío', 'nh-core' ); ?>">
-                                                <?php woocommerce_shipping_calculator(); ?>
-                                            </td>
-                                        </tr>
-                                    <?php endif; ?>
-                                </tbody>
-                            </table>
-                        </div>
-
-                        <?php do_action( 'woocommerce_cart_totals_after_shipping' ); ?>
-                    <?php endif; ?>
-
-                    <?php foreach ( $cart->get_fees() as $fee ) : ?>
-                    <div class="nh-cart-summary-row nh-cart-fee">
-                        <span><?php echo esc_html( $fee->name ); ?></span>
-                        <span><?php wc_cart_totals_fee_html( $fee ); ?></span>
-                    </div>
-                    <?php endforeach; ?>
-
-                    <?php do_action( 'woocommerce_cart_totals_before_order_total' ); ?>
-
-                    <div class="nh-cart-total">
-                        <span><?php esc_html_e( 'Total', 'nh-core' ); ?></span>
-                        <span><?php wc_cart_totals_order_total_html(); ?></span>
-                    </div>
-
-                    <?php do_action( 'woocommerce_cart_totals_after_order_total' ); ?>
-
-                    <?php 
-                    $checkout_url = ! empty( $settings['custom_checkout_url']['url'] ) 
-                        ? $settings['custom_checkout_url']['url'] 
-                        : wc_get_checkout_url();
-                    ?>
-                    <a href="<?php echo esc_url( $checkout_url ); ?>" class="nh-cart-checkout-btn">
-                        <?php if ( ! empty( $settings['checkout_button_icon']['value'] ) ) : ?>
-                            <span class="nh-cart-checkout-icon">
-                                <?php \Elementor\Icons_Manager::render_icon( $settings['checkout_button_icon'], [ 'aria-hidden' => 'true' ] ); ?>
-                            </span>
-                        <?php endif; ?>
-                        <?php echo esc_html( $settings['checkout_button_text'] ); ?>
-                    </a>
-
-                    <?php if ( 'yes' === $settings['show_trust_badges'] && ! empty( $settings['trust_badges_list'] ) ) : ?>
-                    <div class="nh-cart-trust-badges">
-                        <?php foreach ( $settings['trust_badges_list'] as $badge ) : ?>
-                        <div class="nh-cart-badge-item">
-                            <?php if ( ! empty( $badge['badge_icon']['value'] ) ) : ?>
-                                <?php \Elementor\Icons_Manager::render_icon( $badge['badge_icon'], [ 'aria-hidden' => 'true' ] ); ?>
-                            <?php endif; ?>
-                            <span><?php echo esc_html( $badge['badge_text'] ); ?></span>
-                        </div>
-                        <?php endforeach; ?>
-                    </div>
-                    <?php endif; ?>
-
-                    <?php do_action( 'woocommerce_after_cart_totals' ); ?>
-                </div>
-            </div>
-
-            <div class="nh-cart-cross-sells">
-                <?php 
-                if ( function_exists( 'woocommerce_cross_sell_display' ) ) {
-                    woocommerce_cross_sell_display( 4, 4 );
-                }
-                ?>
-            </div>
-            
-            <?php do_action( 'woocommerce_after_cart' ); ?>
         </div>
         <?php
     }
