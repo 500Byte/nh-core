@@ -116,22 +116,24 @@ body.nh-side-cart-open {
   position: absolute;
   top: -4px;
   right: -4px;
-  display: flex;
-  align-items: center;
+  display: flex !important;
+  align-items: center !important;
   justify-content: center;
   min-width: 18px;
   height: 18px;
   padding: 0 4px;
-  background: var(--nh-sc-color-heading);
-  color: var(--nh-sc-color-white);
-  font-family: var(--nh-sc-font-body);
-  font-size: 10px;
-  font-weight: 700;
-  line-height: 1;
+  background: var(--nh-sc-color-heading) !important;
+  color: var(--nh-sc-color-white) !important;
+  font-family: var(--nh-sc-font-body) !important;
+  font-size: 10px !important;
+  font-weight: 700 !important;
+  line-height: 1 !important;
   border-radius: var(--nh-sc-radius-full);
   pointer-events: none;
   transition: transform 0.18s cubic-bezier(0.4, 0, 0.2, 1),
               opacity  0.18s cubic-bezier(0.4, 0, 0.2, 1);
+  -webkit-font-smoothing: antialiased !important;
+  -moz-osx-font-smoothing: grayscale !important;
 }
 
 /* Ocultar badge cuando el carrito está vacío */

@@ -392,12 +392,26 @@
     display: flex !important;
     flex-direction: column !important;
     gap: 12px !important;
+    box-sizing: border-box !important;
+    justify-content: space-between !important;
+}
+
+/* En single product el template Elementor es full-width,
+   que la notice-box se contiene con un max-width propio y auto-centrado.
+   En carrito/checkout el wrapper ya vive dentro de un contenedor acotado
+   por el widget, así que el max-width no tiene efecto visible. */
+body.single-product .woocommerce-notices-wrapper {
+    max-width: 860px !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+    padding: 0 24px !important;
 }
 
 .woocommerce-notices-wrapper:empty {
     display: none !important;
     margin: 0 !important;
 }
+
 
 /* Estilo Base para Todos los Notices */
 .woocommerce-message,
