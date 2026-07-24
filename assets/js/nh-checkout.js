@@ -2,6 +2,8 @@
     'use strict';
 
     const NH_Checkout = {
+        isMobileOpen: false,
+
         init: function() {
             this.bindEvents();
             this.updatePaymentRadioCards();
@@ -27,16 +29,19 @@
             const $content = $('.nh-checkout-collapsible-content');
             const $arrow = $('.nh-toggle-arrow');
             const $label = $('.nh-toggle-label');
+            const self = this;
 
             $content.slideToggle(200, function() {
                 if ($content.is(':visible')) {
                     $content.addClass('is-open');
                     $arrow.text('▴');
                     $label.text('Ocultar resumen');
+                    self.isMobileOpen = true;
                 } else {
                     $content.removeClass('is-open');
                     $arrow.text('▾');
                     $label.text('Mostrar resumen');
+                    self.isMobileOpen = false;
                 }
             });
         },
@@ -74,6 +79,11 @@
         onCheckoutUpdated: function() {
             this.updatePaymentRadioCards();
             this.updateShippingRadioCards();
+            if (this.isMobileOpen && $(window).width() < 768) {
+                $('.nh-checkout-collapsible-content').addClass('is-open').show();
+                $('.nh-toggle-arrow').text('▴');
+                $('.nh-toggle-label').text('Ocultar resumen');
+            }
         },
 
         updatePaymentRadioCards: function() {
