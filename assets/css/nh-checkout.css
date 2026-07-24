@@ -590,22 +590,28 @@
 }
 
 .nh-checkout-summary-row.order-total {
-    border-bottom: none !important;
-    padding-top: 14px !important;
-    font-size: 17px !important;
+    border: 1.5px solid var(--nh-border) !important;
+    background-color: #FAF9F6 !important;
+    border-radius: var(--nh-radius-sm) !important;
+    padding: 14px 16px !important;
+    margin-top: 14px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
 }
 
 .nh-checkout-summary-row.order-total .nh-summary-label {
-    font-family: var(--font-headings);
-    font-size: 18px;
-    font-weight: 700;
-    color: var(--nh-headings);
+    font-family: var(--font-headings) !important;
+    font-size: 16px !important;
+    font-weight: 700 !important;
+    color: var(--nh-headings) !important;
 }
 
 .nh-checkout-summary-row.order-total .nh-summary-value {
-    font-size: 20px;
-    font-weight: 700;
-    color: var(--nh-headings);
+    font-family: var(--font-mono) !important;
+    font-size: 20px !important;
+    font-weight: 700 !important;
+    color: var(--nh-headings) !important;
 }
 
 /* ─── Sección de Envío (Layout Integrado de Columna Única) ─── */

@@ -31,14 +31,12 @@
             const $label = $('.nh-toggle-label');
             const self = this;
 
-            $content.slideToggle(200, function() {
+            $content.stop(true, true).slideToggle(200, function() {
                 if ($content.is(':visible')) {
-                    $content.addClass('is-open');
                     $arrow.text('▴');
                     $label.text('Ocultar resumen');
                     self.isMobileOpen = true;
                 } else {
-                    $content.removeClass('is-open');
                     $arrow.text('▾');
                     $label.text('Mostrar resumen');
                     self.isMobileOpen = false;
@@ -80,7 +78,7 @@
             this.updatePaymentRadioCards();
             this.updateShippingRadioCards();
             if (this.isMobileOpen && $(window).width() < 768) {
-                $('.nh-checkout-collapsible-content').addClass('is-open').show();
+                $('.nh-checkout-collapsible-content').show();
                 $('.nh-toggle-arrow').text('▴');
                 $('.nh-toggle-label').text('Ocultar resumen');
             }

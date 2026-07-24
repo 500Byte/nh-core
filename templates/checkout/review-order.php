@@ -78,17 +78,17 @@ if ( ! defined( 'ABSPATH' ) ) {
 				do_action( 'woocommerce_review_order_after_cart_contents' );
 				?>
 			</div>
-
-			<!-- Cupón de Descuento -->
-			<?php if ( wc_coupons_enabled() ) : ?>
-				<div class="nh-checkout-coupon-card">
-					<div class="nh-coupon-input-group">
-						<input type="text" id="nh_summary_coupon_code" class="input-text" placeholder="Código de descuento" />
-						<button type="button" id="nh_summary_apply_coupon_btn" class="button"><?php esc_html_e( 'Aplicar', 'woocommerce' ); ?></button>
-					</div>
-				</div>
-			<?php endif; ?>
 		</div>
+
+		<!-- Cupón de Descuento (Fuera del Acordeón) -->
+		<?php if ( wc_coupons_enabled() ) : ?>
+			<div class="nh-checkout-coupon-card">
+				<div class="nh-coupon-input-group">
+					<input type="text" id="nh_summary_coupon_code" class="input-text" placeholder="Código de descuento" />
+					<button type="button" id="nh_summary_apply_coupon_btn" class="button"><?php esc_html_e( 'Aplicar', 'woocommerce' ); ?></button>
+				</div>
+			</div>
+		<?php endif; ?>
 
 		<!-- Desglose de Totales y Envío -->
 		<div class="nh-checkout-order-summary-rows">
