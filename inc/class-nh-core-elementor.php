@@ -136,10 +136,16 @@ class NH_Core_Elementor {
             [],
             file_exists( $css_file ) ? filemtime( $css_file ) : '1.0.0'
         );
+
+        // wc-cart-fragments solo está registrado en el frontend, no en el editor de Elementor
+        $js_deps = [ 'jquery' ];
+        if ( wp_script_is( 'wc-cart-fragments', 'registered' ) ) {
+            $js_deps[] = 'wc-cart-fragments';
+        }
         wp_enqueue_script(
             'nh-menu-cart',
             NH_CORE_URL . 'assets/js/nh-menu-cart.js',
-            [ 'jquery', 'wc-cart-fragments' ],
+            $js_deps,
             file_exists( $js_file ) ? filemtime( $js_file ) : '1.0.0',
             true
         );
@@ -204,10 +210,16 @@ class NH_Core_Elementor {
             file_exists( $css_file ) ? filemtime( $css_file ) : '1.0.0'
         );
 
+        // wc-cart-fragments solo está registrado en el frontend, no en el editor de Elementor.
+        // Declararlo como dependencia cuando no está registrado genera Notice en WP 6.9.1.
+        $js_deps = [ 'jquery' ];
+        if ( wp_script_is( 'wc-cart-fragments', 'registered' ) ) {
+            $js_deps[] = 'wc-cart-fragments';
+        }
         wp_enqueue_script(
             'nh-side-cart',
             NH_CORE_URL . 'assets/js/nh-side-cart.js',
-            [ 'jquery', 'wc-cart-fragments' ],
+            $js_deps,
             file_exists( $js_file ) ? filemtime( $js_file ) : '1.0.0',
             true
         );
