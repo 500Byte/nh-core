@@ -1,0 +1,740 @@
+/**
+ * NH Side Cart — Drawer lateral para WooCommerce
+ * Plugin: nh-core
+ *
+ * Convención de nombres: BEM propio  →  .nh-side-cart__*
+ * No contamina el scope global: todas las variables viven en .nh-side-cart
+ *
+ * Design Tokens: Design System Norma Hana
+ * Fuente body: "DM Sans"
+ * Fuente heading: "Playfair Display"
+ *
+ * @version 1.0.0
+ */
+
+/* ============================================================
+   1. VARIABLES LOCALES (scope: .nh-side-cart)
+   ============================================================ */
+
+.nh-side-cart {
+  /* Tipografía */
+  --nh-sc-font-body: "DM Sans", system-ui, sans-serif;
+  --nh-sc-font-heading: "Playfair Display", Georgia, serif;
+
+  /* Colores */
+  --nh-sc-color-heading:    #202020;
+  --nh-sc-color-text:       #595753;
+  --nh-sc-color-muted:      #8C8985;
+  --nh-sc-color-border:     #E8E6E3;
+  --nh-sc-color-white:      #FFFFFF;
+  --nh-sc-color-surface:    #FAF9F6;
+  --nh-sc-color-accent:     #7B6A3E;
+  --nh-sc-color-red:        #C0392B;
+  --nh-sc-color-red-light:  #FEF2F2;
+  --nh-sc-color-btn-hover:  #333333;
+
+  /* Radios */
+  --nh-sc-radius-sm:   4px;
+  --nh-sc-radius-base: 6px;
+  --nh-sc-radius-lg:   12px;
+  --nh-sc-radius-full: 9999px;
+
+  /* Elevación */
+  --nh-sc-shadow-panel: 0 20px 60px rgba(0, 0, 0, 0.18);
+
+  /* Transición base */
+  --nh-sc-transition: all 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* Dimensiones del panel */
+  --nh-sc-panel-width: 420px;
+  --nh-sc-z-overlay:   99990;
+  --nh-sc-z-drawer:    99995;
+}
+
+
+/* ============================================================
+   2. BODY LOCK — bloquea scroll cuando el carrito está abierto
+   ============================================================ */
+
+body.nh-side-cart-open {
+  overflow: hidden;
+}
+
+
+/* ============================================================
+   3. ROOT — contenedor invisible del widget
+   ============================================================ */
+
+.nh-side-cart {
+  position: static;
+  display: contents; /* no genera caja propia, no interfiere con layout */
+}
+
+
+/* ============================================================
+   4. TRIGGER — botón del header/navbar
+   ============================================================ */
+
+.nh-side-cart__trigger {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  background: transparent;
+  border: none;
+  border-radius: var(--nh-sc-radius-base);
+  cursor: pointer;
+  color: var(--nh-sc-color-heading);
+  transition: var(--nh-sc-transition);
+}
+
+.nh-side-cart__trigger:hover {
+  background: var(--nh-sc-color-surface);
+}
+
+.nh-side-cart__trigger:focus-visible {
+  outline: 2px solid var(--nh-sc-color-accent);
+  outline-offset: 2px;
+}
+
+/* Ícono SVG dentro del trigger */
+.nh-side-cart__icon {
+  display: block;
+  width: 22px;
+  height: 22px;
+  flex-shrink: 0;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.6;
+}
+
+/* Badge de cantidad */
+.nh-side-cart__badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  background: var(--nh-sc-color-heading);
+  color: var(--nh-sc-color-white);
+  font-family: var(--nh-sc-font-body);
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1;
+  border-radius: var(--nh-sc-radius-full);
+  pointer-events: none;
+  transition: transform 0.18s cubic-bezier(0.4, 0, 0.2, 1),
+              opacity  0.18s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Ocultar badge cuando el carrito está vacío */
+.nh-side-cart__badge[data-count="0"] {
+  transform: scale(0);
+  opacity: 0;
+}
+
+
+/* ============================================================
+   5. OVERLAY — fondo oscuro semitransparente
+   ============================================================ */
+
+.nh-side-cart__overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(32, 32, 32, 0.45);
+  z-index: var(--nh-sc-z-overlay);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+  -webkit-backdrop-filter: blur(0px);
+  backdrop-filter: blur(0px);
+}
+
+
+/* ============================================================
+   6. DRAWER — panel lateral principal
+   ============================================================ */
+
+.nh-side-cart__drawer {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: var(--nh-sc-panel-width);
+  height: 100dvh; /* dynamic viewport height — soporta mobile nav bars */
+  background: var(--nh-sc-color-white);
+  z-index: var(--nh-sc-z-drawer);
+  transform: translateX(100%);
+  transition: transform 0.32s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  box-shadow: var(--nh-sc-shadow-panel);
+  overflow: hidden;
+}
+
+
+/* ============================================================
+   7. ESTADOS ABIERTOS — clase .nh-side-cart--open en el root
+   ============================================================ */
+
+.nh-side-cart--open .nh-side-cart__overlay {
+  opacity: 1;
+  pointer-events: all;
+}
+
+.nh-side-cart--open .nh-side-cart__drawer {
+  transform: translateX(0);
+}
+
+
+/* ============================================================
+   8. HEADER — cabecera del drawer
+   ============================================================ */
+
+.nh-side-cart__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+  padding: 20px 20px 16px 24px;
+  border-bottom: 1px solid var(--nh-sc-color-border);
+  background: var(--nh-sc-color-white);
+}
+
+.nh-side-cart__header-left {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.nh-side-cart__title {
+  margin: 0;
+  font-family: var(--nh-sc-font-heading);
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 1.2;
+  color: var(--nh-sc-color-heading);
+}
+
+.nh-side-cart__count-label {
+  font-family: var(--nh-sc-font-body);
+  font-size: 12.5px;
+  font-weight: 400;
+  color: var(--nh-sc-color-muted);
+  line-height: 1.4;
+}
+
+/* Botón cerrar */
+.nh-side-cart__close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  background: #F3F2F0;
+  border: none;
+  border-radius: var(--nh-sc-radius-base);
+  cursor: pointer;
+  color: var(--nh-sc-color-text);
+  transition: var(--nh-sc-transition);
+  flex-shrink: 0;
+}
+
+.nh-side-cart__close:hover {
+  background: var(--nh-sc-color-border);
+  color: var(--nh-sc-color-heading);
+}
+
+.nh-side-cart__close:focus-visible {
+  outline: 2px solid var(--nh-sc-color-accent);
+  outline-offset: 2px;
+}
+
+.nh-side-cart__close svg {
+  display: block;
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  stroke: currentColor;
+  stroke-width: 2;
+  fill: none;
+}
+
+
+/* ============================================================
+   9. SHIPPING BAR — barra de progreso de envío gratis
+   ============================================================ */
+
+.nh-side-cart__shipping-bar {
+  flex-shrink: 0;
+  padding: 12px 24px;
+  background: var(--nh-sc-color-surface);
+  border-bottom: 1px solid var(--nh-sc-color-border);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.nh-side-cart__shipping-bar-track {
+  width: 100%;
+  height: 4px;
+  border-radius: var(--nh-sc-radius-full);
+  background: var(--nh-sc-color-border);
+  overflow: hidden;
+}
+
+.nh-side-cart__shipping-bar-fill {
+  height: 4px;
+  border-radius: var(--nh-sc-radius-full);
+  background: var(--nh-sc-color-accent);
+  transition: width 0.5s ease;
+  max-width: 100%;
+}
+
+.nh-side-cart__shipping-bar-text {
+  margin: 0;
+  font-family: var(--nh-sc-font-body);
+  font-size: 12.5px;
+  font-weight: 400;
+  color: var(--nh-sc-color-text);
+  line-height: 1.4;
+  text-align: center;
+}
+
+.nh-side-cart__shipping-bar-text strong {
+  font-weight: 700;
+  color: var(--nh-sc-color-heading);
+}
+
+/* Estado: envío gratis desbloqueado */
+.nh-side-cart__shipping-bar--complete {
+  background: #F0FAF4;
+  border-bottom-color: #C6E8D3;
+  justify-content: center;
+}
+
+.nh-side-cart__shipping-bar--complete .nh-side-cart__shipping-bar-text {
+  font-weight: 600;
+  color: #1A7A42;
+}
+
+
+/* ============================================================
+   10. BODY — área scrollable con la lista de items
+   ============================================================ */
+
+.nh-side-cart__body {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 0 24px;
+  scroll-behavior: smooth;
+
+  /* Scrollbar custom */
+  scrollbar-width: thin;
+  scrollbar-color: var(--nh-sc-color-border) transparent;
+}
+
+.nh-side-cart__body::-webkit-scrollbar {
+  width: 4px;
+}
+
+.nh-side-cart__body::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.nh-side-cart__body::-webkit-scrollbar-thumb {
+  background: var(--nh-sc-color-border);
+  border-radius: var(--nh-sc-radius-full);
+}
+
+.nh-side-cart__body::-webkit-scrollbar-thumb:hover {
+  background: var(--nh-sc-color-muted);
+}
+
+
+/* ============================================================
+   11. ESTADO VACÍO
+   ============================================================ */
+
+.nh-side-cart__empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 48px 24px;
+  min-height: 280px;
+  gap: 16px;
+}
+
+.nh-side-cart__empty-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 64px;
+  height: 64px;
+  background: var(--nh-sc-color-surface);
+  border-radius: var(--nh-sc-radius-full);
+  color: var(--nh-sc-color-muted);
+}
+
+.nh-side-cart__empty-icon svg {
+  display: block;
+  width: 32px;
+  height: 32px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.4;
+}
+
+.nh-side-cart__empty-text {
+  margin: 0;
+  font-family: var(--nh-sc-font-body);
+  font-size: 14.5px;
+  font-weight: 400;
+  color: var(--nh-sc-color-muted);
+  line-height: 1.5;
+}
+
+.nh-side-cart__empty-cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 40px;
+  padding: 0 20px;
+  background: var(--nh-sc-color-heading);
+  color: var(--nh-sc-color-white);
+  font-family: var(--nh-sc-font-body);
+  font-size: 13px;
+  font-weight: 600;
+  border-radius: var(--nh-sc-radius-base);
+  text-decoration: none;
+  transition: var(--nh-sc-transition);
+  margin-top: 4px;
+}
+
+.nh-side-cart__empty-cta:hover {
+  background: var(--nh-sc-color-btn-hover);
+  color: var(--nh-sc-color-white);
+  text-decoration: none;
+}
+
+
+/* ============================================================
+   12. LISTA DE ITEMS
+   ============================================================ */
+
+.nh-side-cart__items {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+/* Item individual */
+.nh-side-cart__item {
+  display: grid;
+  grid-template-columns: 72px 1fr 28px;
+  gap: 12px;
+  align-items: start;
+  padding: 16px 0;
+  border-bottom: 1px solid var(--nh-sc-color-border);
+  transition: background 0.2s ease;
+}
+
+.nh-side-cart__item:last-child {
+  border-bottom: none;
+}
+
+/* Enlace de imagen */
+.nh-side-cart__item-image-wrap {
+  display: block;
+  flex-shrink: 0;
+  border-radius: var(--nh-sc-radius-base);
+  overflow: hidden;
+  text-decoration: none;
+}
+
+/* Imagen del producto */
+.nh-side-cart__item-image {
+  display: block;
+  width: 72px;
+  height: 72px;
+  border-radius: var(--nh-sc-radius-base);
+  object-fit: cover;
+  border: 1px solid var(--nh-sc-color-border);
+  background: var(--nh-sc-color-surface);
+  transition: opacity 0.2s ease;
+}
+
+.nh-side-cart__item-image-wrap:hover .nh-side-cart__item-image {
+  opacity: 0.88;
+}
+
+/* Bloque de información del item */
+.nh-side-cart__item-info {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0; /* permite truncar texto largo */
+}
+
+/* Nombre del producto */
+.nh-side-cart__item-name {
+  display: block;
+  font-family: var(--nh-sc-font-body);
+  font-size: 13.5px;
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--nh-sc-color-heading);
+  text-decoration: none;
+  word-break: break-word;
+  transition: color 0.2s ease;
+}
+
+.nh-side-cart__item-name:hover {
+  color: var(--nh-sc-color-accent);
+  text-decoration: none;
+}
+
+/* Meta: cantidad × precio */
+.nh-side-cart__item-meta {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.nh-side-cart__item-qty {
+  font-family: var(--nh-sc-font-body);
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--nh-sc-color-muted);
+  line-height: 1.4;
+}
+
+.nh-side-cart__item-price {
+  font-family: var(--nh-sc-font-body);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--nh-sc-color-heading);
+  line-height: 1.4;
+}
+
+/* Botón eliminar item */
+.nh-side-cart__item-remove {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  margin-top: 2px; /* alineación visual con la imagen */
+  background: transparent;
+  border: none;
+  border-radius: var(--nh-sc-radius-sm);
+  cursor: pointer;
+  font-size: 0; /* oculta cualquier texto nativo del botón */
+  line-height: 1;
+  transition: var(--nh-sc-transition);
+  flex-shrink: 0;
+  color: transparent;
+}
+
+.nh-side-cart__item-remove::before {
+  content: '×';
+  font-family: var(--nh-sc-font-body);
+  font-size: 22px;
+  font-weight: 300;
+  line-height: 1;
+  color: var(--nh-sc-color-muted);
+  transition: color 0.2s ease;
+}
+
+.nh-side-cart__item-remove:hover {
+  background: var(--nh-sc-color-red-light);
+}
+
+.nh-side-cart__item-remove:hover::before {
+  color: var(--nh-sc-color-red);
+}
+
+.nh-side-cart__item-remove:focus-visible {
+  outline: 2px solid var(--nh-sc-color-red);
+  outline-offset: 2px;
+}
+
+
+/* ============================================================
+   13. FOOTER — subtotal + acciones
+   ============================================================ */
+
+.nh-side-cart__footer {
+  flex-shrink: 0;
+  border-top: 1px solid var(--nh-sc-color-border);
+  background: var(--nh-sc-color-white);
+}
+
+/* Fila subtotal */
+.nh-side-cart__subtotal {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 24px;
+  border-bottom: 1px solid var(--nh-sc-color-border);
+  background: var(--nh-sc-color-surface);
+}
+
+.nh-side-cart__subtotal-label {
+  font-family: var(--nh-sc-font-body);
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--nh-sc-color-text);
+  line-height: 1.4;
+}
+
+.nh-side-cart__subtotal-amount {
+  font-family: var(--nh-sc-font-body);
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--nh-sc-color-heading);
+  line-height: 1.2;
+}
+
+/* Contenedor de botones CTA */
+.nh-side-cart__actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 16px 24px 24px;
+}
+
+/* Base compartida para ambos botones */
+.nh-side-cart__btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 44px;
+  padding: 0 16px;
+  font-family: var(--nh-sc-font-body);
+  font-size: 13.5px;
+  font-weight: 600;
+  line-height: 1;
+  border-radius: var(--nh-sc-radius-base);
+  text-decoration: none;
+  cursor: pointer;
+  text-align: center;
+  white-space: nowrap;
+  transition: var(--nh-sc-transition);
+  letter-spacing: 0.01em;
+  box-sizing: border-box;
+}
+
+.nh-side-cart__btn:focus-visible {
+  outline: 2px solid var(--nh-sc-color-accent);
+  outline-offset: 2px;
+}
+
+/* Botón secundario — "Ver carrito" */
+.nh-side-cart__btn--secondary {
+  border: 1.5px solid var(--nh-sc-color-heading);
+  background: transparent;
+  color: var(--nh-sc-color-heading);
+  font-weight: 600;
+}
+
+.nh-side-cart__btn--secondary:hover {
+  background: var(--nh-sc-color-heading);
+  color: var(--nh-sc-color-white);
+  text-decoration: none;
+}
+
+/* Botón primario — "Finalizar compra" */
+.nh-side-cart__btn--primary {
+  border: none;
+  background: var(--nh-sc-color-heading);
+  color: var(--nh-sc-color-white);
+  font-weight: 700;
+}
+
+.nh-side-cart__btn--primary:hover {
+  background: var(--nh-sc-color-btn-hover);
+  color: var(--nh-sc-color-white);
+  box-shadow: 0 4px 16px rgba(32, 32, 32, 0.25);
+  text-decoration: none;
+}
+
+
+/* ============================================================
+   14. RESPONSIVE — Mobile (<= 768px)
+   ============================================================ */
+
+@media (max-width: 768px) {
+  .nh-side-cart {
+    --nh-sc-panel-width: 100vw;
+  }
+
+  .nh-side-cart__drawer {
+    width: 100vw;
+    height: 100dvh;
+    box-shadow: none; /* sin sombra lateral en pantalla completa */
+  }
+
+  .nh-side-cart__header {
+    padding: 16px 16px 14px 20px;
+  }
+
+  .nh-side-cart__body {
+    padding: 0 20px;
+  }
+
+  .nh-side-cart__shipping-bar {
+    padding: 10px 20px;
+  }
+
+  .nh-side-cart__subtotal {
+    padding: 12px 20px;
+  }
+
+  .nh-side-cart__actions {
+    padding: 14px 20px 28px; /* extra padding inferior para home bar del iPhone */
+  }
+
+  .nh-side-cart__item {
+    grid-template-columns: 64px 1fr 28px;
+    gap: 10px;
+  }
+
+  .nh-side-cart__item-image {
+    width: 64px;
+    height: 64px;
+  }
+
+  .nh-side-cart__empty {
+    padding: 40px 20px;
+  }
+}
+
+/* ============================================================
+   15. ACCESIBILIDAD — reduce animaciones si el usuario lo prefiere
+   ============================================================ */
+
+@media (prefers-reduced-motion: reduce) {
+  .nh-side-cart__drawer,
+  .nh-side-cart__overlay,
+  .nh-side-cart__badge,
+  .nh-side-cart__shipping-bar-fill,
+  .nh-side-cart__btn,
+  .nh-side-cart__item-remove {
+    transition: none;
+  }
+}

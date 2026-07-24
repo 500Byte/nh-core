@@ -47,7 +47,79 @@ class NH_Core_Woocommerce {
         add_action( 'wp_ajax_nopriv_nh_apply_coupon', [ $this, 'ajax_apply_coupon' ] );
         add_action( 'wp_ajax_nh_remove_coupon', [ $this, 'ajax_remove_coupon' ] );
         add_action( 'wp_ajax_nopriv_nh_remove_coupon', [ $this, 'ajax_remove_coupon' ] );
+
+        // AJAX endpoint para NH Side Cart (widget independiente de Elementor Pro)
+        add_action( 'wp_ajax_nh_side_cart_get_items', [ $this, 'ajax_side_cart_get_items' ] );
+        add_action( 'wp_ajax_nopriv_nh_side_cart_get_items', [ $this, 'ajax_side_cart_get_items' ] );
     }
+
+    /**
+     * AJAX: Devuelve los items del carrito para el NH Side Cart Widget.
+     * Nonce: nh_side_cart_nonce
+     */
+    public function ajax_side_cart_get_items() {
+        check_ajax_referer( 'nh_side_cart_nonce', 'nonce' );
+
+        if ( ! function_exists( 'WC' ) || ! WC()->cart ) {
+            wp_send_json_error( [ 'message' => 'Cart not available.' ] );
+            return;
+        }
+
+        WC()->cart->calculate_totals();
+
+        $items = [];
+
+        foreach ( WC()->cart->get_cart() as $key => $cart_item ) {
+            /** @var WC_Product $product */
+            $product = $cart_item['data'];
+            if ( ! $product || ! $product->exists() ) {
+                continue;
+            }
+
+            // Imagen
+            $img_id  = $product->get_image_id();
+            $img_src = $img_id
+                ? wp_get_attachment_image_url( $img_id, 'woocommerce_thumbnail' )
+                : wc_placeholder_img_src( 'woocommerce_thumbnail' );
+
+            // Nombre con variaciones
+            $name = $product->get_name();
+            if ( ! empty( $cart_item['variation'] ) ) {
+                $parts = [];
+                foreach ( $cart_item['variation'] as $attr => $val ) {
+                    if ( $val ) {
+                        $parts[] = wc_attribute_label( str_replace( 'attribute_', '', $attr ) ) . ': ' . ucfirst( $val );
+                    }
+                }
+                if ( $parts ) {
+                    $name .= ' - ' . implode( ', ', $parts );
+                }
+            }
+
+            $line_total = (float) $cart_item['line_total'];
+            $qty        = (int) $cart_item['quantity'];
+            $unit_price = $qty > 0 ? $line_total / $qty : 0;
+
+            $items[] = [
+                'key'             => $key,
+                'name'            => $name,
+                'url'             => $product->get_permalink(),
+                'image'           => $img_src,
+                'quantity'        => $qty,
+                'unit_price'      => $unit_price,
+                'price_formatted' => wp_strip_all_tags( wc_price( $unit_price ) ),
+                'line_total'      => $line_total,
+            ];
+        }
+
+        wp_send_json_success( [
+            'items'           => $items,
+            'subtotal'        => WC()->cart->get_subtotal(),
+            'subtotal_html'   => wp_strip_all_tags( WC()->cart->get_cart_subtotal() ),
+            'count'           => WC()->cart->get_cart_contents_count(),
+        ] );
+    }
+
 
     public function register_assets() {
         wp_register_style(

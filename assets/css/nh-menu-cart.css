@@ -1,0 +1,534 @@
+/*
+ * ==========================================================================
+ * NH SIDE CART — nh-menu-cart.css
+ * Design System: Norma Hana v2
+ * Scope: .elementor-widget-woocommerce-menu-cart (NH_Menu_Cart_Widget)
+ * ==========================================================================
+ *
+ * Arquitectura BEM:
+ *   elementor-menu-cart__wrapper         — raíz del widget
+ *   elementor-menu-cart__toggle          — botón de apertura en navbar
+ *   elementor-menu-cart__container       — overlay de fondo
+ *   elementor-menu-cart__main            — panel drawer lateral
+ *   elementor-menu-cart__close-button*   — botón de cerrar
+ *   elementor-menu-cart__products        — lista de productos
+ *   elementor-menu-cart__product         — item individual
+ *   elementor-menu-cart__subtotal        — bloque de subtotal
+ *   elementor-menu-cart__footer-buttons  — acciones finales (Ver carrito + Finalizar)
+ */
+
+/* ─── Design System Tokens (local scope) ────────────────────────────────── */
+.elementor-widget-woocommerce-menu-cart,
+.elementor-menu-cart__wrapper {
+    --sc-font-body:       "DM Sans", system-ui, sans-serif;
+    --sc-font-heading:    "Playfair Display", Georgia, serif;
+    --sc-white:           #FFFFFF;
+    --sc-headings:        #202020;
+    --sc-text:            #595753;
+    --sc-text-muted:      #8C8985;
+    --sc-border:          #E8E6E3;
+    --sc-surface:         #FAF9F6;
+    --sc-overlay:         rgba(32, 32, 32, 0.45);
+    --sc-radius:          6px;
+    --sc-radius-lg:       12px;
+    --sc-radius-full:     9999px;
+    --sc-shadow:          0 20px 60px rgba(0, 0, 0, 0.18);
+    --sc-transition:      all 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+    --sc-panel-width:     420px;
+    --sc-accent:          #7B6A3E;  /* NH Gold */
+    --sc-red:             #C0392B;
+    --sc-green:           #27AE60;
+}
+
+/* ─── Toggle Button (ícono carrito en navbar) ───────────────────────────── */
+.elementor-menu-cart__toggle_wrapper {
+    position: relative;
+}
+
+.elementor-menu-cart__toggle {
+    display: flex;
+    align-items: center;
+}
+
+.elementor-menu-cart__toggle_button {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    text-decoration: none;
+    border: none;
+    background: transparent;
+    padding: 4px;
+    transition: var(--sc-transition);
+}
+
+.elementor-button-icon {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.elementor-button-icon svg {
+    width: 24px;
+    height: 24px;
+    fill: var(--sc-headings);
+    transition: var(--sc-transition);
+}
+
+.elementor-button-text {
+    font-family: var(--sc-font-body);
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--sc-headings);
+}
+
+/* Badge de cantidad */
+.elementor-button-icon-qty {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 4px;
+    border-radius: var(--sc-radius-full);
+    background-color: var(--sc-headings);
+    color: var(--sc-white);
+    font-family: var(--sc-font-body);
+    font-size: 10px;
+    font-weight: 700;
+    line-height: 18px;
+    text-align: center;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    z-index: 1;
+}
+
+/* ─── Overlay (fondo oscuro al abrir) ───────────────────────────────────── */
+.elementor-menu-cart__container.elementor-lightbox {
+    position: fixed;
+    inset: 0;
+    background-color: var(--sc-overlay);
+    z-index: 99998;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+    display: flex;
+    justify-content: flex-end;
+}
+
+.elementor-menu-cart--shown .elementor-menu-cart__container.elementor-lightbox[aria-hidden="false"] {
+    opacity: 1;
+    pointer-events: all;
+}
+
+/* ─── Panel Drawer Lateral ──────────────────────────────────────────────── */
+.elementor-menu-cart__main {
+    position: fixed !important;
+    top: 0 !important;
+    right: 0 !important;
+    left: auto !important;
+    width: var(--sc-panel-width) !important;
+    max-width: 100vw !important;
+    height: 100dvh !important;
+    height: 100vh !important;
+    background-color: var(--sc-white) !important;
+    box-shadow: var(--sc-shadow) !important;
+    z-index: 99999 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    transform: translateX(100%) !important;
+    transition: transform 0.32s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    overflow: hidden !important;
+    /* Override Elementor Pro padding */
+    padding: 0 !important;
+    margin: 0 !important;
+}
+
+.elementor-menu-cart--shown .elementor-menu-cart__main[aria-hidden="false"] {
+    transform: translateX(0) !important;
+}
+
+/* ─── Cabecera del Panel ────────────────────────────────────────────────── */
+.elementor-menu-cart__close-button,
+.elementor-menu-cart__close-button-custom {
+    /* Movido al interior del header BEM — no posicionamiento absoluto */
+    position: relative !important;
+    top: auto !important;
+    right: auto !important;
+    width: 36px !important;
+    height: 36px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    background-color: #F3F2F0 !important;
+    border-radius: var(--sc-radius) !important;
+    cursor: pointer !important;
+    transition: var(--sc-transition) !important;
+    z-index: 10 !important;
+    flex-shrink: 0 !important;
+    margin-left: auto !important;
+}
+
+.elementor-menu-cart__close-button:hover,
+.elementor-menu-cart__close-button-custom:hover {
+    background-color: #E8E6E3 !important;
+}
+
+.elementor-menu-cart__close-button svg,
+.elementor-menu-cart__close-button-custom svg {
+    width: 16px;
+    height: 16px;
+    fill: var(--sc-headings);
+}
+
+/* Título del panel (inyectado via JS) */
+/* El JS inyecta el header como primer hijo de __main.
+   El botón de cerrar (ya presente en el DOM de Elementor como hermano)
+   se mueve dentro del header via JS. */
+.nh-side-cart-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 20px 16px 24px;
+    border-bottom: 1px solid var(--sc-border);
+    flex-shrink: 0;
+    gap: 12px;
+}
+
+.nh-side-cart-header__title {
+    font-family: var(--sc-font-heading);
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--sc-headings);
+    margin: 0;
+    line-height: 1.2;
+}
+
+.nh-side-cart-header__count {
+    font-family: var(--sc-font-body);
+    font-size: 13px;
+    color: var(--sc-text-muted);
+    margin-left: 8px;
+}
+
+/* ─── Contenido del Mini-Cart ───────────────────────────────────────────── */
+.widget_shopping_cart_content {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+}
+
+/* ─── Lista de Productos (scroll) ───────────────────────────────────────── */
+.elementor-menu-cart__products {
+    flex: 1;
+    overflow-y: auto;
+    padding: 0 24px;
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+}
+
+/* Scrollbar personalizada */
+.elementor-menu-cart__products::-webkit-scrollbar {
+    width: 4px;
+}
+.elementor-menu-cart__products::-webkit-scrollbar-track {
+    background: transparent;
+}
+.elementor-menu-cart__products::-webkit-scrollbar-thumb {
+    background-color: var(--sc-border);
+    border-radius: var(--sc-radius-full);
+}
+
+/* ─── Producto Individual ───────────────────────────────────────────────── */
+.elementor-menu-cart__product {
+    display: grid !important;
+    grid-template-columns: 70px 1fr 32px !important;
+    grid-template-rows: auto auto !important;
+    column-gap: 12px !important;
+    row-gap: 0 !important;
+    align-items: start !important;
+    padding: 18px 0 !important;
+    border-bottom: 1px solid var(--sc-border) !important;
+    position: relative !important;
+    animation: nh-fade-in 0.25s ease !important;
+}
+
+.elementor-menu-cart__product:last-child {
+    border-bottom: none;
+}
+
+@keyframes nh-fade-in {
+    from { opacity: 0; transform: translateY(6px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Imagen */
+.elementor-menu-cart__product-image {
+    grid-row: 1 / 3;
+    grid-column: 1 / 2;
+}
+
+.elementor-menu-cart__product-image a {
+    display: block;
+    width: 70px;
+    height: 70px;
+    border-radius: var(--sc-radius);
+    overflow: hidden;
+    border: 1px solid var(--sc-border);
+    background-color: var(--sc-surface);
+}
+
+.elementor-menu-cart__product-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+/* Nombre */
+.elementor-menu-cart__product-name {
+    grid-row: 1 / 2;
+    grid-column: 2 / 3;
+}
+
+.elementor-menu-cart__product-name a {
+    font-family: var(--sc-font-body);
+    font-size: 13.5px;
+    font-weight: 600;
+    color: var(--sc-headings);
+    text-decoration: none;
+    line-height: 1.35;
+    display: block;
+    transition: color 0.15s ease;
+}
+
+.elementor-menu-cart__product-name a:hover {
+    color: var(--sc-accent);
+}
+
+/* Precio */
+.elementor-menu-cart__product-price {
+    grid-row: 2 / 3;
+    grid-column: 2 / 3;
+    padding-top: 6px;
+}
+
+.elementor-menu-cart__product-price .quantity {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.elementor-menu-cart__product-price .product-quantity {
+    font-family: var(--sc-font-body);
+    font-size: 12px;
+    color: var(--sc-text-muted);
+    font-weight: 500;
+}
+
+.elementor-menu-cart__product-price .woocommerce-Price-amount {
+    font-family: var(--sc-font-body);
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--sc-headings);
+}
+
+.elementor-menu-cart__product-price .woocommerce-Price-currencySymbol {
+    font-size: 11px;
+    font-weight: 600;
+}
+
+/* Botón de eliminar */
+.elementor-menu-cart__product-remove {
+    grid-row: 1 / 3;
+    grid-column: 3 / 4;
+    display: flex;
+    align-items: flex-start;
+    justify-content: flex-end;
+    padding-top: 2px;
+}
+
+/* WooCommerce imprime dos enlaces duplicados — ocultamos el primero */
+.elementor-menu-cart__product-remove .elementor_remove_from_cart_button {
+    display: none !important;
+}
+
+.elementor-menu-cart__product-remove .remove_from_cart_button {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 28px !important;
+    height: 28px !important;
+    border-radius: var(--sc-radius) !important;
+    background-color: transparent !important;
+    text-decoration: none !important;
+    transition: var(--sc-transition) !important;
+    cursor: pointer !important;
+    font-size: 0 !important; /* ocultar cualquier texto/icono interno */
+    line-height: 0 !important;
+    overflow: hidden !important;
+}
+
+.elementor-menu-cart__product-remove .remove_from_cart_button::before {
+    content: "×" !important;
+    font-family: var(--sc-font-body) !important;
+    font-size: 22px !important;
+    font-weight: 300 !important;
+    color: var(--sc-text-muted) !important;
+    line-height: 1 !important;
+    display: block !important;
+}
+
+.elementor-menu-cart__product-remove .remove_from_cart_button:hover {
+    background-color: #FEF2F2 !important;
+}
+
+.elementor-menu-cart__product-remove .remove_from_cart_button:hover::before {
+    color: var(--sc-red) !important;
+}
+
+/* ─── Carrito Vacío ─────────────────────────────────────────────────────── */
+.woocommerce-mini-cart__empty-message {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 48px 24px;
+    gap: 12px;
+    font-family: var(--sc-font-body);
+    font-size: 14px;
+    color: var(--sc-text-muted);
+}
+
+/* ─── Subtotal ──────────────────────────────────────────────────────────── */
+.elementor-menu-cart__subtotal {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 24px;
+    border-top: 1px solid var(--sc-border);
+    background-color: var(--sc-surface);
+    flex-shrink: 0;
+}
+
+.elementor-menu-cart__subtotal strong {
+    font-family: var(--sc-font-body);
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--sc-text);
+}
+
+.elementor-menu-cart__subtotal .woocommerce-Price-amount {
+    font-family: var(--sc-font-body);
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--sc-headings);
+}
+
+/* ─── Footer: Botones de Acción ─────────────────────────────────────────── */
+.elementor-menu-cart__footer-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 16px 24px 24px 24px;
+    flex-shrink: 0;
+    background-color: var(--sc-white);
+}
+
+/* Botón Ver Carrito */
+.elementor-menu-cart__footer-buttons .elementor-button--view-cart {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 44px;
+    border-radius: var(--sc-radius);
+    border: 1.5px solid var(--sc-headings);
+    background-color: transparent;
+    color: var(--sc-headings);
+    font-family: var(--sc-font-body);
+    font-size: 13.5px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    text-decoration: none;
+    text-transform: none;
+    cursor: pointer;
+    transition: var(--sc-transition);
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.elementor-menu-cart__footer-buttons .elementor-button--view-cart:hover {
+    background-color: var(--sc-headings);
+    color: var(--sc-white);
+}
+
+/* Botón Finalizar Compra */
+.elementor-menu-cart__footer-buttons .elementor-button--checkout {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    height: 44px !important;
+    min-height: 44px !important;
+    border-radius: var(--sc-radius) !important;
+    border: none !important;
+    background-color: var(--sc-headings) !important;
+    color: var(--sc-white) !important;
+    font-family: var(--sc-font-body) !important;
+    font-size: 13.5px !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.04em !important;
+    text-decoration: none !important;
+    text-transform: none !important;
+    cursor: pointer !important;
+    transition: var(--sc-transition) !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+    padding: 0 20px !important;
+}
+
+.elementor-menu-cart__footer-buttons .elementor-button--checkout:hover {
+    background-color: #333333 !important;
+    box-shadow: 0 4px 16px rgba(32, 32, 32, 0.25) !important;
+}
+
+/* Ocultar span interno innecesario de Elementor */
+.elementor-menu-cart__footer-buttons .elementor-button-text {
+    font-family: var(--sc-font-body);
+    font-size: 13.5px;
+    font-weight: inherit;
+    color: inherit;
+    letter-spacing: inherit;
+}
+
+/* ─── Responsive: móvil ─────────────────────────────────────────────────── */
+@media (max-width: 768px) {
+    .elementor-menu-cart__main {
+        --sc-panel-width: 100vw;
+        width: 100vw;
+    }
+
+    .elementor-menu-cart__products {
+        padding: 0 16px;
+    }
+
+    .elementor-menu-cart__subtotal,
+    .elementor-menu-cart__footer-buttons {
+        padding-left: 16px;
+        padding-right: 16px;
+    }
+
+    .nh-side-cart-header {
+        padding: 20px 16px 14px 16px;
+    }
+}
+
+/* ─── Block scroll en body cuando el drawer está abierto ────────────────── */
+body.nh-side-cart-open {
+    overflow: hidden;
+}

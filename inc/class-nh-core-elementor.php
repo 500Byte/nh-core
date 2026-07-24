@@ -45,6 +45,11 @@ class NH_Core_Elementor {
         add_action( 'elementor/editor/after_enqueue_styles', [ $this, 'cart_register_styles' ] );
         add_action( 'wp_enqueue_scripts', [ $this, 'cart_register_scripts' ] );
 
+        // ===== Registrar assets de NH Side Cart (independiente de Elementor Pro) =====
+        add_action( 'elementor/frontend/after_enqueue_styles', [ $this, 'side_cart_register_assets' ] );
+        add_action( 'elementor/editor/after_enqueue_styles', [ $this, 'side_cart_register_assets' ] );
+        add_action( 'wp_enqueue_scripts', [ $this, 'side_cart_register_assets' ] );
+
         // ===== Registrar assets de NH Checkout v2 =====
         // CSS already loaded by cart_register_styles on every Elementor page — only enqueue JS here
         add_action( 'elementor/frontend/after_enqueue_styles', [ $this, 'checkout_register_scripts_only' ] );
@@ -88,6 +93,7 @@ class NH_Core_Elementor {
         require_once NH_CORE_PATH . 'widgets/class-nh-product-sorting-widget.php';
         require_once NH_CORE_PATH . 'widgets/class-live-counter-widget.php';
         require_once NH_CORE_PATH . 'widgets/class-nh-menu-cart-widget.php';
+        require_once NH_CORE_PATH . 'widgets/class-nh-side-cart-widget.php';
         require_once NH_CORE_PATH . 'widgets/class-nh-add-to-cart-widget.php';
         require_once NH_CORE_PATH . 'widgets/class-nh-marquee-widget.php';
         require_once NH_CORE_PATH . 'widgets/class-nh-cart-widget.php';
@@ -110,6 +116,7 @@ class NH_Core_Elementor {
         $widgets_manager->register( new \NH_Product_Sorting_Widget() );
         $widgets_manager->register( new \Elementor_Live_Counter_Widget() );
         $widgets_manager->register( new \NH_Menu_Cart_Widget() );
+        $widgets_manager->register( new \NH_Side_Cart_Widget() );
         $widgets_manager->register( new \NH_Add_To_Cart_Widget() );
         $widgets_manager->register( new \NH_Marquee_Widget() );
         $widgets_manager->register( new \NH_Cart_Widget() );
@@ -130,17 +137,20 @@ class NH_Core_Elementor {
     }
 
     public function menu_cart_enqueue_assets() {
-        wp_register_style(
+        $css_file = NH_CORE_PATH . 'assets/css/nh-menu-cart.css';
+        $js_file  = NH_CORE_PATH . 'assets/js/nh-menu-cart.js';
+
+        wp_enqueue_style(
             'nh-menu-cart',
-            NH_CORE_URL . 'assets/css/nh-menu-cart.min.css',
+            NH_CORE_URL . 'assets/css/nh-menu-cart.css',
             [],
-            '1.0.0'
+            file_exists( $css_file ) ? filemtime( $css_file ) : '1.0.0'
         );
-        wp_register_script(
+        wp_enqueue_script(
             'nh-menu-cart',
             NH_CORE_URL . 'assets/js/nh-menu-cart.js',
-            [],
-            '1.0.0',
+            [ 'jquery', 'wc-cart-fragments' ],
+            file_exists( $js_file ) ? filemtime( $js_file ) : '1.0.0',
             true
         );
     }
@@ -183,6 +193,55 @@ class NH_Core_Elementor {
         wp_localize_script( 'nh-cart-widget', 'nh_cart_params', [
             'ajax_url' => admin_url( 'admin-ajax.php' ),
             'nonce'    => wp_create_nonce( 'nh_cart_nonce' ),
+        ] );
+    }
+
+    /**
+     * Register and enqueue NH Side Cart assets (independent of Elementor Pro).
+     */
+    public function side_cart_register_assets() {
+        if ( ! function_exists( 'WC' ) ) {
+            return;
+        }
+
+        $css_file = NH_CORE_PATH . 'assets/css/nh-side-cart.css';
+        $js_file  = NH_CORE_PATH . 'assets/js/nh-side-cart.js';
+
+        wp_enqueue_style(
+            'nh-side-cart',
+            NH_CORE_URL . 'assets/css/nh-side-cart.css',
+            [],
+            file_exists( $css_file ) ? filemtime( $css_file ) : '1.0.0'
+        );
+
+        wp_enqueue_script(
+            'nh-side-cart',
+            NH_CORE_URL . 'assets/js/nh-side-cart.js',
+            [ 'jquery', 'wc-cart-fragments' ],
+            file_exists( $js_file ) ? filemtime( $js_file ) : '1.0.0',
+            true
+        );
+
+        // Detect free shipping threshold
+        $threshold = 280000;
+        if ( class_exists( 'WC_Shipping_Zones' ) ) {
+            foreach ( \WC_Shipping_Zones::get_zones() as $zone ) {
+                foreach ( $zone['shipping_methods'] as $method ) {
+                    if ( 'free_shipping' === $method->id && 'yes' === $method->enabled ) {
+                        $min = floatval( $method->min_amount );
+                        if ( $min > 0 ) { $threshold = $min; break 2; }
+                    }
+                }
+            }
+        }
+
+        wp_localize_script( 'nh-side-cart', 'nhSideCartParams', [
+            'ajax_url'                => admin_url( 'admin-ajax.php' ),
+            'nonce'                   => wp_create_nonce( 'nh_side_cart_nonce' ),
+            'cart_url'                => wc_get_cart_url(),
+            'checkout_url'            => wc_get_checkout_url(),
+            'free_shipping_threshold' => $threshold,
+            'currency_symbol'         => get_woocommerce_currency_symbol(),
         ] );
     }
 
