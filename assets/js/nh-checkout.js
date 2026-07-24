@@ -38,6 +38,7 @@
             $(document).on('change', '.wc_payment_methods input[type="radio"]', this.updatePaymentRadioCards.bind(this));
             $(document).on('change', 'ul#shipping_method input[type="radio"]', this.updateShippingRadioCards.bind(this));
             $(document).on('click', '#nh_summary_apply_coupon_btn', this.applySummaryCoupon.bind(this));
+            $(document).on('click', '.woocommerce-remove-coupon', this.removeSummaryCoupon.bind(this));
             $(document).on('click', '.nh-checkout-mobile-summary-toggle', this.toggleMobileSummary.bind(this));
             $(document).on('keypress', '#nh_summary_coupon_code', function(e) {
                 if (e.which === 13) {
@@ -69,32 +70,68 @@
 
         applySummaryCoupon: function(e) {
             e.preventDefault();
-            const code = $('#nh_summary_coupon_code').val().trim();
+            const $input = $('#nh_summary_coupon_code');
+            const code = $input.val().trim();
             if (!code) return;
 
-            const $nativeInput = $('#coupon_code');
-            const $nativeForm = $('form.checkout_coupon');
+            const $btn = $('#nh_summary_apply_coupon_btn');
+            $btn.prop('disabled', true).text('Aplicando...');
 
-            if ($nativeInput.length && $nativeForm.length) {
-                $nativeInput.val(code);
-                $nativeForm.submit();
-            } else {
-                $.ajax({
-                    type: 'POST',
-                    url: wc_checkout_params.wc_ajax_url.toString().replace('%%endpoint%%', 'apply_coupon'),
-                    data: {
-                        security: wc_checkout_params.apply_coupon_nonce,
-                        coupon_code: code
-                    },
-                    success: function(response) {
-                        $('.woocommerce-error, .woocommerce-message').remove();
-                        if (response) {
-                            $('form.checkout').before(response);
-                            $(document.body).trigger('update_checkout', { update_shipping_method: false });
+            $.ajax({
+                type: 'POST',
+                url: wc_checkout_params.wc_ajax_url.toString().replace('%%endpoint%%', 'apply_coupon'),
+                data: {
+                    security: wc_checkout_params.apply_coupon_nonce,
+                    coupon_code: code
+                },
+                success: function(response) {
+                    $btn.prop('disabled', false).text('Aplicar');
+                    $('.nh-checkout-coupon-notice').remove();
+                    
+                    if (response) {
+                        const $couponCard = $('.nh-checkout-coupon-card');
+                        if ($couponCard.length) {
+                            $couponCard.after('<div class="nh-checkout-coupon-notice">' + response + '</div>');
+                        } else {
+                            $('.woocommerce-notices-wrapper').html(response).show();
                         }
+                        if (response.indexOf('woocommerce-error') === -1) {
+                            $input.val('');
+                        }
+                        $(document.body).trigger('update_checkout', { update_shipping_method: false });
                     }
-                });
-            }
+                },
+                error: function() {
+                    $btn.prop('disabled', false).text('Aplicar');
+                }
+            });
+        },
+
+        removeSummaryCoupon: function(e) {
+            e.preventDefault();
+            const $link = $(e.currentTarget);
+            const couponCode = $link.data('coupon');
+            if (!couponCode) return;
+
+            $('.nh-checkout-coupon-notice').remove();
+
+            $.ajax({
+                type: 'POST',
+                url: wc_checkout_params.wc_ajax_url.toString().replace('%%endpoint%%', 'remove_coupon'),
+                data: {
+                    security: wc_checkout_params.remove_coupon_nonce,
+                    coupon: couponCode
+                },
+                success: function(response) {
+                    if (response) {
+                        const $couponCard = $('.nh-checkout-coupon-card');
+                        if ($couponCard.length) {
+                            $couponCard.after('<div class="nh-checkout-coupon-notice">' + response + '</div>');
+                        }
+                        $(document.body).trigger('update_checkout', { update_shipping_method: false });
+                    }
+                }
+            });
         },
 
         onCheckoutUpdated: function() {
@@ -114,6 +151,12 @@
                     $(this).addClass('active').css({
                         'background-color': '#FAF9F6'
                     });
+                    const customBtnText = $radio.data('order_button_text');
+                    if (customBtnText) {
+                        $('#place_order').text(customBtnText).val(customBtnText);
+                    } else {
+                        $('#place_order').text('Realizar el pedido').val('Realizar el pedido');
+                    }
                 } else {
                     $(this).removeClass('active').css({
                         'background-color': '#FFFFFF'
