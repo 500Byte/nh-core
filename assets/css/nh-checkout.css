@@ -1481,7 +1481,7 @@
     background-color: #333333 !important;
 }
 
-/* ─── Trust Badges Footer ─── */
+/* ─── Trust Badges Footer (Grid de 3 Items) ─── */
 .nh-checkout-trust-badges {
     display: grid !important;
     grid-template-columns: repeat(3, 1fr) !important;
@@ -1496,19 +1496,21 @@
     display: flex !important;
     flex-direction: column !important;
     align-items: center !important;
+    justify-content: center !important;
     gap: 6px !important;
-    font-size: 11px !important;
+    font-size: 11.5px !important;
     font-weight: 500 !important;
     color: var(--nh-text-secondary) !important;
+    text-align: center !important;
 }
 
 .nh-checkout-badge-item i,
 .nh-checkout-badge-item svg {
-    font-size: 18px !important;
-    width: 20px !important;
-    height: 20px !important;
-    fill: var(--nh-clay) !important;
-    color: var(--nh-clay) !important;
+    font-size: 20px !important;
+    width: 22px !important;
+    height: 22px !important;
+    fill: var(--nh-headings) !important;
+    color: var(--nh-headings) !important;
 }
 
 /* ─── Responsive ─── */
@@ -1521,8 +1523,8 @@
     }
 }
 
-/* ─── Trust Badges en Pasarela (SSL & Métodos de Pago) ─── */
-.nh-checkout-trust-badges {
+/* ─── Box de Seguridad SSL en Pasarela ─── */
+.nh-checkout-ssl-box {
     margin-top: 14px !important;
     padding: 12px 14px !important;
     background-color: #FAFAFA !important;

@@ -45,12 +45,12 @@ if ( ! is_ajax() ) {
 
 		<?php do_action( 'woocommerce_review_order_before_submit' ); ?>
 
-		<!-- Trust Badges de Seguridad SSL y Métodos de Pago -->
+		<!-- Box de Seguridad SSL y Métodos de Pago -->
 		<?php
 		$trust_ssl_text = apply_filters( 'nh_checkout_ssl_trust_text', __( 'Pago 100% Seguro con Cifrado SSL', 'woocommerce' ) );
 		$trust_pills    = apply_filters( 'nh_checkout_payment_pills', [ 'Visa', 'Mastercard', 'PSE', 'Wompi', 'Addi', 'Efectivo' ] );
 		?>
-		<div class="nh-checkout-trust-badges">
+		<div class="nh-checkout-ssl-box">
 			<div class="nh-trust-badge-item">
 				<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
 				<span><?php echo esc_html( $trust_ssl_text ); ?></span>
