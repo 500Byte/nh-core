@@ -60,15 +60,11 @@
             $('.wc_payment_methods li.wc_payment_method').each(function() {
                 const $radio = $(this).find('input[type="radio"]');
                 if ($radio.is(':checked')) {
-                    $(this).css({
-                        'border-color': 'var(--nh-headings, #1A1918)',
-                        'box-shadow': '0 2px 10px rgba(0,0,0,0.06)',
-                        'background-color': '#FFFFFF'
+                    $(this).addClass('active').css({
+                        'background-color': '#FAF9F6'
                     });
                 } else {
-                    $(this).css({
-                        'border-color': 'var(--nh-border, #E5E3DF)',
-                        'box-shadow': 'none',
+                    $(this).removeClass('active').css({
                         'background-color': '#FFFFFF'
                     });
                 }
@@ -79,15 +75,9 @@
             $('ul#shipping_method li').each(function() {
                 const $radio = $(this).find('input[type="radio"]');
                 if ($radio.is(':checked')) {
-                    $(this).css({
-                        'border-color': 'var(--nh-headings, #1A1918)',
-                        'background-color': '#FAF9F6'
-                    });
+                    $(this).addClass('active');
                 } else {
-                    $(this).css({
-                        'border-color': 'var(--nh-border, #E5E3DF)',
-                        'background-color': '#F8F7F5'
-                    });
+                    $(this).removeClass('active');
                 }
             });
         }
