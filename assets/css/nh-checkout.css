@@ -1510,4 +1510,28 @@
     .nh-checkout-collapsible-content.is-open {
         display: block !important;
     }
+
+    /* Sticky Button en Celulares */
+    .nh-checkout-widget #place_order,
+    .nh-checkout-widget .nh-checkout-place-order-btn,
+    .nh-checkout-widget button[name="woocommerce_checkout_place_order"] {
+        position: fixed !important;
+        bottom: 12px !important;
+        left: 12px !important;
+        right: 12px !important;
+        width: calc(100% - 24px) !important;
+        z-index: 99999 !important;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25) !important;
+        height: 50px !important;
+        margin-top: 0 !important;
+    }
+
+    body.woocommerce-checkout {
+        padding-bottom: 74px !important;
+    }
+
+    /* Elevar widgets flotantes de soporte en mobile para no obstruir el botón ni los campos */
+    .joinchat, .whatsapp-button, .wh-widget-send-button, [class*="whatsapp"] {
+        bottom: 80px !important;
+    }
 }
