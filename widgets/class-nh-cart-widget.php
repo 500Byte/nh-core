@@ -29,7 +29,7 @@ class NH_Cart_Widget extends \Elementor\Widget_Base {
     }
 
     public function get_style_depends() {
-        return [ 'nh-cart-widget', 'nh-checkout-widget' ];
+        return [ 'nh-checkout-widget' ];
     }
 
     public function get_script_depends() {
