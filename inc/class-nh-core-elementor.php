@@ -25,14 +25,6 @@ class NH_Core_Elementor {
         // Registrar todos los widgets de Elementor migrados al plugin
         add_action( 'elementor/widgets/register', [ $this, 'register_nh_widgets' ] );
         
-        // Encolar assets de NH Menu Cart de forma nativa desde el plugin
-        add_action( 'elementor/panel/enqueue_styles', [ $this, 'menu_cart_enqueue_assets' ] );
-        add_action( 'wp_enqueue_scripts', [ $this, 'menu_cart_enqueue_assets' ] );
-        
-        // AJAX fragments de NH Menu Cart
-        add_action( 'wp_ajax_elementor_menu_cart_fragments', [ $this, 'menu_cart_fragments' ] );
-        add_action( 'wp_ajax_nopriv_elementor_menu_cart_fragments', [ $this, 'menu_cart_fragments' ] );
-        
         // Dropdown wrapper assets global
         add_action( 'wp_enqueue_scripts', [ $this, 'dropdown_wrapper_enqueue_assets' ] );
         
@@ -92,7 +84,6 @@ class NH_Core_Elementor {
         require_once NH_CORE_PATH . 'widgets/class-nh-price-filter-widget.php';
         require_once NH_CORE_PATH . 'widgets/class-nh-product-sorting-widget.php';
         require_once NH_CORE_PATH . 'widgets/class-live-counter-widget.php';
-        require_once NH_CORE_PATH . 'widgets/class-nh-menu-cart-widget.php';
         require_once NH_CORE_PATH . 'widgets/class-nh-side-cart-widget.php';
         require_once NH_CORE_PATH . 'widgets/class-nh-add-to-cart-widget.php';
         require_once NH_CORE_PATH . 'widgets/class-nh-marquee-widget.php';
@@ -115,7 +106,6 @@ class NH_Core_Elementor {
         $widgets_manager->register( new \NH_Price_Filter_Widget() );
         $widgets_manager->register( new \NH_Product_Sorting_Widget() );
         $widgets_manager->register( new \Elementor_Live_Counter_Widget() );
-        $widgets_manager->register( new \NH_Menu_Cart_Widget() );
         $widgets_manager->register( new \NH_Side_Cart_Widget() );
         $widgets_manager->register( new \NH_Add_To_Cart_Widget() );
         $widgets_manager->register( new \NH_Marquee_Widget() );
@@ -238,6 +228,7 @@ class NH_Core_Elementor {
         wp_localize_script( 'nh-side-cart', 'nhSideCartParams', [
             'ajax_url'                => admin_url( 'admin-ajax.php' ),
             'nonce'                   => wp_create_nonce( 'nh_side_cart_nonce' ),
+            'cart_nonce'              => wp_create_nonce( 'nh_cart_nonce' ),
             'cart_url'                => wc_get_cart_url(),
             'checkout_url'            => wc_get_checkout_url(),
             'free_shipping_threshold' => $threshold,

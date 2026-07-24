@@ -113,7 +113,7 @@ class NH_Coupon_Form_Widget extends \Elementor\Widget_Base {
         <div class="nh-cart-widget">
             <div class="nh-cart-coupon">
                 <input type="text" class="nh-cart-coupon-input" placeholder="<?php echo esc_attr( $settings['placeholder_text'] ); ?>">
-                <button class="nh-cart-coupon-btn"><?php echo esc_html( $settings['button_text'] ); ?></button>
+                <button class="nh-btn nh-btn-secondary nh-cart-coupon-btn"><?php echo esc_html( $settings['button_text'] ); ?></button>
             </div>
         </div>
         <?php

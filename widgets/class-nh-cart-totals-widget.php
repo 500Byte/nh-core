@@ -144,7 +144,7 @@ class NH_Cart_Totals_Widget extends \Elementor\Widget_Base {
                 </div>
                 <?php foreach ( $cart->get_coupons() as $code => $coupon ) : ?>
                 <div class="nh-cart-coupon-applied">
-                    <span><?php wc_cart_totals_coupon_label( $coupon ); ?></span>
+                    <span><?php echo esc_html( wc_cart_totals_coupon_label( $coupon, false ) ); ?></span>
                     <span><?php echo wp_kses_post( $coupon->get_amount_html() ); ?></span>
                     <button class="nh-cart-remove-coupon" data-coupon="<?php echo esc_attr( $code ); ?>" title="<?php esc_attr_e( 'Eliminar cupón', 'nh-core' ); ?>">×</button>
                 </div>

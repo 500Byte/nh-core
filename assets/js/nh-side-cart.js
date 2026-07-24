@@ -201,9 +201,9 @@
             url:    cfg.ajax_url,
             method: 'POST',
             data: {
-                action: 'nh_remove_cart_item',
-                nonce:  cfg.nonce,
-                key:    cartItemKey,
+                action:        'nh_remove_cart_item',
+                nonce:         cfg.cart_nonce,   // ← nh_cart_nonce (handler existente)
+                cart_item_key: cartItemKey,       // ← campo que espera el handler PHP
             },
             success: function (res) {
                 if (res.success) {

@@ -528,7 +528,7 @@ class NH_Checkout_Widget extends \Elementor\Widget_Base {
                                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#22C55E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
                                     <span><?php echo esc_html( $settings['whatsapp_text'] ); ?></span>
                                 </div>
-                                <a href="https://wa.me/<?php echo esc_attr( preg_replace('/[^0-9]/', '', $settings['whatsapp_number']) ); ?>" target="_blank" rel="noopener noreferrer" class="nh-wa-card-btn">
+                                <a href="https://wa.me/<?php echo esc_attr( preg_replace('/[^0-9]/', '', $settings['whatsapp_number'] ?? '') ); ?>" target="_blank" rel="noopener noreferrer" class="nh-wa-card-btn">
                                     <?php esc_html_e( 'Escribir', 'nh-core' ); ?>
                                 </a>
                             </div>
@@ -649,15 +649,12 @@ class NH_Checkout_Widget extends \Elementor\Widget_Base {
                         </div>
 
                         <# if ( showTrust && settings.trust_badges_list && settings.trust_badges_list.length ) { #>
-                        <div class="nh-checkout-trust-badges">
-                            <# _.each( settings.trust_badges_list, function( badge ) { #>
-                                <div class="nh-checkout-badge-item">
-                                    <# if ( badge.badge_icon && badge.badge_icon.value ) { #>
-                                        <i class="{{ badge.badge_icon.value }}"></i>
-                                    <# } #>
-                                    <span>{{{ badge.badge_text }}}</span>
-                                </div>
-                            <# }); #>
+                        <div class="nh-trust-box">
+                            <div class="nh-trust-box__pills">
+                                <# _.each( settings.trust_badges_list, function( badge ) { #>
+                                    <span class="nh-trust-box__pill">{{{ badge.badge_text }}}</span>
+                                <# }); #>
+                            </div>
                         </div>
                         <# } #>
                     </div>

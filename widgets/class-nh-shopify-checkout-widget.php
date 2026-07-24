@@ -244,7 +244,7 @@ class NH_Shopify_Checkout_Widget extends \Elementor\Widget_Base {
                             <?php foreach ( $cart->get_coupons() as $code => $coupon ) : ?>
                             <div class="nh-shopify-summary-row">
                                 <span><?php esc_html_e( 'Descuento', 'nh-core' ); ?> (<?php echo esc_html( $code ); ?>)</span>
-                                <span>-<?php wc_cart_totals_coupon_html( $coupon ); ?></span>
+                                <span><?php wc_cart_totals_coupon_html( $coupon ); ?></span>
                             </div>
                             <?php endforeach; ?>
 

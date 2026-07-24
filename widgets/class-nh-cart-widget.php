@@ -182,6 +182,17 @@ class NH_Cart_Widget extends \Elementor\Widget_Base {
             ]
         );
 
+        $this->add_control(
+            'backorder_text',
+            [
+                'label' => esc_html__( 'Texto de Reserva / Backorder', 'nh-core' ),
+                'type' => \Elementor\Controls_Manager::TEXT,
+                'default' => esc_html__( 'Disponible en reserva', 'nh-core' ),
+                'placeholder' => esc_html__( 'Ej: Disponible en reserva', 'nh-core' ),
+                'description' => esc_html__( 'Texto que se muestra en productos con backorder habilitado.', 'nh-core' ),
+            ]
+        );
+
         $this->end_controls_section();
 
         // ─── CONTENIDO: BOTÓN DE CHECKOUT & RESUMEN ────────────
@@ -389,16 +400,61 @@ class NH_Cart_Widget extends \Elementor\Widget_Base {
             <?php if ( 'yes' === $settings['show_header_steps'] ) : ?>
             <div class="nh-cart-header">
                 <div class="nh-cart-checkout-steps">
-                    <span class="nh-cart-step active">1. <?php esc_html_e( 'Carrito', 'nh-core' ); ?></span>
+                    <span class="nh-cart-step active"><span class="nh-cart-step-num">1</span> <?php esc_html_e( 'Carrito', 'nh-core' ); ?></span>
                     <span class="nh-cart-step-separator">→</span>
-                    <span class="nh-cart-step">2. <?php esc_html_e( 'Envío', 'nh-core' ); ?></span>
+                    <span class="nh-cart-step"><span class="nh-cart-step-num">2</span> <?php esc_html_e( 'Envío', 'nh-core' ); ?></span>
                     <span class="nh-cart-step-separator">→</span>
-                    <span class="nh-cart-step">3. <?php esc_html_e( 'Pago', 'nh-core' ); ?></span>
+                    <span class="nh-cart-step"><span class="nh-cart-step-num">3</span> <?php esc_html_e( 'Pago', 'nh-core' ); ?></span>
                 </div>
             </div>
             <?php endif; ?>
 
+            <?php
+            // Barra de envío gratis
+            $threshold = $this->get_free_shipping_threshold();
+            $cart_total = WC()->cart->get_subtotal();
+            if ( $threshold > 0 && $cart_total < $threshold ) {
+                $remaining = $threshold - $cart_total;
+                $progress = min( 100, ( $cart_total / $threshold ) * 100 );
+                ?>
+                <div class="nh-shipping-bar">
+                    <div class="nh-shipping-bar__track">
+                        <div class="nh-shipping-bar__fill" style="width: <?php echo esc_attr( $progress ); ?>%;"></div>
+                    </div>
+                    <div class="nh-shipping-bar__text">
+                        <?php
+                        printf(
+                           /* translators: %s: remaining amount */
+                            esc_html__( 'Te faltan %s para envío gratis', 'nh-core' ),
+                            '<span class="amount">' . wp_strip_all_tags( wc_price( $remaining ) ) . '</span>'
+                        );
+                        ?>
+                    </div>
+                </div>
+                <?php
+            } elseif ( $threshold > 0 && $cart_total >= $threshold ) {
+                ?>
+                <div class="nh-shipping-bar nh-shipping-bar--complete">
+                    <div class="nh-shipping-bar__track">
+                        <div class="nh-shipping-bar__fill" style="width: 100%;"></div>
+                    </div>
+                    <div class="nh-shipping-bar__text">
+                        <?php esc_html_e( '¡Envío gratis desbloqueado!', 'nh-core' ); ?>
+                    </div>
+                </div>
+                <?php
+            }
+            ?>
+
             <?php 
+            // Backorder text from Elementor settings
+            $backorder_text = $settings['backorder_text'] ?? '';
+            if ( ! empty( $backorder_text ) ) {
+                add_filter( 'woocommerce_cart_item_backorder_notification', function( $html, $product_id ) use ( $backorder_text ) {
+                    return '<p class="backorder_notification">' . esc_html( $backorder_text ) . '</p>';
+                }, 10, 2 );
+            }
+
             // Delegar a la plantilla modular del carrito
             wc_get_template( 'cart/cart.php' ); 
             ?>
@@ -416,7 +472,7 @@ class NH_Cart_Widget extends \Elementor\Widget_Base {
                 </div>
                 <h2><?php esc_html_e( 'Tu carrito está vacío', 'nh-core' ); ?></h2>
                 <p><?php esc_html_e( 'Explora nuestra colección y descubre piezas exclusivas.', 'nh-core' ); ?></p>
-                <a href="<?php echo esc_url( wc_get_page_permalink( 'shop' ) ); ?>" class="nh-cart-empty-btn">
+                <a href="<?php echo esc_url( wc_get_page_permalink( 'shop' ) ); ?>" class="nh-btn nh-btn-primary nh-cart-empty-btn">
                     <?php esc_html_e( 'Explorar la Tienda', 'nh-core' ); ?>
                 </a>
             </div>
@@ -453,22 +509,22 @@ class NH_Cart_Widget extends \Elementor\Widget_Base {
         <div class="nh-cart-widget">
             <# if ( showHeader ) { #>
             <div class="nh-cart-header">
-                <h1 class="nh-cart-brand-title">NORMA HANA</h1>
                 <div class="nh-cart-checkout-steps">
-                    <span class="nh-cart-step active">1. Carrito</span>
+                    <span class="nh-cart-step active"><span class="nh-cart-step-num">1</span> Carrito</span>
                     <span class="nh-cart-step-separator">→</span>
-                    <span class="nh-cart-step">2. Envío</span>
+                    <span class="nh-cart-step"><span class="nh-cart-step-num">2</span> Envío</span>
                     <span class="nh-cart-step-separator">→</span>
-                    <span class="nh-cart-step">3. Pago</span>
+                    <span class="nh-cart-step"><span class="nh-cart-step-num">3</span> Pago</span>
                 </div>
             </div>
             <# } #>
 
             <# if ( showFreeShipping ) { #>
-            <div class="nh-cart-free-shipping">
-                <div class="nh-cart-free-shipping-track"></div>
-                <div class="nh-cart-free-shipping-bar" style="width: 70%;"></div>
-                <div class="nh-cart-free-shipping-text">
+            <div class="nh-shipping-bar">
+                <div class="nh-shipping-bar__track">
+                    <div class="nh-shipping-bar__fill" style="width: 70%;"></div>
+                </div>
+                <div class="nh-shipping-bar__text">
                     Te faltan <span class="amount">$45.000</span> para envío gratis
                 </div>
             </div>
@@ -492,7 +548,10 @@ class NH_Cart_Widget extends \Elementor\Widget_Base {
                             <div class="nh-cart-product-details">
                                 <span class="nh-cart-product-name">Venture Bermuda</span>
                                 <# if ( showVariations ) { #>
-                                    <div class="nh-cart-product-variation">Marfil, M</div>
+                                    <div class="nh-pill-group">
+                                        <span class="nh-pill"><span class="nh-pill-label">Color:</span> <span class="nh-pill-value">Marfil</span></span>
+                                        <span class="nh-pill"><span class="nh-pill-label">Talla:</span> <span class="nh-pill-value">M</span></span>
+                                    </div>
                                 <# } #>
                             </div>
                         </div>
@@ -508,9 +567,9 @@ class NH_Cart_Widget extends \Elementor\Widget_Base {
 
                     <# if ( showCoupon ) { #>
                     <div class="nh-cart-coupon-section">
-                        <div class="nh-cart-coupon">
-                            <input type="text" class="nh-cart-coupon-input" placeholder="Código de cupón">
-                            <button class="nh-cart-coupon-btn">Aplicar</button>
+                        <div class="nh-coupon-box">
+                            <input type="text" class="input-text" placeholder="Código de cupón">
+                            <button class="button">Aplicar</button>
                         </div>
                     </div>
                     <# } #>
@@ -518,17 +577,17 @@ class NH_Cart_Widget extends \Elementor\Widget_Base {
 
                 <div class="nh-cart-summary">
                     <h3>Resumen de Compra</h3>
-                    <div class="nh-cart-summary-row">
-                        <span>Subtotal</span>
-                        <span>$110.000</span>
+                    <div class="nh-summary-row">
+                        <span class="nh-summary-row__label">Subtotal</span>
+                        <span class="nh-summary-row__value">$110.000</span>
                     </div>
-                    <div class="nh-cart-summary-row">
-                        <span>Envío</span>
-                        <span>$12.000</span>
+                    <div class="nh-summary-row">
+                        <span class="nh-summary-row__label">Envío</span>
+                        <span class="nh-summary-row__value">$12.000</span>
                     </div>
-                    <div class="nh-cart-total">
-                        <span>Total</span>
-                        <span>$122.000</span>
+                    <div class="nh-summary-row nh-summary-row--total">
+                        <span class="nh-summary-row__label">Total</span>
+                        <span class="nh-summary-row__value">$122.000</span>
                     </div>
                     <a href="#" class="nh-cart-checkout-btn">
                         <# if ( settings.checkout_button_icon && settings.checkout_button_icon.value ) { #>
@@ -537,15 +596,12 @@ class NH_Cart_Widget extends \Elementor\Widget_Base {
                         {{{ settings.checkout_button_text }}}
                     </a>
                     <# if ( showTrust && settings.trust_badges_list && settings.trust_badges_list.length ) { #>
-                    <div class="nh-cart-trust-badges">
-                        <# _.each( settings.trust_badges_list, function( badge ) { #>
-                            <div class="nh-cart-badge-item">
-                                <# if ( badge.badge_icon && badge.badge_icon.value ) { #>
-                                    <i class="{{ badge.badge_icon.value }}"></i>
-                                <# } #>
-                                <span>{{{ badge.badge_text }}}</span>
-                            </div>
-                        <# }); #>
+                    <div class="nh-trust-box">
+                        <div class="nh-trust-box__pills">
+                            <# _.each( settings.trust_badges_list, function( badge ) { #>
+                                <span class="nh-trust-box__pill">{{{ badge.badge_text }}}</span>
+                            <# }); #>
+                        </div>
                     </div>
                     <# } #>
                 </div>
