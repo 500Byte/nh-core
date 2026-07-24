@@ -64,6 +64,25 @@
     border-bottom: 1px solid var(--nh-border);
 }
 
+.nh-checkout-widget > .woocommerce-form-coupon-toggle,
+.nh-checkout-widget > .woocommerce-form-login-toggle,
+.nh-checkout-widget > svg,
+.nh-checkout-steps + svg,
+.nh-checkout-steps + div:empty {
+    display: none !important;
+}
+
+.nh-no-payment-required {
+    background-color: #FAFAFA !important;
+    border: 1.5px solid var(--nh-border) !important;
+    border-radius: var(--nh-radius-sm) !important;
+    padding: 12px 14px !important;
+    font-size: 13px !important;
+    color: var(--nh-text-secondary) !important;
+    margin-bottom: 16px !important;
+    text-align: center !important;
+}
+
 .nh-checkout-brand-title {
     font-family: var(--font-headings);
     font-size: 28px;

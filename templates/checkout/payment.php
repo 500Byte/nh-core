@@ -26,6 +26,10 @@ if ( ! is_ajax() ) {
 			}
 			?>
 		</ul>
+	<?php else : ?>
+		<div class="woocommerce-notice woocommerce-notice--info woocommerce-info nh-no-payment-required">
+			<?php esc_html_e( 'No se requiere pago para este pedido.', 'woocommerce' ); ?>
+		</div>
 	<?php endif; ?>
 
 	<div class="form-row place-order">
