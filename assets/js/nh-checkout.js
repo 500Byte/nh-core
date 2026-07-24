@@ -13,10 +13,30 @@
             $(document).on('change', '.wc_payment_methods input[type="radio"]', this.updatePaymentRadioCards.bind(this));
             $(document).on('change', 'ul#shipping_method input[type="radio"]', this.updateShippingRadioCards.bind(this));
             $(document).on('click', '#nh_summary_apply_coupon_btn', this.applySummaryCoupon.bind(this));
+            $(document).on('click', '.nh-checkout-mobile-summary-toggle', this.toggleMobileSummary.bind(this));
             $(document).on('keypress', '#nh_summary_coupon_code', function(e) {
                 if (e.which === 13) {
                     e.preventDefault();
                     $('#nh_summary_apply_coupon_btn').trigger('click');
+                }
+            });
+        },
+
+        toggleMobileSummary: function(e) {
+            e.preventDefault();
+            const $content = $('.nh-checkout-collapsible-content');
+            const $arrow = $('.nh-toggle-arrow');
+            const $label = $('.nh-toggle-label');
+
+            $content.slideToggle(200, function() {
+                if ($content.is(':visible')) {
+                    $content.addClass('is-open');
+                    $arrow.text('▴');
+                    $label.text('Ocultar resumen');
+                } else {
+                    $content.removeClass('is-open');
+                    $arrow.text('▾');
+                    $label.text('Mostrar resumen');
                 }
             });
         },
