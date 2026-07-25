@@ -45,6 +45,18 @@ class NH_Side_Cart_Widget extends \Elementor\Widget_Base {
         return [ 'nh-side-cart' ];
     }
 
+    /**
+     * Force Elementor editor to always use PHP render() instead of the
+     * JavaScript content_template(). This ensures the editor preview always
+     * matches the frontend for widgets with dynamic WooCommerce content.
+     *
+     * @return bool
+     */
+    protected function is_dynamic_content(): bool {
+        return true;
+    }
+
+
     // ─── Controles de Elementor ─────────────────────────────────────────────
 
     protected function register_controls() {
@@ -57,11 +69,15 @@ class NH_Side_Cart_Widget extends \Elementor\Widget_Base {
         $this->add_control( 'trigger_icon', [
             'label'   => esc_html__( 'Ícono', 'nh-core' ),
             'type'    => \Elementor\Controls_Manager::SELECT,
-            'default' => 'bag',
+            'default' => 'shopping-bag',
             'options' => [
-                'bag'    => esc_html__( 'Bolsa de compra', 'nh-core' ),
-                'cart'   => esc_html__( 'Carrito', 'nh-core' ),
-                'basket' => esc_html__( 'Canasta', 'nh-core' ),
+                'shopping-bag'  => esc_html__( 'Bolsa de compra', 'nh-core' ),
+                'shopping-cart' => esc_html__( 'Carrito', 'nh-core' ),
+                'basket'        => esc_html__( 'Canasta', 'nh-core' ),
+                'tote'          => esc_html__( 'Tote', 'nh-core' ),
+                'handbag'       => esc_html__( 'Bolsa de mano', 'nh-core' ),
+                'package'       => esc_html__( 'Paquete', 'nh-core' ),
+                'storefront'    => esc_html__( 'Fachada', 'nh-core' ),
             ],
         ] );
 
@@ -127,6 +143,342 @@ class NH_Side_Cart_Widget extends \Elementor\Widget_Base {
             'label'   => esc_html__( 'CTA carrito vacío', 'nh-core' ),
             'type'    => \Elementor\Controls_Manager::TEXT,
             'default' => esc_html__( 'Explorar tienda', 'nh-core' ),
+        ] );
+
+        $this->end_controls_section();
+
+        // ════════════════════════════════════════════════════════════════════
+        // STYLE TAB
+        // ════════════════════════════════════════════════════════════════════
+
+        // ── Sección: Trigger ─────────────────────────────────────────────────
+        $this->start_controls_section( 'style_trigger', [
+            'label' => esc_html__( 'Trigger (Ícono)', 'nh-core' ),
+            'tab'   => \Elementor\Controls_Manager::TAB_STYLE,
+        ] );
+
+        $this->add_control( 'trigger_padding', [
+            'label'      => esc_html__( 'Padding', 'nh-core' ),
+            'type'       => \Elementor\Controls_Manager::DIMENSIONS,
+            'size_units' => [ 'px', '%', 'em' ],
+            'default'    => [
+                'unit'     => 'px',
+                'top'      => '',
+                'right'    => '',
+                'bottom'   => '',
+                'left'     => '',
+                'isLinked' => true,
+            ],
+            'selectors'  => [
+                '{{WRAPPER}} .nh-side-cart__trigger' => 'padding: {{TOP}}{{UNIT}} {{RIGHT}}{{UNIT}} {{BOTTOM}}{{UNIT}} {{LEFT}}{{UNIT}};',
+            ],
+        ] );
+
+        $this->add_control( 'trigger_border_radius', [
+            'label'      => esc_html__( 'Border Radius', 'nh-core' ),
+            'type'       => \Elementor\Controls_Manager::DIMENSIONS,
+            'size_units' => [ 'px', '%' ],
+            'default'    => [
+                'unit'     => 'px',
+                'top'      => '6',
+                'right'    => '6',
+                'bottom'   => '6',
+                'left'     => '6',
+                'isLinked' => true,
+            ],
+            'selectors'  => [
+                '{{WRAPPER}} .nh-side-cart__trigger' => 'border-radius: {{TOP}}{{UNIT}} {{RIGHT}}{{UNIT}} {{BOTTOM}}{{UNIT}} {{LEFT}}{{UNIT}};',
+            ],
+        ] );
+
+        $this->add_control( 'trigger_color_heading', [
+            'label' => esc_html__( 'Colores', 'nh-core' ),
+            'type'  => \Elementor\Controls_Manager::HEADING,
+            'separator' => 'before',
+        ] );
+
+        $this->add_control( 'trigger_color', [
+            'label'     => esc_html__( 'Color del ícono', 'nh-core' ),
+            'type'      => \Elementor\Controls_Manager::COLOR,
+            'selectors' => [
+                '{{WRAPPER}} .nh-side-cart__trigger' => 'color: {{VALUE}};',
+            ],
+        ] );
+
+        $this->add_control( 'trigger_bg', [
+            'label'     => esc_html__( 'Color de fondo', 'nh-core' ),
+            'type'      => \Elementor\Controls_Manager::COLOR,
+            'selectors' => [
+                '{{WRAPPER}} .nh-side-cart__trigger' => 'background-color: {{VALUE}};',
+            ],
+        ] );
+
+        $this->add_control( 'trigger_hover_color', [
+            'label'     => esc_html__( 'Color hover', 'nh-core' ),
+            'type'      => \Elementor\Controls_Manager::COLOR,
+            'selectors' => [
+                '{{WRAPPER}} .nh-side-cart__trigger:hover' => 'color: {{VALUE}};',
+            ],
+        ] );
+
+        $this->add_control( 'trigger_hover_bg', [
+            'label'     => esc_html__( 'Fondo hover', 'nh-core' ),
+            'type'      => \Elementor\Controls_Manager::COLOR,
+            'selectors' => [
+                '{{WRAPPER}} .nh-side-cart__trigger:hover' => 'background-color: {{VALUE}};',
+            ],
+        ] );
+
+        $this->add_control( 'trigger_icon_size_heading', [
+            'label'     => esc_html__( 'Ícono', 'nh-core' ),
+            'type'      => \Elementor\Controls_Manager::HEADING,
+            'separator' => 'before',
+        ] );
+
+        $this->add_control( 'trigger_icon_size', [
+            'label'       => esc_html__( 'Tamaño del ícono', 'nh-core' ),
+            'type'        => \Elementor\Controls_Manager::SLIDER,
+            'size_units'  => [ 'px' ],
+            'default'     => [
+                'unit' => 'px',
+                'size' => 22,
+            ],
+            'range'       => [
+                'px' => [ 'min' => 14, 'max' => 40, 'step' => 1 ],
+            ],
+            'selectors'   => [
+                '{{WRAPPER}} .nh-side-cart__icon' => 'width: {{SIZE}}{{UNIT}}; height: {{SIZE}}{{UNIT}}; font-size: {{SIZE}}{{UNIT}};',
+            ],
+        ] );
+
+        // Badge
+        $this->add_control( 'badge_heading', [
+            'label'     => esc_html__( 'Badge', 'nh-core' ),
+            'type'      => \Elementor\Controls_Manager::HEADING,
+            'separator' => 'before',
+        ] );
+
+        $this->add_control( 'badge_bg', [
+            'label'     => esc_html__( 'Fondo badge', 'nh-core' ),
+            'type'      => \Elementor\Controls_Manager::COLOR,
+            'selectors' => [
+                '{{WRAPPER}} .nh-side-cart__badge' => 'background: {{VALUE}};',
+            ],
+        ] );
+
+        $this->add_control( 'badge_color', [
+            'label'     => esc_html__( 'Color texto badge', 'nh-core' ),
+            'type'      => \Elementor\Controls_Manager::COLOR,
+            'selectors' => [
+                '{{WRAPPER}} .nh-side-cart__badge' => 'color: {{VALUE}};',
+            ],
+        ] );
+
+        $this->add_control( 'badge_size', [
+            'label'      => esc_html__( 'Tamaño badge', 'nh-core' ),
+            'type'       => \Elementor\Controls_Manager::SLIDER,
+            'size_units' => [ 'px' ],
+            'default'    => [
+                'unit' => 'px',
+                'size' => 18,
+            ],
+            'range'      => [
+                'px' => [ 'min' => 12, 'max' => 28, 'step' => 1 ],
+            ],
+            'selectors'  => [
+                '{{WRAPPER}} .nh-side-cart__badge' => 'min-width: {{SIZE}}{{UNIT}}; height: {{SIZE}}{{UNIT}};',
+            ],
+        ] );
+
+        $this->end_controls_section();
+
+        // ── Sección: Panel ──────────────────────────────────────────────────
+        $this->start_controls_section( 'style_panel', [
+            'label' => esc_html__( 'Panel (Drawer)', 'nh-core' ),
+            'tab'   => \Elementor\Controls_Manager::TAB_STYLE,
+        ] );
+
+        $this->add_control( 'panel_width', [
+            'label'      => esc_html__( 'Ancho del panel', 'nh-core' ),
+            'type'       => \Elementor\Controls_Manager::SLIDER,
+            'size_units' => [ 'px', '%' ],
+            'default'    => [
+                'unit' => 'px',
+                'size' => 420,
+            ],
+            'range'      => [
+                'px' => [ 'min' => 320, 'max' => 600, 'step' => 10 ],
+                '%'  => [ 'min' => 50, 'max' => 100, 'step' => 5 ],
+            ],
+            'selectors'  => [
+                '{{WRAPPER}} .nh-side-cart__drawer' => 'width: {{SIZE}}{{UNIT}};',
+            ],
+        ] );
+
+        $this->add_control( 'panel_bg', [
+            'label'     => esc_html__( 'Fondo del panel', 'nh-core' ),
+            'type'      => \Elementor\Controls_Manager::COLOR,
+            'selectors' => [
+                '{{WRAPPER}} .nh-side-cart__drawer' => 'background-color: {{VALUE}};',
+            ],
+        ] );
+
+        $this->add_control( 'panel_overlay_opacity', [
+            'label'   => esc_html__( 'Opacidad del overlay', 'nh-core' ),
+            'type'    => \Elementor\Controls_Manager::SLIDER,
+            'default' => [
+                'unit' => '',
+                'size' => 0.45,
+            ],
+            'range'   => [
+                '' => [ 'min' => 0, 'max' => 1, 'step' => 0.05 ],
+            ],
+            'selectors' => [
+                '{{WRAPPER}} .nh-side-cart__overlay' => 'background: rgba(32,32,32,{{SIZE}});',
+            ],
+        ] );
+
+        $this->add_control( 'panel_padding_heading', [
+            'label'     => esc_html__( 'Padding interno', 'nh-core' ),
+            'type'      => \Elementor\Controls_Manager::HEADING,
+            'separator' => 'before',
+        ] );
+
+        $this->add_control( 'panel_padding', [
+            'label'      => esc_html__( 'Padding', 'nh-core' ),
+            'type'       => \Elementor\Controls_Manager::DIMENSIONS,
+            'size_units' => [ 'px' ],
+            'default'    => [
+                'unit'     => 'px',
+                'top'      => '24',
+                'right'    => '24',
+                'bottom'   => '24',
+                'left'     => '24',
+                'isLinked' => true,
+            ],
+            'selectors'  => [
+                '{{WRAPPER}} .nh-side-cart__drawer' => 'padding: {{TOP}}{{UNIT}} {{RIGHT}}{{UNIT}} {{BOTTOM}}{{UNIT}} {{LEFT}}{{UNIT}};',
+            ],
+        ] );
+
+        $this->end_controls_section();
+
+        // ── Sección: Botón cerrar ───────────────────────────────────────────
+        $this->start_controls_section( 'style_close', [
+            'label' => esc_html__( 'Botón Cerrar', 'nh-core' ),
+            'tab'   => \Elementor\Controls_Manager::TAB_STYLE,
+        ] );
+
+        $this->add_control( 'close_size', [
+            'label'       => esc_html__( 'Tamaño', 'nh-core' ),
+            'type'        => \Elementor\Controls_Manager::SELECT,
+            'default'     => '36',
+            'options'     => [
+                '28' => '28 px',
+                '32' => '32 px',
+                '36' => '36 px',
+                '40' => '40 px',
+                '44' => '44 px',
+            ],
+            'selectors'   => [
+                '{{WRAPPER}} .nh-side-cart__close' => 'width: {{VALUE}}px; height: {{VALUE}}px;',
+            ],
+        ] );
+
+        $this->add_control( 'close_color', [
+            'label'     => esc_html__( 'Color', 'nh-core' ),
+            'type'      => \Elementor\Controls_Manager::COLOR,
+            'selectors' => [
+                '{{WRAPPER}} .nh-side-cart__close' => 'color: {{VALUE}};',
+            ],
+        ] );
+
+        $this->add_control( 'close_bg', [
+            'label'     => esc_html__( 'Fondo', 'nh-core' ),
+            'type'      => \Elementor\Controls_Manager::COLOR,
+            'selectors' => [
+                '{{WRAPPER}} .nh-side-cart__close' => 'background-color: {{VALUE}};',
+            ],
+        ] );
+
+        $this->add_control( 'close_border_radius', [
+            'label'      => esc_html__( 'Border Radius', 'nh-core' ),
+            'type'       => \Elementor\Controls_Manager::SLIDER,
+            'size_units' => [ 'px', '%' ],
+            'default'    => [
+                'unit' => 'px',
+                'size' => 6,
+            ],
+            'range'      => [
+                'px' => [ 'min' => 0, 'max' => 50, 'step' => 1 ],
+            ],
+            'selectors'  => [
+                '{{WRAPPER}} .nh-side-cart__close' => 'border-radius: {{SIZE}}{{UNIT}};',
+            ],
+        ] );
+
+        $this->end_controls_section();
+
+        // ── Sección: Header del panel ───────────────────────────────────────
+        $this->start_controls_section( 'style_header', [
+            'label' => esc_html__( 'Header del Panel', 'nh-core' ),
+            'tab'   => \Elementor\Controls_Manager::TAB_STYLE,
+        ] );
+
+        $this->add_control( 'header_title_color', [
+            'label'     => esc_html__( 'Color título', 'nh-core' ),
+            'type'      => \Elementor\Controls_Manager::COLOR,
+            'selectors' => [
+                '{{WRAPPER}} .nh-side-cart__title' => 'color: {{VALUE}};',
+            ],
+        ] );
+
+        $this->add_control( 'header_count_color', [
+            'label'     => esc_html__( 'Color contador', 'nh-core' ),
+            'type'      => \Elementor\Controls_Manager::COLOR,
+            'selectors' => [
+                '{{WRAPPER}} .nh-side-cart__count-label' => 'color: {{VALUE}};',
+            ],
+        ] );
+
+        $this->add_control( 'header_border_color', [
+            'label'     => esc_html__( 'Color borde inferior', 'nh-core' ),
+            'type'      => \Elementor\Controls_Manager::COLOR,
+            'selectors' => [
+                '{{WRAPPER}} .nh-side-cart__header' => 'border-bottom-color: {{VALUE}};',
+            ],
+        ] );
+
+        $this->end_controls_section();
+
+        // ── Sección: Botones footer ─────────────────────────────────────────
+        $this->start_controls_section( 'style_footer_buttons', [
+            'label' => esc_html__( 'Botones Footer', 'nh-core' ),
+            'tab'   => \Elementor\Controls_Manager::TAB_STYLE,
+        ] );
+
+        $this->add_control( 'btn_primary_bg', [
+            'label'     => esc_html__( 'Fondo botón primario', 'nh-core' ),
+            'type'      => \Elementor\Controls_Manager::COLOR,
+            'selectors' => [
+                '{{WRAPPER}} .nh-side-cart__btn--primary' => 'background-color: {{VALUE}};',
+            ],
+        ] );
+
+        $this->add_control( 'btn_primary_color', [
+            'label'     => esc_html__( 'Color texto primario', 'nh-core' ),
+            'type'      => \Elementor\Controls_Manager::COLOR,
+            'selectors' => [
+                '{{WRAPPER}} .nh-side-cart__btn--primary' => 'color: {{VALUE}};',
+            ],
+        ] );
+
+        $this->add_control( 'btn_secondary_border', [
+            'label'     => esc_html__( 'Borde botón secundario', 'nh-core' ),
+            'type'      => \Elementor\Controls_Manager::COLOR,
+            'selectors' => [
+                '{{WRAPPER}} .nh-side-cart__btn--secondary' => 'border-color: {{VALUE}}; color: {{VALUE}};',
+            ],
         ] );
 
         $this->end_controls_section();
@@ -205,9 +557,7 @@ class NH_Side_Cart_Widget extends \Elementor\Widget_Base {
                         class="nh-side-cart__close"
                         aria-label="<?php esc_attr_e( 'Cerrar carrito', 'nh-core' ); ?>"
                     >
-                        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                            <path d="M1 1L13 13M13 1L1 13" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
-                        </svg>
+                        <i class="ph-light ph-x" aria-hidden="true" style="font-size: 14px;"></i>
                     </button>
                 </header>
 
@@ -240,9 +590,7 @@ class NH_Side_Cart_Widget extends \Elementor\Widget_Base {
                     <?php /* Estado vacío */ ?>
                     <div class="nh-side-cart__empty<?php echo ! WC()->cart->is_empty() ? ' nh-side-cart__empty--hidden' : ''; ?>">
                         <div class="nh-side-cart__empty-icon" aria-hidden="true">
-                            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/>
-                            </svg>
+                            <i class="ph-light ph-shopping-bag" style="font-size: 48px;"></i>
                         </div>
                         <p class="nh-side-cart__empty-text"><?php echo esc_html( $empty_text ); ?></p>
                         <a class="nh-side-cart__empty-cta" href="<?php echo esc_url( $shop_url ); ?>">
@@ -370,15 +718,15 @@ class NH_Side_Cart_Widget extends \Elementor\Widget_Base {
     }
 
     /**
-     * SVG icons para el trigger.
+     * Phosphor icon para el trigger.
      */
     private function get_cart_icon_svg( string $type ): string {
-        $svgs = [
-            'bag' => '<svg class="nh-side-cart__icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>',
-            'cart' => '<svg class="nh-side-cart__icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>',
-            'basket' => '<svg class="nh-side-cart__icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5.757 1.929l-1.414 1.414L8 7.172l-5 5V19a2 2 0 002 2h14a2 2 0 002-2v-6.828l-5-5 3.657-3.829-1.414-1.414L11 7.344 5.757 1.929z"/></svg>',
+        $valid = [
+            'shopping-bag', 'shopping-cart', 'basket', 'tote',
+            'handbag', 'package', 'storefront',
         ];
-        return $svgs[ $type ] ?? $svgs['bag'];
+        $icon = in_array( $type, $valid, true ) ? $type : 'shopping-bag';
+        return '<i class="ph-light ph-' . esc_attr( $icon ) . ' nh-side-cart__icon" aria-hidden="true"></i>';
     }
 
     /**
@@ -390,11 +738,7 @@ class NH_Side_Cart_Widget extends \Elementor\Widget_Base {
             <button class="nh-side-cart__trigger" aria-label="Abrir carrito">
                 <span class="nh-side-cart__trigger-icon-wrap">
                     <span class="nh-side-cart__badge" data-count="3">3</span>
-                    <svg class="nh-side-cart__icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/>
-                        <line x1="3" y1="6" x2="21" y2="6"/>
-                        <path d="M16 10a4 4 0 0 1-8 0"/>
-                    </svg>
+                    <i class="ph-light ph-shopping-bag nh-side-cart__icon" aria-hidden="true"></i>
                 </span>
             </button>
             <p style="font-family: sans-serif; font-size: 12px; color: #888; margin-top: 8px; text-align: center;">

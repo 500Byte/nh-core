@@ -29,6 +29,17 @@ class NH_Marquee_Widget extends \Elementor\Widget_Base {
 		return [ 'nh-marquee-widget' ];
 	}
 
+
+	/**
+	 * Force Elementor editor to use PHP render() — prevents JS template
+	 * from showing stale/broken output when controls change in the editor.
+	 *
+	 * @return bool
+	 */
+	protected function is_dynamic_content(): bool {
+		return true;
+	}
+
 	protected function register_controls() {
 
 		// ─── CONTENIDO ────────────────────────────────────────

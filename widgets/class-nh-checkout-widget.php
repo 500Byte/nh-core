@@ -43,6 +43,18 @@ class NH_Checkout_Widget extends \Elementor\Widget_Base {
         return [ 'nh-checkout-widget', 'wc-checkout' ];
     }
 
+    /**
+     * Force Elementor editor to always use PHP render() instead of the
+     * JavaScript content_template(). This ensures the editor preview always
+     * matches the frontend for widgets with dynamic WooCommerce content.
+     *
+     * @return bool
+     */
+    protected function is_dynamic_content(): bool {
+        return true;
+    }
+
+
     protected function register_controls() {
 
         // ─── SECCIÓN: CABECERA & PASOS ────────────────────────
@@ -463,7 +475,7 @@ class NH_Checkout_Widget extends \Elementor\Widget_Base {
 
             <?php if ( 'yes' === $settings['show_reservation_timer'] ) : ?>
             <div class="nh-checkout-reservation-timer">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                <i class="ph-light ph-clock" style="font-size: 15px;" aria-hidden="true"></i>
                 <span><?php esc_html_e( '¡Tus productos están reservados por', 'nh-core' ); ?> <strong id="nh_checkout_timer_count"><?php echo (int) ( ! empty( $settings['reservation_minutes'] ) ? $settings['reservation_minutes'] : 15 ); ?>:00</strong> <?php esc_html_e( 'minutos!', 'nh-core' ); ?></span>
             </div>
             <?php endif; ?>
@@ -525,7 +537,7 @@ class NH_Checkout_Widget extends \Elementor\Widget_Base {
                             <?php if ( 'yes' === $settings['show_whatsapp_support'] && ! empty( $settings['whatsapp_number'] ) ) : ?>
                             <div class="nh-checkout-whatsapp-card">
                                 <div class="nh-wa-card-left">
-                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#22C55E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+                                    <i class="ph-light ph-chat-circle-text" style="font-size: 20px; color: #22C55E;" aria-hidden="true"></i>
                                     <span><?php echo esc_html( $settings['whatsapp_text'] ); ?></span>
                                 </div>
                                 <a href="https://wa.me/<?php echo esc_attr( preg_replace('/[^0-9]/', '', $settings['whatsapp_number'] ?? '') ); ?>" target="_blank" rel="noopener noreferrer" class="nh-wa-card-btn">

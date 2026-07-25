@@ -36,6 +36,18 @@ class NH_Cart_Widget extends \Elementor\Widget_Base {
         return [ 'nh-cart-widget' ];
     }
 
+    /**
+     * Force Elementor editor to always use PHP render() instead of the
+     * JavaScript content_template(). This ensures the editor preview always
+     * matches the frontend for widgets with dynamic WooCommerce content.
+     *
+     * @return bool
+     */
+    protected function is_dynamic_content(): bool {
+        return true;
+    }
+
+
     protected function register_controls() {
 
         // ─── CONTENIDO: GENERAL & EDITOR ───────────────────────

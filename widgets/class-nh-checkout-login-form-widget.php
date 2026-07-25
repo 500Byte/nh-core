@@ -31,6 +31,18 @@ class NH_Checkout_Login_Form_Widget extends \Elementor\Widget_Base {
         return [ 'checkout', 'login', 'iniciar sesion', 'norma hana' ];
     }
 
+    /**
+     * Force Elementor editor to always use PHP render() instead of the
+     * JavaScript content_template(). This ensures the editor preview always
+     * matches the frontend for widgets with dynamic WooCommerce content.
+     *
+     * @return bool
+     */
+    protected function is_dynamic_content(): bool {
+        return true;
+    }
+
+
     public function get_style_depends() {
         return [ 'nh-checkout-widget' ];
     }
