@@ -1,0 +1,159 @@
+/* ── NH Qty — Unified Quantity Selector ────────────────────────────────────── */
+
+/* Block: .nh-qty (wrapper) */
+.nh-qty {
+    display: inline-flex;
+    align-items: center;
+    border: 2px solid var(--nh-gray-200);
+    border-radius: var(--radius-sm);
+    overflow: visible;
+    background: transparent;
+    width: fit-content;
+    min-width: 130px;
+    height: 42px;
+    padding: 0;
+    transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.nh-qty:hover {
+    border-color: var(--nh-gray-300);
+}
+
+.nh-qty:focus-within {
+    border-color: var(--nh-primary);
+    box-shadow: 0 0 0 3px rgba(103, 103, 101, 0.12);
+}
+
+/* Element: .nh-qty__input */
+.nh-qty__input {
+    flex: 1 1 auto;
+    width: 46px;
+    height: 100%;
+    padding: 0;
+    text-align: center;
+    border: none;
+    background: transparent;
+    color: var(--nh-text);
+    font-family: var(--font-body);
+    font-size: 15px;
+    font-weight: 500;
+    line-height: 42px;
+    outline: none;
+    box-shadow: none;
+    -moz-appearance: textfield;
+}
+
+.nh-qty__input::-webkit-outer-spin-button,
+.nh-qty__input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+.nh-qty__input:focus {
+    background: transparent;
+}
+
+/* Element: .nh-qty__btn */
+.nh-qty__btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 auto;
+    width: 42px;
+    height: 42px;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    font-family: var(--font-body);
+    font-size: 18px;
+    font-weight: 500;
+    color: var(--nh-text);
+    transition: background var(--transition-fast), color var(--transition-fast),
+                opacity var(--transition-fast), transform var(--transition-fast);
+    padding: 0;
+    margin: 0;
+    box-sizing: border-box;
+    box-shadow: none;
+    border-radius: 0;
+    -webkit-user-select: none;
+    user-select: none;
+}
+
+/* Modifier: minus has right border, plus has left border */
+.nh-qty__btn--minus {
+    border-right: 2px solid var(--nh-gray-200);
+}
+
+.nh-qty__btn--plus {
+    border-left: 2px solid var(--nh-gray-200);
+}
+
+.nh-qty__btn:hover {
+    background: var(--nh-text);
+    color: var(--nh-white);
+}
+
+.nh-qty__btn:active {
+    background: var(--nh-text);
+    color: var(--nh-white);
+    transform: scale(0.95);
+}
+
+.nh-qty__btn:focus-visible {
+    outline: 2px solid var(--nh-primary);
+    outline-offset: -2px;
+}
+
+/* Modifier: disabled state */
+.nh-qty__btn--disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+/* ── Cart Widget variant (smaller, compact) ────────────────────────────────── */
+.nh-cart-widget .nh-qty,
+.nh-cart-table-widget .nh-qty {
+    min-width: 100px;
+    height: 34px;
+    border-width: 1px;
+}
+
+.nh-cart-widget .nh-qty__input,
+.nh-cart-table-widget .nh-qty__input {
+    width: 34px;
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 34px;
+}
+
+.nh-cart-widget .nh-qty__btn,
+.nh-cart-table-widget .nh-qty__btn {
+    width: 32px;
+    height: 34px;
+    font-size: 14px;
+}
+
+.nh-cart-widget .nh-qty__btn--minus,
+.nh-cart-table-widget .nh-qty__btn--minus {
+    border-right-width: 1px;
+}
+
+.nh-cart-widget .nh-qty__btn--plus,
+.nh-cart-table-widget .nh-qty__btn--plus {
+    border-left-width: 1px;
+}
+
+/* ── Loading state ─────────────────────────────────────────────────────────── */
+.nh-qty--loading {
+    opacity: 0.5;
+    pointer-events: none;
+}
+
+/* ── Reduced motion ────────────────────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+    .nh-qty,
+    .nh-qty__btn {
+        transition: none;
+    }
+}
