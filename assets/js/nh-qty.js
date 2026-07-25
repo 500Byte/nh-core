@@ -127,6 +127,17 @@
             .then((res) => {
                 console.log('[NH Qty] AJAX response:', res);
                 if (res.success) {
+                    // Update item subtotal
+                    if (res.data?.subtotal) {
+                        const subtotalEl = wrapper.closest('.nh-cart-item')?.querySelector('.nh-cart-product-subtotal');
+                        if (subtotalEl) subtotalEl.innerHTML = res.data.subtotal;
+                    }
+                    // Update cart totals
+                    if (res.data?.totals_html) {
+                        const summary = document.querySelector('.nh-cart-summary');
+                        if (summary) summary.innerHTML = res.data.totals_html;
+                    }
+                    // Also trigger WC fragments for mini cart / side cart
                     if (typeof jQuery !== 'undefined') {
                         jQuery(document.body).trigger('wc_fragment_refresh');
                     }

@@ -500,8 +500,24 @@ class NH_Core_Woocommerce {
             error_log( '[NH Qty AJAX] setting qty=' . $qty );
             WC()->cart->set_quantity( $key, $qty );
             WC()->cart->calculate_totals();
+
+            $cart_item = WC()->cart->get_cart_item( $key );
+            $subtotal = '';
+            if ( $cart_item && isset( $cart_item['data'] ) ) {
+                $subtotal = WC()->cart->get_product_subtotal( $cart_item['data'], $cart_item['quantity'] );
+            }
+
+            ob_start();
+            if ( function_exists( 'woocommerce_cart_totals' ) ) {
+                woocommerce_cart_totals();
+            }
+            $totals_html = ob_get_clean();
+
             error_log( '[NH Qty AJAX] SUCCESS' );
-            wp_send_json_success();
+            wp_send_json_success( [
+                'subtotal' => $subtotal,
+                'totals_html' => $totals_html,
+            ] );
         }
         
         error_log( '[NH Qty AJAX] FAILED: key or cart missing' );
