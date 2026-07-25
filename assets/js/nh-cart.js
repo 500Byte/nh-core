@@ -10,54 +10,10 @@
         },
 
         bindEvents: function() {
-            $(document).on('click', '.nh-cart-qty-plus', this.updateQuantity.bind(this, 'increase'));
-            $(document).on('click', '.nh-cart-qty-minus', this.updateQuantity.bind(this, 'decrease'));
-            $(document).on('change', '.nh-cart-qty-input', this.updateQuantity.bind(this, 'set'));
             $(document).on('click', '.nh-cart-remove', this.removeItem.bind(this));
             $(document).on('click', '.nh-cart-clear', this.clearCart.bind(this));
             $(document).on('click', '.nh-cart-coupon-btn', this.applyCoupon.bind(this));
             $(document).on('click', '.nh-cart-remove-coupon', this.removeCoupon.bind(this));
-        },
-
-        updateQuantity: function(action, e) {
-            e.preventDefault();
-            const $btn = $(e.currentTarget);
-            const $item = $btn.closest('.nh-cart-item');
-            const key = $btn.data('key') || $item.data('key');
-            const $input = $item.find('.nh-cart-qty-input');
-            let qty = parseInt($input.val(), 10);
-
-            if (action === 'increase') qty++;
-            else if (action === 'decrease') qty = Math.max(1, qty - 1);
-            else if (action === 'set') qty = parseInt($input.val(), 10);
-
-            if (isNaN(qty) || qty < 1) qty = 1;
-
-            this.showLoading($item);
-
-            $.ajax({
-                url: nh_cart_params?.ajax_url || '/wp-admin/admin-ajax.php',
-                type: 'POST',
-                data: {
-                    action: 'nh_update_cart_item',
-                    cart_item_key: key,
-                    quantity: qty,
-                    nonce: nh_cart_params?.nonce || ''
-                },
-                success: (response) => {
-                    if (response.success) {
-                        this.refreshCartFragments();
-                    } else {
-                        this.showError(response.data?.message || 'Error al actualizar');
-                    }
-                },
-                error: () => {
-                    this.showError('Error de conexión');
-                },
-                complete: () => {
-                    this.hideLoading($item);
-                }
-            });
         },
 
         removeItem: function(e) {
