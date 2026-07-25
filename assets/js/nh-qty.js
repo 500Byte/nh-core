@@ -90,14 +90,11 @@
 
     function getCartItemKey(wrapper) {
         const input = wrapper.querySelector(SELECTORS.input);
-        // Try data-key first (Elementor cart table, side cart)
         let key = input?.getAttribute('data-key') || wrapper.getAttribute('data-key') || '';
-        // Fallback: extract from input name="cart[KEY][qty]" (native cart page)
         if (!key && input?.name) {
             const match = input.name.match(/^cart\[([^\]]+)\]\[qty\]$/);
             if (match) key = match[1];
         }
-        console.log('[NH Qty] getCartItemKey:', { key, inputName: input?.name, wrapperHTML: wrapper.outerHTML.substring(0, 200) });
         return key;
     }
 
@@ -106,7 +103,7 @@
      */
     function ajaxUpdate(wrapper, newQty) {
         const key = getCartItemKey(wrapper);
-        if (!key) { console.warn('[NH Qty] No cart_item_key found, skipping AJAX'); return; }
+        if (!key) return;
 
         setLoading(wrapper, true);
         pending.set(wrapper, true);
@@ -114,8 +111,6 @@
         const params = window.nh_cart_params || window.nhSideCartParams || {};
         const ajaxUrl = params.ajax_url || '/wp-admin/admin-ajax.php';
         const nonce = params.nonce || '';
-
-        console.log('[NH Qty] AJAX request:', { ajaxUrl, key, newQty, nonce: nonce ? '***' : 'MISSING', params });
 
         fetch(ajaxUrl, {
             method: 'POST',
@@ -127,29 +122,23 @@
                 nonce: nonce,
             }),
         })
-            .then((r) => { console.log('[NH Qty] AJAX response status:', r.status); return r.json(); })
+            .then((r) => r.json())
             .then((res) => {
-                console.log('[NH Qty] AJAX response:', res);
                 if (res.success) {
-                    // Update item subtotal
                     if (res.data?.subtotal) {
                         const subtotalEl = wrapper.closest('.nh-cart-item')?.querySelector('.nh-cart-product-subtotal');
                         if (subtotalEl) subtotalEl.innerHTML = res.data.subtotal;
                     }
-                    // Update cart totals
                     if (res.data?.totals_html) {
                         const summary = document.querySelector('.nh-cart-summary');
                         if (summary) summary.innerHTML = res.data.totals_html;
                     }
-                    // Also trigger WC fragments for mini cart / side cart
                     if (typeof jQuery !== 'undefined') {
                         jQuery(document.body).trigger('wc_fragment_refresh');
                     }
-                } else {
-                    console.warn('[NH Qty] Server error:', res.data?.message || 'Update failed');
                 }
             })
-            .catch((err) => console.error('[NH Qty] AJAX fetch error:', err))
+            .catch(() => {})
             .finally(() => { pending.delete(wrapper); setLoading(wrapper, false); });
     }
 
@@ -165,13 +154,12 @@
         let newVal = current + delta * step;
         newVal = clampQty(newVal, { min, max, step });
 
-        if (newVal === current) { console.log('[NH Qty] newVal === current, skip'); return; }
+        if (newVal === current) return;
 
         input.value = newVal;
         updateDisabledState(wrapper);
 
         const key = getCartItemKey(wrapper);
-        console.log('[NH Qty] updateQty:', { delta, current, newVal, hasKey: !!key });
         if (key) {
             ajaxUpdate(wrapper, newVal);
         } else {
