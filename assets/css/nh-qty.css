@@ -33,91 +33,94 @@
     box-shadow: 0 0 0 3px rgba(103, 103, 101, 0.12);
 }
 
-/* Element: .nh-qty__input */
-.nh-qty__input {
-    flex: 1 1 auto;
-    width: 46px;
-    height: 100%;
-    padding: 0;
-    text-align: center;
-    border: none;
-    background: transparent;
-    color: var(--nh-text);
-    font-family: var(--font-body);
-    font-size: 15px;
-    font-weight: 500;
-    line-height: 42px;
-    outline: none;
-    box-shadow: none;
-    -moz-appearance: textfield;
+/* Element: .nh-qty__input — all properties with !important to beat Elementor/WC */
+.nh-qty .nh-qty__input {
+    flex: 1 1 auto !important;
+    width: 46px !important;
+    height: 100% !important;
+    padding: 0 !important;
+    text-align: center !important;
+    border: none !important;
+    background: transparent !important;
+    color: var(--nh-text) !important;
+    font-family: var(--font-body) !important;
+    font-size: 15px !important;
+    font-weight: 500 !important;
+    line-height: 42px !important;
+    outline: none !important;
+    box-shadow: none !important;
+    -moz-appearance: textfield !important;
 }
 
-.nh-qty__input::-webkit-outer-spin-button,
-.nh-qty__input::-webkit-inner-spin-button {
-    -webkit-appearance: none;
-    margin: 0;
+.nh-qty .nh-qty__input::-webkit-outer-spin-button,
+.nh-qty .nh-qty__input::-webkit-inner-spin-button {
+    -webkit-appearance: none !important;
+    margin: 0 !important;
 }
 
-.nh-qty__input:focus {
-    background: transparent;
+.nh-qty .nh-qty__input:focus {
+    background: transparent !important;
 }
 
-/* Element: .nh-qty__btn (specificity 0,2,0 to beat Elementor's global button) */
+/* Element: .nh-qty__btn — all properties with !important to beat Elementor's global button */
 .nh-qty .nh-qty__btn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    flex: 0 0 auto;
-    width: 42px;
-    height: 42px;
-    background: transparent;
-    border: none;
-    cursor: pointer;
-    font-family: var(--font-body);
-    font-size: 18px;
-    font-weight: 500;
-    color: var(--nh-text);
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    flex: 0 0 auto !important;
+    width: 42px !important;
+    height: 42px !important;
+    background: transparent !important;
+    background-color: transparent !important;
+    border: none !important;
+    cursor: pointer !important;
+    font-family: var(--font-body) !important;
+    font-size: 18px !important;
+    font-weight: 500 !important;
+    color: var(--nh-text) !important;
     transition: background var(--transition-fast), color var(--transition-fast),
-                opacity var(--transition-fast), transform var(--transition-fast);
-    padding: 0;
-    margin: 0;
-    box-sizing: border-box;
-    box-shadow: none;
-    border-radius: 0;
-    -webkit-user-select: none;
-    user-select: none;
+                opacity var(--transition-fast), transform var(--transition-fast) !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    box-sizing: border-box !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+    -webkit-user-select: none !important;
+    user-select: none !important;
+    text-align: center !important;
+    white-space: nowrap !important;
 }
 
 /* Modifier: minus has right border, plus has left border */
-.nh-qty__btn--minus {
-    border-right: 2px solid var(--nh-gray-200);
+.nh-qty .nh-qty__btn--minus {
+    border-right: 2px solid var(--nh-gray-200) !important;
 }
 
-.nh-qty__btn--plus {
-    border-left: 2px solid var(--nh-gray-200);
+.nh-qty .nh-qty__btn--plus {
+    border-left: 2px solid var(--nh-gray-200) !important;
 }
 
 .nh-qty .nh-qty__btn:hover {
-    background: var(--nh-text);
-    color: var(--nh-white);
+    background: var(--nh-text) !important;
+    color: var(--nh-white) !important;
 }
 
 .nh-qty .nh-qty__btn:active {
-    background: var(--nh-text);
-    color: var(--nh-white);
-    transform: scale(0.95);
+    background: var(--nh-text) !important;
+    color: var(--nh-white) !important;
+    transform: scale(0.95) !important;
 }
 
 .nh-qty .nh-qty__btn:focus-visible {
-    outline: 2px solid var(--nh-primary);
-    outline-offset: -2px;
+    outline: 2px solid var(--nh-primary) !important;
+    outline-offset: -2px !important;
 }
 
 /* Modifier: disabled state */
-.nh-qty__btn--disabled {
-    opacity: 0.35;
-    cursor: not-allowed;
-    pointer-events: none;
+.nh-qty .nh-qty__btn--disabled {
+    opacity: 0.35 !important;
+    cursor: not-allowed !important;
+    pointer-events: none !important;
 }
 
 /* ── Cart Widget variant (smaller, compact) ────────────────────────────────── */
@@ -128,29 +131,29 @@
     border-width: 1px;
 }
 
-.nh-cart-widget .nh-qty__input,
-.nh-cart-table-widget .nh-qty__input {
-    width: 34px;
-    font-size: 13px;
-    font-weight: 600;
-    line-height: 34px;
+.nh-cart-widget .nh-qty .nh-qty__input,
+.nh-cart-table-widget .nh-qty .nh-qty__input {
+    width: 34px !important;
+    font-size: 13px !important;
+    font-weight: 600 !important;
+    line-height: 34px !important;
 }
 
 .nh-cart-widget .nh-qty .nh-qty__btn,
 .nh-cart-table-widget .nh-qty .nh-qty__btn {
-    width: 32px;
-    height: 34px;
-    font-size: 14px;
+    width: 32px !important;
+    height: 34px !important;
+    font-size: 14px !important;
 }
 
-.nh-cart-widget .nh-qty__btn--minus,
-.nh-cart-table-widget .nh-qty__btn--minus {
-    border-right-width: 1px;
+.nh-cart-widget .nh-qty .nh-qty__btn--minus,
+.nh-cart-table-widget .nh-qty .nh-qty__btn--minus {
+    border-right-width: 1px !important;
 }
 
-.nh-cart-widget .nh-qty__btn--plus,
-.nh-cart-table-widget .nh-qty__btn--plus {
-    border-left-width: 1px;
+.nh-cart-widget .nh-qty .nh-qty__btn--plus,
+.nh-cart-table-widget .nh-qty .nh-qty__btn--plus {
+    border-left-width: 1px !important;
 }
 
 /* ── Loading state ─────────────────────────────────────────────────────────── */
@@ -163,6 +166,6 @@
 @media (prefers-reduced-motion: reduce) {
     .nh-qty,
     .nh-qty .nh-qty__btn {
-        transition: none;
+        transition: none !important;
     }
 }
