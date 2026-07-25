@@ -5,7 +5,14 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 class NH_Add_To_Cart_Widget extends \Elementor\Widget_Base {
 
-    public static $custom_backorder_text = '';
+    /** @var int Product ID for Buy Now hook */
+    private $_buy_now_product_id = 0;
+    /** @var bool Whether product is variable */
+    private $_buy_now_is_variable = false;
+    /** @var string Primary category name */
+    private $_buy_now_category = '';
+    /** @var string Button label */
+    private $_buy_now_text = '';
 
     public function get_name() {
         return 'nh-add-to-cart';
@@ -76,6 +83,30 @@ class NH_Add_To_Cart_Widget extends \Elementor\Widget_Base {
             ]
         );
 
+        $this->add_control(
+            'show_buy_now',
+            [
+                'label' => esc_html__( 'Mostrar Botón Compra Rápida', 'nh-core' ),
+                'type' => \Elementor\Controls_Manager::SWITCHER,
+                'label_on' => esc_html__( 'Sí', 'nh-core' ),
+                'label_off' => esc_html__( 'No', 'nh-core' ),
+                'return_value' => 'yes',
+                'default' => 'no',
+            ]
+        );
+
+        $this->add_control(
+            'buy_now_text',
+            [
+                'label' => esc_html__( 'Texto del Botón', 'nh-core' ),
+                'type' => \Elementor\Controls_Manager::TEXT,
+                'default' => esc_html__( 'Comprar Ahora', 'nh-core' ),
+                'condition' => [
+                    'show_buy_now' => 'yes',
+                ],
+            ]
+        );
+
         $this->end_controls_section();
     }
 
@@ -89,23 +120,43 @@ class NH_Add_To_Cart_Widget extends \Elementor\Widget_Base {
 
         $settings = $this->get_settings_for_display();
 
-        // Guardar el texto de reserva personalizado en la base de datos y propiedad estática
+        // Filtro persistente para texto de backorder por producto
         $backorder_text = isset( $settings['backorder_text'] ) ? $settings['backorder_text'] : '';
-        self::$custom_backorder_text = $backorder_text;
-        if ( ! empty( $backorder_text ) ) {
-            update_option( 'nh_custom_backorder_text', $backorder_text );
+        if ( ! empty( $backorder_text ) && $product ) {
+            $product_id = $product->get_id();
+            add_filter( 'woocommerce_get_stock_html', function( $html ) use ( $backorder_text, $product_id ) {
+                if ( strpos( $html, 'available-on-backorder' ) === false ) {
+                    return $html;
+                }
+                return '<p class="stock available-on-backorder">' . wp_kses_post( $backorder_text ) . '</p>';
+            }, 20 );
         }
 
-        echo '<div class="nh-custom-add-to-cart-wrapper">';
-        
-        // Render WooCommerce native add to cart form
+        echo '<div class="nh-add-to-cart">';
+
+        // If Buy Now is enabled, inject it inside form.cart via WC hook
+        if ( 'yes' === $settings['show_buy_now'] && $product ) {
+            $this->_buy_now_product_id  = $product->get_id();
+            $this->_buy_now_is_variable = $product->is_type( 'variable' );
+            $this->_buy_now_category    = $this->get_primary_category( $this->_buy_now_product_id );
+            $this->_buy_now_text        = $settings['buy_now_text'];
+
+            add_action( 'woocommerce_after_add_to_cart_button', [ $this, '_render_buy_now_button' ] );
+        }
+
+        // Render the WC form (hook injects Buy Now inside form.cart)
         woocommerce_template_single_add_to_cart();
+
+        // Remove hook after render to prevent leaking
+        if ( 'yes' === $settings['show_buy_now'] ) {
+            remove_action( 'woocommerce_after_add_to_cart_button', [ $this, '_render_buy_now_button' ] );
+        }
 
         // Render promo block
         if ( ! empty( $settings['promo_text'] ) ) {
-            $icon = ( 'yes' === $settings['show_icon'] ) ? '<span class="nh-icon">✓</span>' : '';
+            $icon = ( 'yes' === $settings['show_icon'] ) ? '<span class="nh-add-to-cart__promo-icon">✓</span>' : '';
             echo '
-            <div class="nh-injected-snippet nh-atc-snippet">
+            <div class="nh-add-to-cart__promo">
                 ' . $icon . '
                 <span>' . esc_html( $settings['promo_text'] ) . '</span>
             </div>
@@ -113,5 +164,33 @@ class NH_Add_To_Cart_Widget extends \Elementor\Widget_Base {
         }
 
         echo '</div>';
+    }
+
+    /**
+     * Render Buy Now button — hooked into woocommerce_after_add_to_cart_button.
+     * Called during woocommerce_template_single_add_to_cart(), removed after.
+     */
+    public function _render_buy_now_button() {
+        if ( ! $this->_buy_now_product_id ) {
+            return;
+        }
+
+        printf(
+            '<button type="button" class="nh-btn nh-btn-primary nh-add-to-cart__buy-now" data-nh-product-id="%s" data-nh-product-name="%s" data-nh-product-price="%s" data-nh-category="%s" data-is-variable="%s">%s</button>',
+            esc_attr( $this->_buy_now_product_id ),
+            esc_attr( get_the_title( $this->_buy_now_product_id ) ),
+            esc_attr( wc_get_product( $this->_buy_now_product_id )->get_price() ),
+            esc_attr( $this->_buy_now_category ),
+            $this->_buy_now_is_variable ? 'true' : 'false',
+            esc_html( $this->_buy_now_text )
+        );
+    }
+
+    /**
+     * Get the first product category name for a given product ID.
+     */
+    private function get_primary_category( $product_id ) {
+        $terms = get_the_terms( $product_id, 'product_cat' );
+        return ( $terms && ! is_wp_error( $terms ) ) ? $terms[0]->name : '';
     }
 }

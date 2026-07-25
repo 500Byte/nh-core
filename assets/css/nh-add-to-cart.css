@@ -1,0 +1,101 @@
+/* ── NH Add to Cart — Widget Layout ────────────────────────────────────────────
+   Button visual styles live in the DS component (.nh-btn) in nh-woocommerce.css.
+   WooCommerce .single_add_to_cart_button is styled by the DS in nh-woocommerce.css.
+   This file handles ONLY: layout, flex sizing, responsive, loading spinner.
+   ========================================================================== */
+
+/* ── Block: .nh-add-to-cart (wrapper) ──────────────────────────────────────── */
+.nh-add-to-cart {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+/* ── Desktop (>768px): row layout ──────────────────────────────────────────── */
+.woocommerce div.product form.cart {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    gap: 8px !important;
+    flex-wrap: nowrap !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+}
+
+.woocommerce div.product form.cart .quantity,
+.woocommerce div.product form.cart .nh-qty {
+    flex: 0 0 auto !important;
+}
+
+/* Both buttons: equal weight, share available space */
+.woocommerce div.product form.cart .single_add_to_cart_button,
+.woocommerce div.product form.cart .nh-add-to-cart__buy-now {
+    flex: 1 1 0 !important;
+    min-width: 0 !important;
+}
+
+/* ── Element: .nh-add-to-cart__promo ──────────────────────────────────────── */
+.nh-add-to-cart__promo {
+    margin-top: 15px;
+    padding: 10px 12px;
+    font-size: 0.9rem;
+    color: #333;
+    background-color: #f7f9fa;
+    border: 1px solid #e1e8ed;
+    border-radius: 4px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.nh-add-to-cart__promo-icon {
+    color: #2ecc71;
+    font-weight: bold;
+}
+
+/* ── Element: .nh-add-to-cart__buy-now — JS-only extras ──────────────────────
+   Visual styles come from .nh-btn .nh-btn-primary.
+   Only the JS-driven loading spinner is defined here. */
+.nh-add-to-cart__buy-now--loading::after {
+    content: '';
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+    margin-left: 8px;
+    border: 2px solid currentColor;
+    border-right-color: transparent;
+    border-radius: 50%;
+    animation: nh-spin 0.6s linear infinite;
+}
+
+@keyframes nh-spin {
+    to { transform: rotate(360deg); }
+}
+
+/* ── Responsive: ≤768px → column layout ────────────────────────────────────── */
+@media (max-width: 768px) {
+    .woocommerce div.product form.cart {
+        flex-direction: column !important;
+        align-items: stretch !important;
+        gap: 12px !important;
+    }
+
+    .woocommerce div.product form.cart .quantity,
+    .woocommerce div.product form.cart .nh-qty {
+        width: 100% !important;
+        justify-content: center !important;
+    }
+
+    .woocommerce div.product form.cart .single_add_to_cart_button,
+    .woocommerce div.product form.cart .nh-add-to-cart__buy-now {
+        width: 100% !important;
+        margin-left: 0 !important;
+        flex: none !important;
+    }
+
+    .nh-add-to-cart__promo {
+        width: 100%;
+        box-sizing: border-box;
+    }
+}

@@ -24,8 +24,7 @@ class NH_Core_Woocommerce {
         add_action( 'wp_enqueue_scripts', [ $this, 'register_assets' ] );
         add_action( 'wp_enqueue_scripts', [ $this, 'dequeue_conflicting_styles' ], 999 );
         add_filter( 'woocommerce_locate_template', [ $this, 'locate_quantity_input_template' ], 10, 3 );
-        add_filter( 'woocommerce_get_stock_html', [ $this, 'custom_backorder_stock_html' ], 10, 2 );
-        
+
         // Hooks de invalidación de transients al modificar productos
         add_action( 'woocommerce_update_product', [ $this, 'invalidate_price_transients' ] );
         add_action( 'woocommerce_new_product', [ $this, 'invalidate_price_transients' ] );
@@ -51,6 +50,10 @@ class NH_Core_Woocommerce {
         // AJAX endpoint para NH Side Cart (widget independiente de Elementor Pro)
         add_action( 'wp_ajax_nh_side_cart_get_items', [ $this, 'ajax_side_cart_get_items' ] );
         add_action( 'wp_ajax_nopriv_nh_side_cart_get_items', [ $this, 'ajax_side_cart_get_items' ] );
+
+        // AJAX endpoint para Buy Now (Compra Rápida)
+        add_action( 'wp_ajax_nh_buy_now', [ $this, 'ajax_buy_now' ] );
+        add_action( 'wp_ajax_nopriv_nh_buy_now', [ $this, 'ajax_buy_now' ] );
     }
 
     /**
@@ -169,6 +172,29 @@ class NH_Core_Woocommerce {
             'ajax_url' => admin_url( 'admin-ajax.php' ),
             'nonce'    => wp_create_nonce( 'nh_cart_nonce' ),
         ] );
+
+        // Enqueue Add to Cart widget styles
+        $atc_css = NH_CORE_PATH . 'assets/css/nh-add-to-cart.css';
+        wp_enqueue_style(
+            'nh-add-to-cart',
+            NH_CORE_URL . 'assets/css/nh-add-to-cart.css',
+            [ 'nh-qty' ],
+            file_exists( $atc_css ) ? filemtime( $atc_css ) : '1.0.0'
+        );
+
+        // Enqueue Buy Now handler (solo en páginas de producto)
+        if ( is_product() || is_singular( 'product' ) ) {
+            $atc_js = NH_CORE_PATH . 'assets/js/nh-add-to-cart.js';
+            if ( file_exists( $atc_js ) ) {
+                wp_enqueue_script(
+                    'nh-add-to-cart',
+                    NH_CORE_URL . 'assets/js/nh-add-to-cart.js',
+                    [ 'nh-qty' ],
+                    filemtime( $atc_js ),
+                    true
+                );
+            }
+        }
     }
 
     /**
@@ -466,26 +492,6 @@ class NH_Core_Woocommerce {
         return $recipient;
     }
 
-    public function custom_backorder_stock_html( $html, $product ) {
-        if ( strpos( $html, 'available-on-backorder' ) !== false ) {
-            $custom_text = '';
-
-            // 1. Intentar desde la variable estática del widget en memoria
-            if ( class_exists( '\NH_Add_To_Cart_Widget' ) && ! empty( \NH_Add_To_Cart_Widget::$custom_backorder_text ) ) {
-                $custom_text = \NH_Add_To_Cart_Widget::$custom_backorder_text;
-            }
-
-            // 2. Si está vacía, usar el fallback persistido en la base de datos (por ejemplo, para cargas tempranas o AJAX)
-            if ( empty( $custom_text ) ) {
-                $custom_text = get_option( 'nh_custom_backorder_text' );
-            }
-
-            if ( ! empty( $custom_text ) ) {
-                $html = '<p class="stock available-on-backorder">' . wp_kses_post( $custom_text ) . '</p>';
-            }
-        }
-        return $html;
-    }
 
     public function ajax_update_cart_item() {
         check_ajax_referer( 'nh_cart_nonce', 'nonce' );
@@ -565,5 +571,38 @@ class NH_Core_Woocommerce {
         }
         
         wp_send_json_error();
+    }
+
+    public function ajax_buy_now() {
+        check_ajax_referer( 'nh_cart_nonce', 'nonce' );
+
+        $product_id   = isset( $_POST['product_id'] ) ? absint( $_POST['product_id'] ) : 0;
+        $variation_id = isset( $_POST['variation_id'] ) ? absint( $_POST['variation_id'] ) : 0;
+        $quantity     = isset( $_POST['quantity'] ) ? absint( $_POST['quantity'] ) : 1;
+        $variations   = isset( $_POST['variations'] ) ? (array) $_POST['variations'] : [];
+
+        if ( ! $product_id || ! function_exists( 'WC' ) || ! WC()->cart ) {
+            wp_send_json_error( [ 'message' => __( 'Producto no válido.', 'nh-core' ) ] );
+        }
+
+        $product = wc_get_product( $variation_id ? $variation_id : $product_id );
+        if ( ! $product || ! $product->is_purchasable() ) {
+            wp_send_json_error( [ 'message' => __( 'Producto no disponible para compra.', 'nh-core' ) ] );
+        }
+
+        WC()->cart->empty_cart();
+
+        $cart_item_key = WC()->cart->add_to_cart( $product_id, $quantity, $variation_id, $variations );
+
+        if ( ! $cart_item_key ) {
+            wp_send_json_error( [ 'message' => __( 'No se pudo añadir el producto.', 'nh-core' ) ] );
+        }
+
+        WC()->cart->calculate_totals();
+
+        wp_send_json_success( [
+            'checkout_url' => wc_get_checkout_url(),
+            'cart_item_key' => $cart_item_key,
+        ] );
     }
 }

@@ -2851,6 +2851,45 @@ form.checkout_coupon input[type="submit"]:hover {
     border-color: var(--nh-btn-disabled-border);
     cursor: not-allowed;
     pointer-events: none;
+    opacity: 0.6;
+}
+
+/* ─── WooCommerce ATC button override ─── */
+button.single_add_to_cart_button,
+.woocommerce div.product form.cart button.single_add_to_cart_button {
+    background-color: var(--nh-btn-primary-bg) !important;
+    color: var(--nh-btn-primary-text) !important;
+    border-color: var(--nh-btn-primary-bg) !important;
+    font-family: var(--font-body) !important;
+    font-size: var(--nh-text-sm) !important;
+    font-weight: var(--nh-font-bold) !important;
+    text-transform: uppercase !important;
+    letter-spacing: var(--nh-tracking-wider) !important;
+    line-height: var(--nh-leading-none) !important;
+    padding: 11px var(--nh-space-6) !important;
+    min-height: 44px !important;
+    border-radius: var(--nh-radius) !important;
+    cursor: pointer !important;
+    transition: all var(--nh-duration-normal) var(--nh-ease-default) !important;
+}
+
+button.single_add_to_cart_button:hover,
+.woocommerce div.product form.cart button.single_add_to_cart_button:hover {
+    background-color: var(--nh-btn-primary-hover-bg) !important;
+    border-color: var(--nh-btn-primary-hover-bg) !important;
+}
+
+button.single_add_to_cart_button:active {
+    transform: translateY(1px) !important;
+}
+
+button.single_add_to_cart_button:disabled {
+    background-color: var(--nh-btn-disabled-bg) !important;
+    color: var(--nh-btn-disabled-text) !important;
+    border-color: var(--nh-btn-disabled-border) !important;
+    cursor: not-allowed !important;
+    pointer-events: none !important;
+    opacity: 0.6 !important;
 }
 
 /* ==========================================================================
