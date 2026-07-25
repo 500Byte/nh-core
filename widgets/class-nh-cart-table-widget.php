@@ -169,10 +169,10 @@ class NH_Cart_Table_Widget extends \Elementor\Widget_Base {
                         <?php echo wp_kses_post( $product->get_price_html() ); ?>
                     </div>
                     
-                    <div class="nh-cart-product-qty">
-                        <button class="nh-cart-qty-btn nh-cart-qty-minus" data-key="<?php echo esc_attr( $cart_item_key ); ?>">-</button>
-                        <input type="number" class="nh-cart-qty-input" value="<?php echo esc_attr( $quantity ); ?>" min="1" data-key="<?php echo esc_attr( $cart_item_key ); ?>">
-                        <button class="nh-cart-qty-btn nh-cart-qty-plus" data-key="<?php echo esc_attr( $cart_item_key ); ?>">+</button>
+                    <div class="nh-qty" data-key="<?php echo esc_attr( $cart_item_key ); ?>">
+                        <button class="nh-qty__btn nh-qty__btn--minus" aria-label="<?php esc_attr_e( 'Disminuir cantidad', 'nh-core' ); ?>">-</button>
+                        <input type="number" class="nh-qty__input" value="<?php echo esc_attr( $quantity ); ?>" min="1" data-key="<?php echo esc_attr( $cart_item_key ); ?>">
+                        <button class="nh-qty__btn nh-qty__btn--plus" aria-label="<?php esc_attr_e( 'Aumentar cantidad', 'nh-core' ); ?>">+</button>
                     </div>
                     
                     <div class="nh-cart-product-subtotal">
