@@ -162,8 +162,6 @@
         const key = getCartItemKey(wrapper);
         if (key) {
             ajaxUpdate(wrapper, newVal);
-        } else {
-            input.dispatchEvent(new Event('change', { bubbles: true }));
         }
     }
 
@@ -185,8 +183,6 @@
         const key = getCartItemKey(wrapper);
         if (key) {
             ajaxUpdate(wrapper, val);
-        } else {
-            input.dispatchEvent(new Event('change', { bubbles: true }));
         }
     }
 
