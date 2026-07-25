@@ -82,17 +82,17 @@ class NH_Core_Woocommerce {
                 ? wp_get_attachment_image_url( $img_id, 'woocommerce_thumbnail' )
                 : wc_placeholder_img_src( 'woocommerce_thumbnail' );
 
-            // Nombre con variaciones
-            $name = $product->get_name();
+            // Nombre sin variaciones (las pills se encargan de mostrarlas)
+            $name = $product->get_title();
+            $variations = [];
             if ( ! empty( $cart_item['variation'] ) ) {
-                $parts = [];
                 foreach ( $cart_item['variation'] as $attr => $val ) {
                     if ( $val ) {
-                        $parts[] = wc_attribute_label( str_replace( 'attribute_', '', $attr ) ) . ': ' . ucfirst( $val );
+                        $variations[] = [
+                            'label' => wc_attribute_label( str_replace( 'attribute_', '', $attr ) ),
+                            'value' => ucfirst( $val ),
+                        ];
                     }
-                }
-                if ( $parts ) {
-                    $name .= ' - ' . implode( ', ', $parts );
                 }
             }
 
@@ -103,6 +103,7 @@ class NH_Core_Woocommerce {
             $items[] = [
                 'key'             => $key,
                 'name'            => $name,
+                'variations'      => $variations,
                 'url'             => $product->get_permalink(),
                 'image'           => $img_src,
                 'quantity'        => $qty,

@@ -274,6 +274,17 @@ class NH_Side_Cart_Widget extends \Elementor\Widget_Base {
                             }
                             $full_name  = $name . $variation_str;
                             $product_url = $product->get_permalink();
+                            $variation_pills = [];
+                            if ( ! empty( $item['variation'] ) ) {
+                                foreach ( $item['variation'] as $attr => $val ) {
+                                    if ( $val ) {
+                                        $variation_pills[] = [
+                                            'label' => wc_attribute_label( str_replace( 'attribute_', '', $attr ) ),
+                                            'value' => ucfirst( $val ),
+                                        ];
+                                    }
+                                }
+                            }
                         ?>
                         <li class="nh-side-cart__item" data-key="<?php echo esc_attr( $key ); ?>">
                             <a class="nh-side-cart__item-image-wrap" href="<?php echo esc_url( $product_url ); ?>" tabindex="-1" aria-hidden="true">
@@ -287,8 +298,18 @@ class NH_Side_Cart_Widget extends \Elementor\Widget_Base {
                             </a>
                             <div class="nh-side-cart__item-info">
                                 <a class="nh-side-cart__item-name" href="<?php echo esc_url( $product_url ); ?>">
-                                    <?php echo esc_html( $full_name ); ?>
+                                    <?php echo esc_html( $name ); ?>
                                 </a>
+                                <?php if ( $variation_pills ) : ?>
+                                <div class="nh-pill-group">
+                                    <?php foreach ( $variation_pills as $pill ) : ?>
+                                    <span class="nh-pill">
+                                        <span class="nh-pill-label"><?php echo esc_html( $pill['label'] ); ?>:</span>
+                                        <span class="nh-pill-value"><?php echo esc_html( $pill['value'] ); ?></span>
+                                    </span>
+                                    <?php endforeach; ?>
+                                </div>
+                                <?php endif; ?>
                                 <div class="nh-side-cart__item-meta">
                                     <span class="nh-side-cart__item-qty"><?php echo esc_html( $qty ); ?> &times;</span>
                                     <span class="nh-side-cart__item-price"><?php echo wp_kses_post( wc_price( $line_tot / $qty ) ); ?></span>

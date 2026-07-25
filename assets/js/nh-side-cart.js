@@ -140,12 +140,26 @@
             totalQty += parseInt(item.quantity, 10) || 0;
             totalRaw += parseFloat(item.line_total) || 0;
 
+            // Build variation pills HTML
+            var pillsHtml = '';
+            if (item.variations && item.variations.length > 0) {
+                pillsHtml = '<div class="nh-pill-group">';
+                item.variations.forEach(function (v) {
+                    pillsHtml += '<span class="nh-pill">' +
+                        '<span class="nh-pill-label">' + v.label + ':</span> ' +
+                        '<span class="nh-pill-value">' + v.value + '</span>' +
+                    '</span>';
+                });
+                pillsHtml += '</div>';
+            }
+
             const $li = $('<li class="nh-side-cart__item" data-key="' + item.key + '">' +
                 '<a class="nh-side-cart__item-image-wrap" href="' + item.url + '">' +
                     '<img class="nh-side-cart__item-image" src="' + item.image + '" alt="' + item.name + '" loading="lazy">' +
                 '</a>' +
                 '<div class="nh-side-cart__item-info">' +
                     '<a class="nh-side-cart__item-name" href="' + item.url + '">' + item.name + '</a>' +
+                    pillsHtml +
                     '<div class="nh-side-cart__item-meta">' +
                         '<span class="nh-side-cart__item-qty">' + item.quantity + ' &times;</span>' +
                         '<span class="nh-side-cart__item-price">' + item.price_formatted + '</span>' +

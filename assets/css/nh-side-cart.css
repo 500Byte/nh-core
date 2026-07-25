@@ -83,20 +83,24 @@ body.nh-side-cart-open {
   width: 40px;
   height: 40px;
   padding: 0;
-  background: transparent;
-  border: none;
+  background: transparent !important;
+  border: none !important;
   border-radius: var(--nh-sc-radius-base);
   cursor: pointer;
-  color: var(--nh-sc-color-heading);
+  color: var(--nh-sc-color-heading) !important;
   transition: var(--nh-sc-transition);
+  font-size: inherit !important;
+  line-height: 1 !important;
 }
 
 .nh-side-cart__trigger:hover {
-  background: var(--nh-sc-color-surface);
+  background: var(--nh-sc-color-surface) !important;
+  color: var(--nh-sc-color-heading) !important;
 }
 
 .nh-side-cart__trigger:active {
-  background: var(--nh-sc-color-border);
+  background: var(--nh-sc-color-border) !important;
+  color: var(--nh-sc-color-heading) !important;
   transform: scale(0.95);
 }
 
@@ -262,23 +266,25 @@ body.nh-side-cart-open {
   width: 36px;
   height: 36px;
   padding: 0;
-  background: #F3F2F0;
-  border: none;
+  background: #F3F2F0 !important;
+  border: none !important;
   border-radius: var(--nh-sc-radius-base);
   cursor: pointer;
-  color: var(--nh-sc-color-text);
+  color: var(--nh-sc-color-text) !important;
   transition: var(--nh-sc-transition);
   flex-shrink: 0;
+  font-size: inherit !important;
+  line-height: 1 !important;
 }
 
 .nh-side-cart__close:hover {
-  background: var(--nh-sc-color-border);
-  color: var(--nh-sc-color-heading);
+  background: var(--nh-sc-color-border) !important;
+  color: var(--nh-sc-color-heading) !important;
 }
 
 .nh-side-cart__close:active {
-  background: var(--nh-sc-color-heading);
-  color: var(--nh-sc-color-white);
+  background: var(--nh-sc-color-heading) !important;
+  color: var(--nh-sc-color-white) !important;
   transform: scale(0.93);
 }
 
@@ -556,6 +562,38 @@ body.nh-side-cart-open {
   align-items: baseline;
   gap: 6px;
   flex-wrap: wrap;
+}
+
+/* Variation Pills dentro del side cart */
+.nh-side-cart .nh-pill-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 6px;
+  margin-top: 2px;
+}
+
+.nh-side-cart .nh-pill {
+  display: inline-flex !important;
+  align-items: center;
+  gap: 3px;
+  font-family: var(--nh-sc-font-body) !important;
+  font-size: 10px !important;
+  background-color: var(--nh-sc-color-surface) !important;
+  border: 1px solid var(--nh-sc-color-border) !important;
+  border-radius: 99px !important;
+  padding: 2px 8px !important;
+  line-height: 1.2 !important;
+  color: inherit !important;
+}
+
+.nh-side-cart .nh-pill-label {
+  color: var(--nh-sc-color-muted) !important;
+  font-weight: 500 !important;
+}
+
+.nh-side-cart .nh-pill-value {
+  color: var(--nh-sc-color-heading) !important;
+  font-weight: 600 !important;
 }
 
 .nh-side-cart__item-qty {
