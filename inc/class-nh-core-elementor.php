@@ -181,7 +181,7 @@ class NH_Core_Elementor {
         wp_enqueue_script(
             'nh-cart-widget',
             NH_CORE_URL . 'assets/js/nh-cart.js',
-            [ 'jquery' ],
+            [ 'jquery', 'nh-qty' ],
             '1.0.0',
             true
         );

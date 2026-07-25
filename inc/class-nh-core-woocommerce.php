@@ -145,18 +145,20 @@ class NH_Core_Woocommerce {
             true
         );
 
-        // Enqueue premium quantity buttons styles and scripts
+        // Enqueue unified quantity selector (nh-qty)
+        $qty_css = NH_CORE_PATH . 'assets/css/nh-qty.css';
+        $qty_js  = NH_CORE_PATH . 'assets/js/nh-qty.js';
         wp_enqueue_style(
-            'nh-quantity-buttons',
-            NH_CORE_URL . 'assets/css/nh-quantity-buttons.css',
+            'nh-qty',
+            NH_CORE_URL . 'assets/css/nh-qty.css',
             [],
-            '1.0.0'
+            file_exists( $qty_css ) ? filemtime( $qty_css ) : '1.0.0'
         );
         wp_enqueue_script(
-            'nh-quantity-buttons',
-            NH_CORE_URL . 'assets/js/nh-quantity-buttons.js',
-            [ 'jquery' ],
-            '1.0.0',
+            'nh-qty',
+            NH_CORE_URL . 'assets/js/nh-qty.js',
+            [],
+            file_exists( $qty_js ) ? filemtime( $qty_js ) : '1.0.0',
             true
         );
     }
