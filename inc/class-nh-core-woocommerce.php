@@ -497,8 +497,7 @@ class NH_Core_Woocommerce {
         error_log( '[NH Qty AJAX] key=' . $key . ' qty=' . $qty . ' has_cart=' . ( function_exists( 'WC' ) && WC()->cart ? 'yes' : 'no' ) );
         
         if ( $key && function_exists( 'WC' ) && WC()->cart ) {
-            $old_qty = WC()->cart->get_cart_item_quantity( $key );
-            error_log( '[NH Qty AJAX] old_qty=' . $old_qty . ' → new_qty=' . $qty );
+            error_log( '[NH Qty AJAX] setting qty=' . $qty );
             WC()->cart->set_quantity( $key, $qty );
             WC()->cart->calculate_totals();
             error_log( '[NH Qty AJAX] SUCCESS' );
