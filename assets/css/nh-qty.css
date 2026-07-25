@@ -1,5 +1,14 @@
 /* ── NH Qty — Unified Quantity Selector ────────────────────────────────────── */
 
+/* Override WooCommerce core: .quantity .qty { display: none !important } */
+.quantity .nh-qty__input {
+    display: block !important;
+}
+
+.quantity .nh-qty {
+    display: inline-flex !important;
+}
+
 /* Block: .nh-qty (wrapper) */
 .nh-qty {
     display: inline-flex;

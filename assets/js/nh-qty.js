@@ -19,6 +19,7 @@
     };
 
     const AJAX_CONTEXT = '.nh-cart-widget, .nh-cart-table-widget';
+    const CART_FORM_CONTEXT = '.woocommerce-cart-form';
 
     /**
      * Read min/max/step from an input element.
@@ -92,11 +93,18 @@
     }
 
     /**
-     * Get the cart item key from data attribute.
+     * Get the cart item key from data attribute or input name (cart[KEY][qty]).
      */
     function getCartItemKey(wrapper) {
         const input = wrapper.querySelector(SELECTORS.input);
-        return input?.getAttribute('data-key') || wrapper.getAttribute('data-key') || '';
+        // Try data-key first (Elementor cart table, side cart)
+        let key = input?.getAttribute('data-key') || wrapper.getAttribute('data-key') || '';
+        // Fallback: extract from input name="cart[KEY][qty]" (native cart page)
+        if (!key && input?.name) {
+            const match = input.name.match(/^cart\[([^\]]+)\]\[qty\]$/);
+            if (match) key = match[1];
+        }
+        return key;
     }
 
     /**
@@ -108,9 +116,10 @@
 
         setLoading(wrapper, true);
 
-        const params = window.nhSideCartParams || window.nh_cart_params || {};
+        const params = window.nh_cart_params || window.nhSideCartParams || {};
         const ajaxUrl = params.ajax_url || '/wp-admin/admin-ajax.php';
-        const nonce = params.nonce || params.cart_nonce || '';
+        // Use cart nonce for nh_update_cart_item endpoint (checks 'nh_cart_nonce')
+        const nonce = params.nonce || '';
 
         fetch(ajaxUrl, {
             method: 'POST',
@@ -138,7 +147,7 @@
     }
 
     /**
-     * Update qty value (local or AJAX depending on context).
+     * Update qty value (local, AJAX, or form submit depending on context).
      */
     function updateQty(wrapper, delta) {
         const input = wrapper.querySelector(SELECTORS.input);
@@ -156,8 +165,21 @@
 
         if (isAjaxContext(wrapper)) {
             ajaxUpdate(wrapper, newVal);
+        } else if (wrapper.closest(CART_FORM_CONTEXT)) {
+            // Native cart page: auto-submit form to recalculate totals
+            const form = wrapper.closest('form');
+            if (form) {
+                setLoading(wrapper, true);
+                // Click the "Actualizar carrito" button to trigger WC recalculation
+                const updateBtn = form.querySelector('[name="update_cart"]');
+                if (updateBtn) {
+                    updateBtn.click();
+                } else {
+                    form.submit();
+                }
+            }
         } else {
-            // Local context: trigger change so WooCommerce handlers pick it up
+            // PDP: local update only
             input.dispatchEvent(new Event('change', { bubbles: true }));
         }
     }
@@ -179,6 +201,17 @@
 
         if (isAjaxContext(wrapper)) {
             ajaxUpdate(wrapper, val);
+        } else if (wrapper.closest(CART_FORM_CONTEXT)) {
+            const form = wrapper.closest('form');
+            if (form) {
+                setLoading(wrapper, true);
+                const updateBtn = form.querySelector('[name="update_cart"]');
+                if (updateBtn) {
+                    updateBtn.click();
+                } else {
+                    form.submit();
+                }
+            }
         } else {
             input.dispatchEvent(new Event('change', { bubbles: true }));
         }

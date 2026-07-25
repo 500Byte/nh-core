@@ -154,13 +154,21 @@ class NH_Core_Woocommerce {
             [],
             file_exists( $qty_css ) ? filemtime( $qty_css ) : '1.0.0'
         );
+        $qty_deps = [];
+        if ( wp_script_is( 'wc-cart-fragments', 'registered' ) ) {
+            $qty_deps[] = 'wc-cart-fragments';
+        }
         wp_enqueue_script(
             'nh-qty',
             NH_CORE_URL . 'assets/js/nh-qty.js',
-            [],
+            $qty_deps,
             file_exists( $qty_js ) ? filemtime( $qty_js ) : '1.0.0',
             true
         );
+        wp_localize_script( 'nh-qty', 'nh_cart_params', [
+            'ajax_url' => admin_url( 'admin-ajax.php' ),
+            'nonce'    => wp_create_nonce( 'nh_cart_nonce' ),
+        ] );
     }
 
     /**
