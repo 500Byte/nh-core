@@ -17,7 +17,7 @@ defined( 'ABSPATH' ) || exit;
 $label = ! empty( $args['product_name'] ) ? sprintf( esc_html__( '%s quantity', 'woocommerce' ), wp_strip_all_tags( $args['product_name'] ) ) : esc_html__( 'Quantity', 'woocommerce' );
 
 ?>
-<div class="quantity">
+<div class="nh-qty">
 	<?php
 	/**
 	 * Hook to output something before the quantity input field.
@@ -29,14 +29,14 @@ $label = ! empty( $args['product_name'] ) ? sprintf( esc_html__( '%s quantity', 
 	<label class="screen-reader-text" for="<?php echo esc_attr( $input_id ); ?>"><?php echo esc_attr( $label ); ?></label>
 	
 	<?php if ( 'hidden' !== $type ) : ?>
-		<button type="button" class="nh-qty-btn nh-qty-minus" aria-label="Disminuir cantidad">—</button>
+		<button type="button" class="nh-qty__btn nh-qty__btn--minus" aria-label="Disminuir cantidad">—</button>
 	<?php endif; ?>
 
 	<input
 		type="<?php echo esc_attr( $type ); ?>"
 		<?php echo $readonly ? 'readonly="readonly"' : ''; ?>
 		id="<?php echo esc_attr( $input_id ); ?>"
-		class="<?php echo esc_attr( join( ' ', (array) $classes ) ); ?>"
+		class="nh-qty__input <?php echo esc_attr( join( ' ', (array) $classes ) ); ?>"
 		name="<?php echo esc_attr( $input_name ); ?>"
 		value="<?php echo esc_attr( $input_value ); ?>"
 		aria-label="<?php esc_attr_e( 'Product quantity', 'woocommerce' ); ?>"
@@ -56,7 +56,7 @@ $label = ! empty( $args['product_name'] ) ? sprintf( esc_html__( '%s quantity', 
 	/>
 
 	<?php if ( 'hidden' !== $type ) : ?>
-		<button type="button" class="nh-qty-btn nh-qty-plus" aria-label="Aumentar cantidad">+</button>
+		<button type="button" class="nh-qty__btn nh-qty__btn--plus" aria-label="Aumentar cantidad">+</button>
 	<?php endif; ?>
 
 	<?php
