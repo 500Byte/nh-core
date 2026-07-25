@@ -488,17 +488,24 @@ class NH_Core_Woocommerce {
     }
 
     public function ajax_update_cart_item() {
+        error_log( '[NH Qty AJAX] Received: ' . wp_json_encode( $_POST ) );
         check_ajax_referer( 'nh_cart_nonce', 'nonce' );
         
         $key = isset( $_POST['cart_item_key'] ) ? sanitize_text_field( wp_unslash( $_POST['cart_item_key'] ) ) : '';
         $qty = isset( $_POST['quantity'] ) ? intval( $_POST['quantity'] ) : 1;
         
+        error_log( '[NH Qty AJAX] key=' . $key . ' qty=' . $qty . ' has_cart=' . ( function_exists( 'WC' ) && WC()->cart ? 'yes' : 'no' ) );
+        
         if ( $key && function_exists( 'WC' ) && WC()->cart ) {
+            $old_qty = WC()->cart->get_cart_item_quantity( $key );
+            error_log( '[NH Qty AJAX] old_qty=' . $old_qty . ' → new_qty=' . $qty );
             WC()->cart->set_quantity( $key, $qty );
             WC()->cart->calculate_totals();
+            error_log( '[NH Qty AJAX] SUCCESS' );
             wp_send_json_success();
         }
         
+        error_log( '[NH Qty AJAX] FAILED: key or cart missing' );
         wp_send_json_error( [ 'message' => __( 'No se pudo actualizar la cantidad.', 'nh-core' ) ] );
     }
 

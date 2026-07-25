@@ -1,9 +1,9 @@
 /**
  * NH Qty — Unified quantity selector module
  *
- * Auto-detects context:
- *   - Inside .nh-cart-widget or .nh-cart-table-widget → AJAX update via wc_fragment_refresh
- *   - Otherwise (PDP, cart page native) → local update, triggers WooCommerce update event
+ * Auto-detects context by cart_item_key presence:
+ *   - Has cart_item_key (cart page, widget, side cart) → AJAX update via nh_update_cart_item
+ *   - No cart_item_key (PDP) → local change event only
  *
  * BEM classes: .nh-qty, .nh-qty__btn, .nh-qty__btn--minus, .nh-qty__btn--plus,
  *              .nh-qty__btn--disabled, .nh-qty__input, .nh-qty--loading
@@ -94,6 +94,7 @@
             const match = input.name.match(/^cart\[([^\]]+)\]\[qty\]$/);
             if (match) key = match[1];
         }
+        console.log('[NH Qty] getCartItemKey:', { key, inputName: input?.name, wrapperHTML: wrapper.outerHTML.substring(0, 200) });
         return key;
     }
 
@@ -102,14 +103,15 @@
      */
     function ajaxUpdate(wrapper, newQty) {
         const key = getCartItemKey(wrapper);
-        if (!key) return;
+        if (!key) { console.warn('[NH Qty] No cart_item_key found, skipping AJAX'); return; }
 
         setLoading(wrapper, true);
 
         const params = window.nh_cart_params || window.nhSideCartParams || {};
         const ajaxUrl = params.ajax_url || '/wp-admin/admin-ajax.php';
-        // Use cart nonce for nh_update_cart_item endpoint (checks 'nh_cart_nonce')
         const nonce = params.nonce || '';
+
+        console.log('[NH Qty] AJAX request:', { ajaxUrl, key, newQty, nonce: nonce ? '***' : 'MISSING', params });
 
         fetch(ajaxUrl, {
             method: 'POST',
@@ -121,18 +123,18 @@
                 nonce: nonce,
             }),
         })
-            .then((r) => r.json())
+            .then((r) => { console.log('[NH Qty] AJAX response status:', r.status); return r.json(); })
             .then((res) => {
+                console.log('[NH Qty] AJAX response:', res);
                 if (res.success) {
-                    // Refresh WC fragments to update cart totals, mini cart, etc.
                     if (typeof jQuery !== 'undefined') {
                         jQuery(document.body).trigger('wc_fragment_refresh');
                     }
                 } else {
-                    console.warn('[NH Qty]', res.data?.message || 'Update failed');
+                    console.warn('[NH Qty] Server error:', res.data?.message || 'Update failed');
                 }
             })
-            .catch((err) => console.error('[NH Qty] AJAX error:', err))
+            .catch((err) => console.error('[NH Qty] AJAX fetch error:', err))
             .finally(() => setLoading(wrapper, false));
     }
 
@@ -148,16 +150,16 @@
         let newVal = current + delta * step;
         newVal = clampQty(newVal, { min, max, step });
 
-        if (newVal === current) return;
+        if (newVal === current) { console.log('[NH Qty] newVal === current, skip'); return; }
 
         input.value = newVal;
         updateDisabledState(wrapper);
 
         const key = getCartItemKey(wrapper);
+        console.log('[NH Qty] updateQty:', { delta, current, newVal, hasKey: !!key });
         if (key) {
             ajaxUpdate(wrapper, newVal);
         } else {
-            // PDP: local update only
             input.dispatchEvent(new Event('change', { bubbles: true }));
         }
     }
