@@ -2319,41 +2319,7 @@ body.single-product .woocommerce-notices-wrapper {
     color: var(--nh-headings);
 }
 
-.nh-cart-product-qty {
-    display: inline-flex;
-    align-items: center;
-    border: 1px solid var(--nh-border);
-    border-radius: var(--nh-radius);
-    background: var(--nh-white);
-    overflow: hidden;
-}
 
-.nh-cart-qty-btn {
-    width: 28px;
-    height: 30px;
-    border: none;
-    background: transparent;
-    color: var(--nh-text-secondary);
-    cursor: pointer;
-    font-size: 14px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.nh-cart-qty-input {
-    width: 34px;
-    height: 30px;
-    text-align: center;
-    border: none;
-    border-left: 1px solid var(--nh-border);
-    border-right: 1px solid var(--nh-border);
-    font-family: var(--font-body);
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--nh-headings);
-    background: transparent;
-}
 
 .nh-cart-remove {
     width: 28px;

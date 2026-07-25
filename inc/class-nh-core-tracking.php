@@ -393,7 +393,7 @@ class NH_Core_Tracking {
         $item_ids     = wp_list_pluck( $items, 'item_id' );
 
         // Deterministic event_id based on cart hash (stable across browser/server)
-        $checkout_event_id = 'begin_checkout_' . md5( $cart->get_cart_contents_hash() );
+        $checkout_event_id = 'begin_checkout_' . md5( $cart->get_cart_hash() );
 
         // Aggregate item names for Meta Pixel content_name
         $item_names   = wp_list_pluck( $items, 'item_name' );
