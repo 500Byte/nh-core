@@ -85,6 +85,9 @@
     /**
      * Get the cart item key from data attribute or input name (cart[KEY][qty]).
      */
+    /** Pending AJAX requests per wrapper to prevent spam */
+    const pending = new WeakMap();
+
     function getCartItemKey(wrapper) {
         const input = wrapper.querySelector(SELECTORS.input);
         // Try data-key first (Elementor cart table, side cart)
@@ -106,6 +109,7 @@
         if (!key) { console.warn('[NH Qty] No cart_item_key found, skipping AJAX'); return; }
 
         setLoading(wrapper, true);
+        pending.set(wrapper, true);
 
         const params = window.nh_cart_params || window.nhSideCartParams || {};
         const ajaxUrl = params.ajax_url || '/wp-admin/admin-ajax.php';
@@ -146,7 +150,7 @@
                 }
             })
             .catch((err) => console.error('[NH Qty] AJAX fetch error:', err))
-            .finally(() => setLoading(wrapper, false));
+            .finally(() => { pending.delete(wrapper); setLoading(wrapper, false); });
     }
 
     /**
@@ -154,7 +158,7 @@
      */
     function updateQty(wrapper, delta) {
         const input = wrapper.querySelector(SELECTORS.input);
-        if (!input) return;
+        if (!input || pending.get(wrapper)) return;
 
         const { min, max, step } = getLimits(input);
         const current = parseFloat(input.value) || min;
