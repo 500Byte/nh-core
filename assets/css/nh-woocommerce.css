@@ -440,6 +440,13 @@ body.single-product .woocommerce-notices-wrapper {
     display: none !important;
 }
 
+.woocommerce-message::after,
+.woocommerce-error::after,
+.woocommerce-info::after,
+.woocommerce-notice::after {
+    display: none !important;
+}
+
 /* 1. Aviso Éxito / Mensaje (.woocommerce-message) */
 .woocommerce-message,
 .woocommerce-notice--success {
