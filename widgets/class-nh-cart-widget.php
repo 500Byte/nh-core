@@ -568,10 +568,10 @@ class NH_Cart_Widget extends \Elementor\Widget_Base {
                             </div>
                         </div>
                         <div class="nh-cart-product-price">$110.000</div>
-                        <div class="nh-cart-product-qty">
-                            <button class="nh-cart-qty-btn">-</button>
-                            <input type="number" class="nh-cart-qty-input" value="1" readonly>
-                            <button class="nh-cart-qty-btn">+</button>
+                        <div class="nh-qty">
+                            <button class="nh-qty__btn nh-qty__btn--minus" aria-label="Disminuir cantidad">-</button>
+                            <input type="number" class="nh-qty__input" value="1" readonly>
+                            <button class="nh-qty__btn nh-qty__btn--plus" aria-label="Aumentar cantidad">+</button>
                         </div>
                         <div class="nh-cart-product-subtotal">$110.000</div>
                         <button class="nh-cart-remove"><i class="eicon-close"></i></button>
