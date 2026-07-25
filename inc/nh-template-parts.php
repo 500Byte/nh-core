@@ -87,7 +87,7 @@ function nh_render_trust_box( $ssl_text, $pills, $box_class = 'nh-trust-box' ) {
 	?>
 	<div class="<?php echo esc_attr( $box_class ); ?>">
 		<div class="nh-trust-box__badge">
-			<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+			<i class="ph-light ph-lock-key" style="font-size: 14px;" aria-hidden="true"></i>
 			<span><?php echo esc_html( $ssl_text ); ?></span>
 		</div>
 		<div class="nh-trust-box__pills">

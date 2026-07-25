@@ -210,6 +210,14 @@ class NH_Core_Elementor {
             file_exists( $css_file ) ? filemtime( $css_file ) : '1.0.0'
         );
 
+        // Phosphor Icons (web font, light weight)
+        wp_enqueue_style(
+            'phosphor-icons',
+            'https://cdn.jsdelivr.net/npm/@phosphor-icons/web@2.1.1/src/light/style.css',
+            [],
+            '2.1.1'
+        );
+
         // wc-cart-fragments solo está registrado en el frontend, no en el editor de Elementor.
         // Declararlo como dependencia cuando no está registrado genera Notice en WP 6.9.1.
         $js_deps = [ 'jquery' ];
@@ -275,6 +283,17 @@ class NH_Core_Elementor {
                 $version
             );
         }
+
+        // Phosphor Icons (web font, light weight)
+        if ( ! wp_style_is( 'phosphor-icons', 'enqueued' ) ) {
+            wp_enqueue_style(
+                'phosphor-icons',
+                'https://cdn.jsdelivr.net/npm/@phosphor-icons/web@2.1.1/src/light/style.css',
+                [],
+                '2.1.1'
+            );
+        }
+
         wp_enqueue_script(
             'nh-checkout-widget',
             NH_CORE_URL . 'assets/js/nh-checkout.js',

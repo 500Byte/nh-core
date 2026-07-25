@@ -123,6 +123,14 @@ class NH_Core_Woocommerce {
 
 
     public function register_assets() {
+        // Phosphor Icons (web font, light weight)
+        wp_enqueue_style(
+            'phosphor-icons',
+            'https://cdn.jsdelivr.net/npm/@phosphor-icons/web@2.1.1/src/light/style.css',
+            [],
+            '2.1.1'
+        );
+
         wp_register_style(
             'nh-price-filter',
             NH_CORE_URL . 'assets/css/nh-price-filter.css',

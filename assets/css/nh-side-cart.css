@@ -80,27 +80,33 @@ body.nh-side-cart-open {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 40px;
-  height: 40px;
+  width: auto;
+  height: auto;
   padding: 0;
-  background: transparent !important;
-  border: none !important;
+  background: transparent;
+  border: none;
   border-radius: var(--nh-sc-radius-base);
   cursor: pointer;
-  color: var(--nh-sc-color-heading) !important;
+  color: var(--nh-sc-color-heading);
   transition: var(--nh-sc-transition);
-  font-size: inherit !important;
-  line-height: 1 !important;
+  font-size: inherit;
+  line-height: 1;
 }
 
 .nh-side-cart__trigger:hover {
-  background: var(--nh-sc-color-surface) !important;
-  color: var(--nh-sc-color-heading) !important;
+  background: var(--nh-sc-color-surface);
+  color: var(--nh-sc-color-heading);
 }
 
 .nh-side-cart__trigger:active {
-  background: var(--nh-sc-color-border) !important;
-  color: var(--nh-sc-color-heading) !important;
+  background: var(--nh-sc-color-border);
+  color: var(--nh-sc-color-heading);
+  transform: scale(0.95);
+}
+
+.nh-side-cart__trigger:focus {
+  background: var(--nh-sc-color-border);
+  color: var(--nh-sc-color-heading);
   transform: scale(0.95);
 }
 
@@ -125,22 +131,24 @@ body.nh-side-cart-open {
   }
 }
 
-/* Ícono SVG dentro del trigger */
+/* Ícono Phosphor dentro del trigger */
 .nh-side-cart__icon {
-  display: block;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   width: 22px;
   height: 22px;
+  font-size: 22px;
+  line-height: 1;
   flex-shrink: 0;
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 1.6;
+  color: inherit;
 }
 
 /* Badge de cantidad */
 .nh-side-cart__badge {
   position: absolute;
-  top: -4px;
-  right: -4px;
+  top: -8px;
+  right: -8px;
   display: flex !important;
   align-items: center !important;
   justify-content: center;
@@ -266,25 +274,31 @@ body.nh-side-cart-open {
   width: 36px;
   height: 36px;
   padding: 0;
-  background: #F3F2F0 !important;
-  border: none !important;
+  background: #F3F2F0;
+  border: none;
   border-radius: var(--nh-sc-radius-base);
   cursor: pointer;
-  color: var(--nh-sc-color-text) !important;
+  color: var(--nh-sc-color-text);
   transition: var(--nh-sc-transition);
   flex-shrink: 0;
-  font-size: inherit !important;
-  line-height: 1 !important;
+  font-size: inherit;
+  line-height: 1;
 }
 
 .nh-side-cart__close:hover {
-  background: var(--nh-sc-color-border) !important;
-  color: var(--nh-sc-color-heading) !important;
+  background: var(--nh-sc-color-border);
+  color: var(--nh-sc-color-heading);
 }
 
 .nh-side-cart__close:active {
-  background: var(--nh-sc-color-heading) !important;
-  color: var(--nh-sc-color-white) !important;
+  background: var(--nh-sc-color-heading);
+  color: var(--nh-sc-color-white);
+  transform: scale(0.93);
+}
+
+.nh-side-cart__close:focus {
+  background: var(--nh-sc-color-heading);
+  color: var(--nh-sc-color-white);
   transform: scale(0.93);
 }
 
@@ -573,27 +587,27 @@ body.nh-side-cart-open {
 }
 
 .nh-side-cart .nh-pill {
-  display: inline-flex !important;
+  display: inline-flex;
   align-items: center;
   gap: 3px;
-  font-family: var(--nh-sc-font-body) !important;
-  font-size: 10px !important;
-  background-color: var(--nh-sc-color-surface) !important;
-  border: 1px solid var(--nh-sc-color-border) !important;
-  border-radius: 99px !important;
-  padding: 2px 8px !important;
-  line-height: 1.2 !important;
-  color: inherit !important;
+  font-family: var(--nh-sc-font-body);
+  font-size: 10px;
+  background-color: var(--nh-sc-color-surface);
+  border: 1px solid var(--nh-sc-color-border);
+  border-radius: 99px;
+  padding: 2px 8px;
+  line-height: 1.2;
+  color: inherit;
 }
 
 .nh-side-cart .nh-pill-label {
-  color: var(--nh-sc-color-muted) !important;
-  font-weight: 500 !important;
+  color: var(--nh-sc-color-muted);
+  font-weight: 500;
 }
 
 .nh-side-cart .nh-pill-value {
-  color: var(--nh-sc-color-heading) !important;
-  font-weight: 600 !important;
+  color: var(--nh-sc-color-heading);
+  font-weight: 600;
 }
 
 .nh-side-cart__item-qty {
