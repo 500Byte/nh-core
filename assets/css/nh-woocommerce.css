@@ -2508,7 +2508,7 @@ body.single-product .woocommerce-notices-wrapper {
     }
 
     .nh-cart-product-price,
-    .nh-cart-product-qty,
+    .nh-qty,
     .nh-cart-product-subtotal {
         grid-column: 1;
     }
@@ -2561,7 +2561,7 @@ body.single-product .woocommerce-notices-wrapper {
         width: 100%;
     }
 
-    .nh-cart-product-qty .input-text.qty {
+    .nh-qty .nh-qty__input {
         width: 42px;
     }
 }

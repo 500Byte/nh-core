@@ -83,7 +83,7 @@ do_action( 'woocommerce_before_cart' ); ?>
 							</div>
 
 							<!-- Selector de Cantidad -->
-							<div class="nh-cart-product-qty" data-title="<?php esc_attr_e( 'Cantidad', 'woocommerce' ); ?>">
+							<div class="nh-qty" data-title="<?php esc_attr_e( 'Cantidad', 'woocommerce' ); ?>">
 								<?php
 								if ( $is_sold_individually ) {
 									$min_quantity = 1;
