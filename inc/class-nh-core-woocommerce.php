@@ -495,6 +495,7 @@ class NH_Core_Woocommerce {
         
         if ( $key && function_exists( 'WC' ) && WC()->cart ) {
             WC()->cart->set_quantity( $key, $qty );
+            WC()->cart->calculate_totals();
             wp_send_json_success();
         }
         

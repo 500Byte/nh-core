@@ -162,6 +162,11 @@
     pointer-events: none;
 }
 
+/* Hide "Actualizar carrito" button — qty changes are AJAX now */
+.woocommerce-cart-form:has(.nh-qty) [name="update_cart"] {
+    display: none !important;
+}
+
 /* ── Reduced motion ────────────────────────────────────────────────────────── */
 @media (prefers-reduced-motion: reduce) {
     .nh-qty,

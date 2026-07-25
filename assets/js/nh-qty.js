@@ -18,9 +18,6 @@
         btnPlus: '.nh-qty__btn--plus',
     };
 
-    const AJAX_CONTEXT = '.nh-cart-widget, .nh-cart-table-widget';
-    const CART_FORM_CONTEXT = '.woocommerce-cart-form';
-
     /**
      * Read min/max/step from an input element.
      * Falls back to sensible defaults when attributes are missing.
@@ -86,13 +83,6 @@
     }
 
     /**
-     * Determine if this wrapper should use AJAX.
-     */
-    function isAjaxContext(wrapper) {
-        return wrapper.closest(AJAX_CONTEXT) !== null;
-    }
-
-    /**
      * Get the cart item key from data attribute or input name (cart[KEY][qty]).
      */
     function getCartItemKey(wrapper) {
@@ -147,7 +137,7 @@
     }
 
     /**
-     * Update qty value (local, AJAX, or form submit depending on context).
+     * Update qty value — AJAX when cart_item_key exists, local otherwise.
      */
     function updateQty(wrapper, delta) {
         const input = wrapper.querySelector(SELECTORS.input);
@@ -163,20 +153,9 @@
         input.value = newVal;
         updateDisabledState(wrapper);
 
-        if (isAjaxContext(wrapper)) {
+        const key = getCartItemKey(wrapper);
+        if (key) {
             ajaxUpdate(wrapper, newVal);
-        } else if (wrapper.closest(CART_FORM_CONTEXT)) {
-            // Native cart page: submit form to recalculate totals
-            const form = wrapper.closest('form');
-            if (form) {
-                setLoading(wrapper, true);
-                // Trigger WooCommerce's form submit event
-                if (typeof jQuery !== 'undefined') {
-                    jQuery(form).trigger('submit');
-                } else {
-                    form.submit();
-                }
-            }
         } else {
             // PDP: local update only
             input.dispatchEvent(new Event('change', { bubbles: true }));
@@ -198,25 +177,9 @@
         input.value = val;
         updateDisabledState(wrapper);
 
-        if (isAjaxContext(wrapper)) {
+        const key = getCartItemKey(wrapper);
+        if (key) {
             ajaxUpdate(wrapper, val);
-        } else if (wrapper.closest(CART_FORM_CONTEXT)) {
-            // Native cart page: submit form to recalculate totals.
-            // WooCommerce requires 'update_cart' in POST to process qty changes.
-            const form = wrapper.closest('form');
-            if (form) {
-                setLoading(wrapper, true);
-                // Ensure update_cart param is present (button click includes it, .trigger('submit') doesn't)
-                let hidden = form.querySelector('input[name="update_cart"]');
-                if (!hidden) {
-                    hidden = document.createElement('input');
-                    hidden.type = 'hidden';
-                    hidden.name = 'update_cart';
-                    hidden.value = '1';
-                    form.appendChild(hidden);
-                }
-                form.submit();
-            }
         } else {
             input.dispatchEvent(new Event('change', { bubbles: true }));
         }
