@@ -4,7 +4,7 @@
  * GA4 Enhanced Ecommerce + Meta Pixel Standard Events + Google Consent Mode v2
  *
  * @package NH_Core
- * @version 1.2.0
+ * @version 1.3.0
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -297,7 +297,7 @@ class NH_Core_Tracking {
             'nh-datalayer-cart',
             NH_CORE_URL . 'assets/js/nh-datalayer-cart.js',
             [ 'jquery' ],
-            '1.2.0',
+            '1.3.0',
             true
         );
 
