@@ -1056,8 +1056,6 @@ body.single-product .woocommerce-notices-wrapper {
 
 .nh-checkout-summary-card {
     background: var(--nh-white);
-    border: 1px solid var(--nh-border);
-    border-radius: var(--nh-radius-lg);
     padding: 0;
     width: 100%;
 }
@@ -2083,8 +2081,9 @@ body.single-product .woocommerce-notices-wrapper {
         padding: 24px;
     }
     .nh-checkout-widget .nh-checkout-summary-card {
-        background-color: var(--white);
-        border: 0px solid var(--nh-border);
+        background-color: var(--nh-surface-secondary);
+        border: 1px solid var(--nh-border);
+        border-radius: var(--nh-radius-lg);
 }
 }
 
@@ -3176,10 +3175,7 @@ select option {
    MIGRATE HARDCODED COLORS → TOKENS
    ========================================================================== */
 
-/* Checkout summary card background (was #FAF9F6) */
-.nh-checkout-widget .nh-checkout-summary-card {
-    background-color: var(--nh-surface-secondary);
-}
+
 
 /* Cart total row background (was #FAF9F6) */
 .nh-cart-summary-row.nh-cart-total {

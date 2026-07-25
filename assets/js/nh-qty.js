@@ -201,14 +201,21 @@
         if (isAjaxContext(wrapper)) {
             ajaxUpdate(wrapper, val);
         } else if (wrapper.closest(CART_FORM_CONTEXT)) {
+            // Native cart page: submit form to recalculate totals.
+            // WooCommerce requires 'update_cart' in POST to process qty changes.
             const form = wrapper.closest('form');
             if (form) {
                 setLoading(wrapper, true);
-                if (typeof jQuery !== 'undefined') {
-                    jQuery(form).trigger('submit');
-                } else {
-                    form.submit();
+                // Ensure update_cart param is present (button click includes it, .trigger('submit') doesn't)
+                let hidden = form.querySelector('input[name="update_cart"]');
+                if (!hidden) {
+                    hidden = document.createElement('input');
+                    hidden.type = 'hidden';
+                    hidden.name = 'update_cart';
+                    hidden.value = '1';
+                    form.appendChild(hidden);
                 }
+                form.submit();
             }
         } else {
             input.dispatchEvent(new Event('change', { bubbles: true }));
