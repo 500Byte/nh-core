@@ -62,8 +62,8 @@
     background: transparent;
 }
 
-/* Element: .nh-qty__btn */
-.nh-qty__btn {
+/* Element: .nh-qty__btn (specificity 0,2,0 to beat Elementor's global button) */
+.nh-qty .nh-qty__btn {
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -97,18 +97,18 @@
     border-left: 2px solid var(--nh-gray-200);
 }
 
-.nh-qty__btn:hover {
+.nh-qty .nh-qty__btn:hover {
     background: var(--nh-text);
     color: var(--nh-white);
 }
 
-.nh-qty__btn:active {
+.nh-qty .nh-qty__btn:active {
     background: var(--nh-text);
     color: var(--nh-white);
     transform: scale(0.95);
 }
 
-.nh-qty__btn:focus-visible {
+.nh-qty .nh-qty__btn:focus-visible {
     outline: 2px solid var(--nh-primary);
     outline-offset: -2px;
 }
@@ -136,8 +136,8 @@
     line-height: 34px;
 }
 
-.nh-cart-widget .nh-qty__btn,
-.nh-cart-table-widget .nh-qty__btn {
+.nh-cart-widget .nh-qty .nh-qty__btn,
+.nh-cart-table-widget .nh-qty .nh-qty__btn {
     width: 32px;
     height: 34px;
     font-size: 14px;
@@ -162,7 +162,7 @@
 /* ── Reduced motion ────────────────────────────────────────────────────────── */
 @media (prefers-reduced-motion: reduce) {
     .nh-qty,
-    .nh-qty__btn {
+    .nh-qty .nh-qty__btn {
         transition: none;
     }
 }

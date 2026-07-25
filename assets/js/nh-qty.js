@@ -166,14 +166,13 @@
         if (isAjaxContext(wrapper)) {
             ajaxUpdate(wrapper, newVal);
         } else if (wrapper.closest(CART_FORM_CONTEXT)) {
-            // Native cart page: auto-submit form to recalculate totals
+            // Native cart page: submit form to recalculate totals
             const form = wrapper.closest('form');
             if (form) {
                 setLoading(wrapper, true);
-                // Click the "Actualizar carrito" button to trigger WC recalculation
-                const updateBtn = form.querySelector('[name="update_cart"]');
-                if (updateBtn) {
-                    updateBtn.click();
+                // Trigger WooCommerce's form submit event
+                if (typeof jQuery !== 'undefined') {
+                    jQuery(form).trigger('submit');
                 } else {
                     form.submit();
                 }
@@ -205,9 +204,8 @@
             const form = wrapper.closest('form');
             if (form) {
                 setLoading(wrapper, true);
-                const updateBtn = form.querySelector('[name="update_cart"]');
-                if (updateBtn) {
-                    updateBtn.click();
+                if (typeof jQuery !== 'undefined') {
+                    jQuery(form).trigger('submit');
                 } else {
                     form.submit();
                 }

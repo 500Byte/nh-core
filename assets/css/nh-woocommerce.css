@@ -2082,6 +2082,10 @@ body.single-product .woocommerce-notices-wrapper {
     .nh-checkout-summary-card {
         padding: 24px;
     }
+    .nh-checkout-widget .nh-checkout-summary-card {
+        background-color: var(--white);
+        border: 0px solid var(--nh-border);
+}
 }
 
 @media (max-width: 767px) {
