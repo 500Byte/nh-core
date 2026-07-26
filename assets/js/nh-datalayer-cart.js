@@ -159,4 +159,61 @@ jQuery(document).ready(function ($) {
             });
         }
     });
+
+    /* ── remove_from_cart (AJAX — side cart / cart page) ──────────────────── */
+    $(document.body).on('removed_from_cart', function (event, fragments, cart_hash, $button) {
+        // $button may not always be present (e.g. cart page reload)
+        // Try to read from the element that triggered removal
+        var $el = $button && $button.length ? $button : null;
+        var productId = '';
+        var itemName = '';
+        var itemPrice = 0;
+        var quantity = 1;
+
+        if ($el) {
+            productId = $el.data('nh-product-id')
+                || $el.closest('.nh-side-cart__item, .cart_item').find('[data-nh-product-id]').attr('data-nh-product-id')
+                || '';
+            itemName = $el.data('nh-product-name')
+                || $el.closest('.nh-side-cart__item, .cart_item').find('[data-nh-product-name]').attr('data-nh-product-name')
+                || '';
+            itemPrice = parseFloat($el.data('nh-product-price')) || 0;
+            quantity = parseInt($el.data('nh-quantity')) || 1;
+        }
+
+        if (!productId) return;
+
+        window.dataLayer = window.dataLayer || [];
+
+        // GA4 Standard Event: remove_from_cart
+        window.dataLayer.push({
+            'event': 'remove_from_cart',
+            'ecommerce': {
+                'currency': 'COP',
+                'value': parseFloat((itemPrice * quantity).toFixed(2)),
+                'items': [{
+                    'item_id': String(productId),
+                    'item_name': itemName,
+                    'price': itemPrice,
+                    'quantity': quantity
+                }]
+            }
+        });
+
+        // Meta Pixel: RemoveFromCart
+        if (typeof fbq !== 'undefined') {
+            fbq('track', 'RemoveFromCart', {
+                content_ids: [String(productId)],
+                content_type: 'product',
+                content_name: itemName,
+                value: parseFloat((itemPrice * quantity).toFixed(2)),
+                currency: 'COP'
+            });
+        }
+    });
+
+    /* ── Session-based events (non-AJAX fallback) ─────────────────────────── */
+    // These are injected by PHP via wp_add_inline_script before this file.
+    // They are one-shot: PHP reads session, emits inline, clears session.
+    // No additional JS needed — the inline script handles it.
 });

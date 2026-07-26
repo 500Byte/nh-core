@@ -52,6 +52,12 @@ class NH_Core_Tracking {
         add_action( 'wp_footer', [ $this, 'datalayer_iniciar_pago' ] );
         add_action( 'wp_footer', [ $this, 'datalayer_compra_exitosa' ] );
 
+        // View Cart tracking
+        add_action( 'wp_footer', [ $this, 'datalayer_ver_carrito' ] );
+
+        // Remove from cart tracking
+        add_action( 'woocommerce_cart_item_removed', [ $this, 'capture_remove_from_cart' ], 10, 2 );
+
         // Meta Pixel domain verification
         add_action( 'wp_head', [ $this, 'fb_domain_verification' ], 1 );
 
@@ -287,6 +293,65 @@ class NH_Core_Tracking {
     }
 
     // ============================================================
+    // VIEW CART
+    // ============================================================
+
+    public function datalayer_ver_carrito() {
+        if ( $this->is_tracking_disabled() || ! is_cart() ) return;
+
+        $cart = WC()->cart;
+        if ( ! $cart ) return;
+
+        $total = $cart->get_cart_contents_total();
+        $items = [];
+
+        foreach ( $cart->get_cart() as $cart_item_key => $cart_item ) {
+            $_product = apply_filters( 'woocommerce_cart_item_product', $cart_item['data'], $cart_item, $cart_item_key );
+            if ( ! $_product ) continue;
+
+            $item = [
+                'item_id'   => (string) $_product->get_id(),
+                'item_name' => sanitize_text_field( $_product->get_name() ),
+                'price'     => $_product->get_price(),
+                'quantity'  => $cart_item['quantity'],
+            ];
+
+            if ( $_product->is_type( 'variation' ) ) {
+                $variant_str = $this->get_clean_variation_string( $_product, $cart_item['variation'] );
+                if ( $variant_str ) {
+                    $item['item_variant'] = $variant_str;
+                }
+            }
+
+            $items[] = $item;
+        }
+
+        ?>
+        <script>
+        window.dataLayer = window.dataLayer || [];
+        // GA4 Standard Event: view_cart
+        window.dataLayer.push({
+            'event': 'view_cart',
+            'ecommerce': {
+                'currency': 'COP',
+                'value': <?php echo esc_js( $total ); ?>,
+                'items': <?php echo wp_json_encode( $items ); ?>
+            }
+        });
+        // Meta Pixel: ViewCart
+        if (typeof fbq !== 'undefined') {
+            fbq('track', 'ViewCart', {
+                value: <?php echo esc_js( $total ); ?>,
+                currency: 'COP',
+                content_type: 'product',
+                content_ids: <?php echo wp_json_encode( wp_list_pluck( $items, 'item_id' ) ); ?>
+            });
+        }
+        </script>
+        <?php
+    }
+
+    // ============================================================
     // CART SCRIPT (Frontend JS for add_to_cart)
     // ============================================================
 
@@ -297,18 +362,63 @@ class NH_Core_Tracking {
             'nh-datalayer-cart',
             NH_CORE_URL . 'assets/js/nh-datalayer-cart.js',
             [ 'jquery' ],
-            '1.3.0',
+            '1.4.0',
             true
         );
 
-        // Non-AJAX fallback: emit event from session if present
+        // Non-AJAX fallback: emit events from session if present
         if ( isset( WC()->session ) ) {
+            // add_to_cart fallback
             $added_event = WC()->session->get( 'nh_added_to_cart_event' );
             if ( ! empty( $added_event ) ) {
                 WC()->session->set( 'nh_added_to_cart_event', null );
+                $ga4_event = [
+                    'event'      => 'add_to_cart',
+                    'ecommerce'  => [
+                        'currency' => 'COP',
+                        'value'    => $added_event['price'] * $added_event['quantity'],
+                        'items'    => [[
+                            'item_id'       => $added_event['product_id'],
+                            'item_name'     => $added_event['item_name'],
+                            'price'         => $added_event['price'],
+                            'quantity'      => $added_event['quantity'],
+                            'item_variant'  => $added_event['item_variant'] ?? null,
+                        ]],
+                    ],
+                ];
                 wp_add_inline_script(
                     'nh-datalayer-cart',
-                    'window.dataLayer = window.dataLayer || []; window.dataLayer.push(' . wp_json_encode( $added_event ) . ');',
+                    'window.dataLayer = window.dataLayer || []; window.dataLayer.push(' . wp_json_encode( $ga4_event ) . ');',
+                    'before'
+                );
+                // Legacy event
+                wp_add_inline_script(
+                    'nh-datalayer-cart',
+                    'window.dataLayer.push(' . wp_json_encode( $added_event ) . ');',
+                    'before'
+                );
+            }
+
+            // remove_from_cart fallback
+            $removed_event = WC()->session->get( 'nh_removed_from_cart_event' );
+            if ( ! empty( $removed_event ) ) {
+                WC()->session->set( 'nh_removed_from_cart_event', null );
+                $ga4_remove = [
+                    'event'      => 'remove_from_cart',
+                    'ecommerce'  => [
+                        'currency' => 'COP',
+                        'value'    => $removed_event['price'] * $removed_event['quantity'],
+                        'items'    => [[
+                            'item_id'       => $removed_event['product_id'],
+                            'item_name'     => $removed_event['item_name'],
+                            'price'         => $removed_event['price'],
+                            'quantity'      => $removed_event['quantity'],
+                        ]],
+                    ],
+                ];
+                wp_add_inline_script(
+                    'nh-datalayer-cart',
+                    'window.dataLayer.push(' . wp_json_encode( $ga4_remove ) . ');',
                     'before'
                 );
             }
@@ -352,6 +462,42 @@ class NH_Core_Tracking {
 
         if ( isset( WC()->session ) ) {
             WC()->session->set( 'nh_added_to_cart_event', $event_data );
+        }
+    }
+
+    /**
+     * Capture remove-from-cart for tracking.
+     * Stores event in session for frontend emission on next page load (non-AJAX).
+     * For AJAX removals (side cart), the frontend JS handles it directly.
+     */
+    public function capture_remove_from_cart( $cart_item_key, $cart_item ) {
+        if ( $this->is_tracking_disabled() || wp_doing_ajax() || isset( $_REQUEST['wc-ajax'] ) ) {
+            return;
+        }
+
+        $_product = apply_filters( 'woocommerce_cart_item_product', $cart_item['data'], $cart_item, $cart_item_key );
+        if ( ! $_product ) return;
+
+        $product_id = $_product->is_type( 'variation' ) ? $_product->get_parent_id() : $_product->get_id();
+        $variation_id = $_product->is_type( 'variation' ) ? $_product->get_id() : 0;
+
+        $event_data = [
+            'event'      => 'remove_from_cart',
+            'product_id' => (string) $product_id,
+            'item_name'  => sanitize_text_field( $_product->get_name() ),
+            'price'      => $_product->get_price(),
+            'quantity'   => $cart_item['quantity'],
+        ];
+
+        if ( $variation_id ) {
+            $variant_str = $this->get_clean_variation_string( $_product, $cart_item['variation'] ?? [] );
+            if ( $variant_str ) {
+                $event_data['item_variant'] = $variant_str;
+            }
+        }
+
+        if ( isset( WC()->session ) ) {
+            WC()->session->set( 'nh_removed_from_cart_event', $event_data );
         }
     }
 
