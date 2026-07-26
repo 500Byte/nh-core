@@ -4,7 +4,7 @@
  * GA4 Enhanced Ecommerce + Meta Pixel Standard Events + Google Consent Mode v2
  *
  * @package NH_Core
- * @version 1.3.0
+ * @version 1.4.0
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -89,6 +89,7 @@ class NH_Core_Tracking {
         return (
             ( defined( 'WP_ENVIRONMENT_TYPE' ) && WP_ENVIRONMENT_TYPE === 'local' )
             || ( isset( $_SERVER['HTTP_HOST'] ) && strpos( $_SERVER['HTTP_HOST'], '.ddev.site' ) !== false )
+            || ( isset( $_SERVER['HTTP_HOST'] ) && preg_match( '/staging|dev\.|\.dev$/', $_SERVER['HTTP_HOST'] ) )
         );
     }
 
@@ -333,7 +334,7 @@ class NH_Core_Tracking {
         window.dataLayer.push({
             'event': 'view_cart',
             'ecommerce': {
-                'currency': 'COP',
+                'currency': '<?php echo esc_js( get_woocommerce_currency() ); ?>',
                 'value': <?php echo esc_js( $total ); ?>,
                 'items': <?php echo wp_json_encode( $items ); ?>
             }
@@ -342,9 +343,10 @@ class NH_Core_Tracking {
         if (typeof fbq !== 'undefined') {
             fbq('track', 'ViewCart', {
                 value: <?php echo esc_js( $total ); ?>,
-                currency: 'COP',
+                currency: '<?php echo esc_js( get_woocommerce_currency() ); ?>',
                 content_type: 'product',
-                content_ids: <?php echo wp_json_encode( wp_list_pluck( $items, 'item_id' ) ); ?>
+                content_ids: <?php echo wp_json_encode( wp_list_pluck( $items, 'item_id' ) ); ?>,
+                event_id: 'view_cart_<?php echo md5( wp_json_encode( $items ) ); ?>'
             });
         }
         </script>
@@ -606,10 +608,6 @@ class NH_Core_Tracking {
         $order = wc_get_order( $order_id );
         if ( ! $order || $order->get_meta( '_nh_tracked_purchase' ) ) return;
 
-        // Mark as tracked to prevent duplicate events on refresh
-        $order->update_meta_data( '_nh_tracked_purchase', 'yes' );
-        $order->save();
-
         $total        = $order->get_total();
         $currency     = $order->get_currency();
         $coupon_codes = $order->get_coupon_codes();
@@ -641,8 +639,10 @@ class NH_Core_Tracking {
         $shipping = $order->get_shipping_total();
         $tax      = $order->get_total_tax();
 
-        // Consistent event_id for CAPI deduplication (browser + server)
         $event_id = 'purchase_' . $order_id;
+
+        // Store order ID for marking AFTER script renders
+        $this->_pending_purchase_order_id = $order_id;
         ?>
         <script>
         window.dataLayer = window.dataLayer || [];
@@ -681,6 +681,10 @@ class NH_Core_Tracking {
         }
         </script>
         <?php
+        // Mark AFTER script output — if JS is disabled, mark is never set,
+        // so event retries on next page load (correct behavior).
+        $order->update_meta_data( '_nh_tracked_purchase', 'yes' );
+        $order->save();
     }
 
     // ============================================================

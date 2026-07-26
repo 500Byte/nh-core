@@ -240,7 +240,11 @@
                         $(document.body).trigger('removed_from_cart', [
                             {},               // fragments (not needed for tracking)
                             '',               // cart_hash
-                            $('<button>').data(trackData) // synthetic button with product data
+                            $('<button>')
+                                .attr('data-nh-product-id',    trackData['nh-product-id'])
+                                .attr('data-nh-product-name',  trackData['nh-product-name'])
+                                .attr('data-nh-product-price', trackData['nh-product-price'])
+                                .attr('data-nh-quantity',      trackData['nh-quantity'])
                         ]);
                     });
                 }

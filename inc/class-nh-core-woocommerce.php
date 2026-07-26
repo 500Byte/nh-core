@@ -175,6 +175,7 @@ class NH_Core_Woocommerce {
         wp_localize_script( 'nh-qty', 'nh_cart_params', [
             'ajax_url' => admin_url( 'admin-ajax.php' ),
             'nonce'    => wp_create_nonce( 'nh_cart_nonce' ),
+            'currency' => get_woocommerce_currency(),
         ] );
 
         // Enqueue Add to Cart widget styles
