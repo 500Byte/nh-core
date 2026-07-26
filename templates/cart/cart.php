@@ -39,7 +39,12 @@ do_action( 'woocommerce_before_cart' ); ?>
 						$quantity          = $cart_item['quantity'];
 						$is_sold_individually = $_product->is_sold_individually();
 						?>
-						<div class="nh-cart-item woocommerce-cart-form__cart-item <?php echo esc_attr( apply_filters( 'woocommerce_cart_item_class', 'cart_item', $cart_item, $cart_item_key ) ); ?>" data-key="<?php echo esc_attr( $cart_item_key ); ?>">
+						<div class="nh-cart-item woocommerce-cart-form__cart-item <?php echo esc_attr( apply_filters( 'woocommerce_cart_item_class', 'cart_item', $cart_item, $cart_item_key ) ); ?>" data-key="<?php echo esc_attr( $cart_item_key ); ?>"
+						data-nh-product-id="<?php echo esc_attr( $product_id ); ?>"
+						data-nh-product-name="<?php echo esc_attr( $_product->get_name() ); ?>"
+						data-nh-product-price="<?php echo esc_attr( $_product->get_price() ); ?>"
+						data-nh-quantity="<?php echo esc_attr( $cart_item['quantity'] ); ?>"
+					>
 							
 							<!-- Info del Producto e Imagen -->
 							<div class="nh-cart-product-info">

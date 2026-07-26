@@ -1,11 +1,34 @@
 jQuery(document).ready(function ($) {
     /**
      * NH Core — Frontend Cart Tracking
-     * Emits GA4 add_to_cart, custom agregar_carrito, and Meta Pixel AddToCart.
+     * Emits GA4 add_to_cart, remove_from_cart, view_cart events
+     * and Meta Pixel AddToCart / RemoveFromCart.
      * Reads product data from backend-injected data-nh-* attributes (source of truth).
      *
-     * @version 1.1.0
+     * @version 1.4.0
      */
+
+    /* ── Cart page: capture data before WC native remove processes it ──────── */
+    // WC's wc-cart-fragments intercepts .cart .remove clicks via wc-ajax.
+    // We capture product data in a capturing-phase listener BEFORE WC fires.
+    var _pendingRemovedItem = null;
+
+    document.addEventListener('click', function (e) {
+        var removeLink = e.target.closest('.cart .remove, .nh-cart-remove');
+        if (!removeLink) return;
+
+        var $item = $(removeLink).closest('.nh-cart-item, .cart_item');
+        if (!$item.length) return;
+
+        _pendingRemovedItem = {
+            productId:  $item.data('nh-product-id') || removeLink.getAttribute('data-product_id') || '',
+            itemName:    $item.data('nh-product-name') || '',
+            itemPrice:   parseFloat($item.data('nh-product-price')) || 0,
+            quantity:    parseInt($item.data('nh-quantity')) || 1,
+        };
+    }, true); // capturing phase — fires BEFORE WC's bubbled handler
+
+    /* ── added_to_cart (AJAX — ATC button) ─────────────────────────────────── */
 
     $(document.body).on('added_to_cart', function (event, fragments, cart_hash, $button) {
         if (!$button || !$button.length) {
@@ -162,23 +185,33 @@ jQuery(document).ready(function ($) {
 
     /* ── remove_from_cart (AJAX — side cart / cart page) ──────────────────── */
     $(document.body).on('removed_from_cart', function (event, fragments, cart_hash, $button) {
-        // $button may not always be present (e.g. cart page reload)
-        // Try to read from the element that triggered removal
-        var $el = $button && $button.length ? $button : null;
+        // Side cart passes synthetic $button with data-nh-* via .data()
+        // Cart page: WC passes the <a> remove link — use _pendingRemovedItem fallback
         var productId = '';
         var itemName = '';
         var itemPrice = 0;
         var quantity = 1;
 
-        if ($el) {
-            productId = $el.data('nh-product-id')
-                || $el.closest('.nh-side-cart__item, .cart_item').find('[data-nh-product-id]').attr('data-nh-product-id')
-                || '';
-            itemName = $el.data('nh-product-name')
-                || $el.closest('.nh-side-cart__item, .cart_item').find('[data-nh-product-name]').attr('data-nh-product-name')
-                || '';
-            itemPrice = parseFloat($el.data('nh-product-price')) || 0;
-            quantity = parseInt($el.data('nh-quantity')) || 1;
+        // 1. Try from $button (side cart synthetic button)
+        if ($button && $button.length) {
+            productId = $button.data('nh-product-id') || '';
+            itemName = $button.data('nh-product-name') || '';
+            itemPrice = parseFloat($button.data('nh-product-price')) || 0;
+            quantity = parseInt($button.data('nh-quantity')) || 1;
+        }
+
+        // 2. Fallback: data captured from cart page remove link (capturing phase)
+        if (!productId && _pendingRemovedItem) {
+            productId = _pendingRemovedItem.productId;
+            itemName = _pendingRemovedItem.itemName;
+            itemPrice = _pendingRemovedItem.itemPrice;
+            quantity = _pendingRemovedItem.quantity;
+            _pendingRemovedItem = null;
+        }
+
+        // 3. Last resort: try reading from WC's remove link data attributes
+        if (!productId && $button && $button.length) {
+            productId = $button.attr('data-product_id') || '';
         }
 
         if (!productId) return;
