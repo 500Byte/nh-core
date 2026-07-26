@@ -153,7 +153,12 @@
                 pillsHtml += '</div>';
             }
 
-            const $li = $('<li class="nh-side-cart__item" data-key="' + item.key + '">' +
+            const $li = $(
+                '<li class="nh-side-cart__item" data-key="' + item.key + '"' +
+                ' data-nh-product-id="' + (item.product_id || '') + '"' +
+                ' data-nh-product-name="' + (item.name || '').replace(/"/g, '&quot;') + '"' +
+                ' data-nh-product-price="' + (item.unit_price || 0) + '"' +
+                ' data-nh-quantity="' + (item.quantity || 1) + '">' +
                 '<a class="nh-side-cart__item-image-wrap" href="' + item.url + '">' +
                     '<img class="nh-side-cart__item-image" src="' + item.image + '" alt="' + item.name + '" loading="lazy">' +
                 '</a>' +
@@ -166,7 +171,8 @@
                     '</div>' +
                 '</div>' +
                 '<button class="nh-side-cart__item-remove" aria-label="Eliminar ' + item.name + '" data-key="' + item.key + '">&times;</button>' +
-            '</li>');
+            '</li>'
+            );
 
             $items.append($li);
         });
@@ -213,10 +219,10 @@
 
         // Capture product data for tracking BEFORE removal
         var trackData = {
-            'nh-product-id':    $item.data('nh-product-id') || '',
-            'nh-product-name':  $item.data('nh-product-name') || '',
-            'nh-product-price': parseFloat($item.data('nh-product-price')) || 0,
-            'nh-quantity':      parseInt($item.data('nh-quantity')) || 1,
+            'nh-product-id':    $item.attr('data-nh-product-id') || '',
+            'nh-product-name':  $item.attr('data-nh-product-name') || '',
+            'nh-product-price': parseFloat($item.attr('data-nh-product-price')) || 0,
+            'nh-quantity':      parseInt($item.attr('data-nh-quantity')) || 1,
         };
 
         $.ajax({

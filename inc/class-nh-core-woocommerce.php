@@ -109,6 +109,7 @@ class NH_Core_Woocommerce {
 
             $items[] = [
                 'key'             => $key,
+                'product_id'      => $product->get_id(),
                 'name'            => $name,
                 'variations'      => $variations,
                 'url'             => $product->get_permalink(),

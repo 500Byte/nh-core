@@ -6,13 +6,24 @@ jQuery(document).ready(function ($) {
      * Reads product data from data-nh-* HTML attributes via .attr() (NOT .data(),
      * because jQuery caches .data() on first read and ignores later .attr() changes).
      *
-     * @version 1.5.0
+     * @version 1.7.0
      */
 
     var nhCurrency = (window.nh_cart_params && window.nh_cart_params.currency) || 'COP';
 
     /* ── Cart page: capture data before WC native remove processes it ──────── */
     var _pendingRemovedItem = null;
+
+    // Restore from sessionStorage (for full page reload on cart remove)
+    try {
+        var stored = sessionStorage.getItem('nh_pending_remove');
+        if (stored) {
+            _pendingRemovedItem = JSON.parse(stored);
+            sessionStorage.removeItem('nh_pending_remove');
+            // Emit event immediately (page reloaded after remove)
+            setTimeout(function() { $(document.body).trigger('removed_from_cart', [{}, '', null]); }, 100);
+        }
+    } catch(e) {}
 
     document.addEventListener('click', function (e) {
         var removeLink = e.target.closest('.cart .remove, .nh-cart-remove');
@@ -27,6 +38,9 @@ jQuery(document).ready(function ($) {
             itemPrice:   parseFloat($item.attr('data-nh-product-price')) || 0,
             quantity:    parseInt($item.attr('data-nh-quantity')) || 1,
         };
+
+        // Persist for full page reload (cart page remove is not AJAX)
+        try { sessionStorage.setItem('nh_pending_remove', JSON.stringify(_pendingRemovedItem)); } catch(e) {}
     }, true);
 
     /* ── added_to_cart (AJAX — ATC button) ─────────────────────────────────── */
@@ -157,6 +171,8 @@ jQuery(document).ready(function ($) {
     });
 
     /* ── remove_from_cart (AJAX — side cart / cart page) ──────────────────── */
+    var _lastRemoveEventId = null;
+    var _lastRemoveTimestamp = 0;
     $(document.body).on('removed_from_cart', function (event, fragments, cart_hash, $button) {
         var productId = '';
         var itemName = '';
@@ -186,6 +202,12 @@ jQuery(document).ready(function ($) {
         }
 
         if (!productId) return;
+
+        // Dedup: WC fragments and side cart JS both fire removed_from_cart
+        var now = Date.now();
+        if (_lastRemoveEventId === productId && (now - _lastRemoveTimestamp) < 500) return;
+        _lastRemoveEventId = productId;
+        _lastRemoveTimestamp = now;
 
         window.dataLayer = window.dataLayer || [];
 

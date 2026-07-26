@@ -153,6 +153,53 @@ class NH_Core_Tracking {
             'wait_for_update':500
         });
         </script>
+        <script>
+        (function(){
+            var _nhConsentUpdated=false;
+            function nhReadCookieYesConsent(){
+                var m=document.cookie.match(/cookieyes-consent[^;]*consent:(yes|no)/);
+                return m?m[1]==='yes':false;
+            }
+            function nhReadCookieYesCategories(){
+                var c=document.cookie;
+                var cats={};
+                ['functional','analytics','performance','advertisement'].forEach(function(k){
+                    var re=new RegExp(k+':(yes|no)');
+                    var m=c.match(re);
+                    cats[k]=m?m[1]==='yes':false;
+                });
+                return cats;
+            }
+            function nhEmitConsentUpdate(){
+                if(_nhConsentUpdated)return;
+                var consented=nhReadCookieYesConsent();
+                if(!consented)return;
+                _nhConsentUpdated=true;
+                var cats=nhReadCookieYesCategories();
+                gtag('consent','update',{
+                    'ad_storage':cats.advertisement?'granted':'denied',
+                    'ad_user_data':cats.advertisement?'granted':'denied',
+                    'ad_personalization':cats.advertisement?'granted':'denied',
+                    'analytics_storage':cats.analytics?'granted':'denied',
+                    'functionality_storage':cats.functional?'granted':'denied',
+                    'personalization_storage':cats.performance?'granted':'denied'
+                });
+            }
+            // Check immediately (cookie may already exist from prior visit)
+            nhEmitConsentUpdate();
+            // Listen for CookieYes consent save events
+            document.addEventListener('cookieyes_consent_update',nhEmitConsentUpdate);
+            document.addEventListener('cookieyesConsentUpdated',nhEmitConsentUpdate);
+            // Fallback: poll for cookie changes (CookieYes may not fire events)
+            var lastCookie=document.cookie;
+            setInterval(function(){
+                if(document.cookie!==lastCookie){
+                    lastCookie=document.cookie;
+                    nhEmitConsentUpdate();
+                }
+            },1000);
+        })();
+        </script>
         <?php
     }
 
