@@ -1,7 +1,7 @@
 ================================================================================
  NH Core — Analytics & Purchase Funnel Inventory
 ================================================================================
- Auto-generated file. Do not edit manually.
+ Manually maintained. Edit the source script to update content.
  Run: ./scripts/generate-analytics-inventory.sh
 ================================================================================
 
@@ -169,5 +169,5 @@ BACKLOG (Not Yet Implemented)
   • begin_checkout event_id depends on cart_hash (non-reproducible server-side)
 
 ================================================================================
- Generated: 2026-07-26 02:08:55 -05
+ Generated: 2026-07-26 02:12:27 -05
 ================================================================================

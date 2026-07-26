@@ -50,8 +50,8 @@ sed -i "s/define( 'NH_CORE_VERSION', '[^']*'/define( 'NH_CORE_VERSION', '$VERSIO
 # class-nh-core-tracking.php header: @version X.Y.Z
 sed -i "s/^\( \* @version\) .*/\1 $VERSION/" "$PLUGIN_DIR/inc/class-nh-core-tracking.php"
 
-# class-nh-core-tracking.php enqueue: 'X.Y.Z',
-sed -i "0,/'[0-9]*\.[0-9]*\.[0-9]*',/s//'$VERSION',/" "$PLUGIN_DIR/inc/class-nh-core-tracking.php"
+# class-nh-core-tracking.php enqueue: 'X.Y.Z', (wp_enqueue_script version param)
+sed -i "/wp_enqueue_script/,/nh-datalayer-cart/{s/'[0-9]*\.[0-9]*\.[0-9]*',/'$VERSION',/}" "$PLUGIN_DIR/inc/class-nh-core-tracking.php"
 
 echo "  Files updated"
 
@@ -62,6 +62,7 @@ echo "Verifying..."
 grep "Version: $VERSION" "$PLUGIN_DIR/nh-core.php" > /dev/null && echo "  ✓ nh-core.php header"
 grep "NH_CORE_VERSION', '$VERSION'" "$PLUGIN_DIR/nh-core.php" > /dev/null && echo "  ✓ nh-core.php constant"
 grep "@version $VERSION" "$PLUGIN_DIR/inc/class-nh-core-tracking.php" > /dev/null && echo "  ✓ tracking.php header"
+grep "'$VERSION'," "$PLUGIN_DIR/inc/class-nh-core-tracking.php" > /dev/null && echo "  ✓ tracking.php enqueue version"
 
 # ── 3. Git commit + tag ────────────────────────────────────────────────────
 
@@ -76,7 +77,12 @@ if git tag -l | grep -qx "$TAG"; then
 fi
 
 git add nh-core.php inc/class-nh-core-tracking.php
-git commit -m "release: $TAG"
+if git diff --cached --quiet; then
+    echo ""
+    echo "  ⚠ No changes to commit (version already $VERSION)"
+else
+    git commit -m "release: $TAG"
+fi
 
 git tag -a "$TAG" -m "NH Core $VERSION"
 echo ""

@@ -2,7 +2,11 @@
 set -euo pipefail
 
 # ── NH Core — Analytics & Purchase Inventory ─────────────────────────────────
-# Generates a txt listing all files involved in the purchase funnel and/or analytics.
+# Regenerates docs/analytics-inventory.txt with updated timestamp.
+#
+# NOTE: Content is MANUALLY maintained. If you add/remove tracking events,
+# files, or change the data flow, edit the heredoc below to match.
+# The script only updates the "Generated:" date line.
 #
 # Usage:
 #   ./scripts/generate-analytics-inventory.sh
@@ -25,7 +29,7 @@ cat > "$OUTPUT" << 'HEADER'
 ================================================================================
  NH Core — Analytics & Purchase Funnel Inventory
 ================================================================================
- Auto-generated file. Do not edit manually.
+ Manually maintained. Edit the source script to update content.
  Run: ./scripts/generate-analytics-inventory.sh
 ================================================================================
 
