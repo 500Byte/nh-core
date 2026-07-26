@@ -411,7 +411,7 @@ class NH_Core_Tracking {
             'nh-datalayer-cart',
             NH_CORE_URL . 'assets/js/nh-datalayer-cart.js',
             [ 'jquery' ],
-            '1.4.0',
+            '1.5.0',
             true
         );
 
