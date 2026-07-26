@@ -210,10 +210,10 @@ class NH_Core_Elementor {
             file_exists( $css_file ) ? filemtime( $css_file ) : '1.0.0'
         );
 
-        // Phosphor Icons (web font, light weight)
+        // Phosphor Icons (local, light weight)
         wp_enqueue_style(
             'phosphor-icons',
-            'https://cdn.jsdelivr.net/npm/@phosphor-icons/web@2.1.1/src/light/style.css',
+            NH_CORE_URL . 'assets/phosphor/phosphor-light.css',
             [],
             '2.1.1'
         );
@@ -284,11 +284,11 @@ class NH_Core_Elementor {
             );
         }
 
-        // Phosphor Icons (web font, light weight)
+        // Phosphor Icons (local, light weight)
         if ( ! wp_style_is( 'phosphor-icons', 'enqueued' ) ) {
             wp_enqueue_style(
                 'phosphor-icons',
-                'https://cdn.jsdelivr.net/npm/@phosphor-icons/web@2.1.1/src/light/style.css',
+                NH_CORE_URL . 'assets/phosphor/phosphor-light.css',
                 [],
                 '2.1.1'
             );

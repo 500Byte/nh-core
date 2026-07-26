@@ -31,6 +31,9 @@ class NH_Core_Loader {
         // Template parts compartidos (Cart + Checkout)
         require_once NH_CORE_PATH . 'inc/nh-template-parts.php';
 
+        // ATC block renderer (nh_render_atc_block)
+        require_once NH_CORE_PATH . 'inc/nh-atc-helpers.php';
+
         // Carga de submódulo de WooCommerce (si WooCommerce está activo)
         if ( class_exists( 'WooCommerce' ) ) {
             require_once NH_CORE_PATH . 'inc/class-nh-core-woocommerce.php';
@@ -41,6 +44,10 @@ class NH_Core_Loader {
         if ( did_action( 'elementor/loaded' ) || defined( 'ELEMENTOR_VERSION' ) ) {
             require_once NH_CORE_PATH . 'inc/class-nh-core-elementor.php';
             \NH_Core_Elementor::get_instance();
+
+            // Registrar iconos Phosphor en el icon picker de Elementor
+            require_once NH_CORE_PATH . 'inc/class-nh-core-icons.php';
+            \NH_Core_Icons::get_instance();
         }
     }
 }

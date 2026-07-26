@@ -126,10 +126,10 @@ class NH_Core_Woocommerce {
 
 
     public function register_assets() {
-        // Phosphor Icons (web font, light weight)
+        // Phosphor Icons (local, light weight)
         wp_enqueue_style(
             'phosphor-icons',
-            'https://cdn.jsdelivr.net/npm/@phosphor-icons/web@2.1.1/src/light/style.css',
+            NH_CORE_URL . 'assets/phosphor/phosphor-light.css',
             [],
             '2.1.1'
         );
@@ -189,7 +189,7 @@ class NH_Core_Woocommerce {
                 wp_enqueue_script(
                     'nh-add-to-cart',
                     NH_CORE_URL . 'assets/js/nh-add-to-cart.js',
-                    [ 'nh-qty' ],
+                    [ 'jquery', 'nh-qty', 'wc-add-to-cart-variation' ],
                     filemtime( $atc_js ),
                     true
                 );
