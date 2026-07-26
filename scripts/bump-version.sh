@@ -51,7 +51,7 @@ sed -i "s/define( 'NH_CORE_VERSION', '[^']*'/define( 'NH_CORE_VERSION', '$VERSIO
 sed -i "s/^\( \* @version\) .*/\1 $VERSION/" "$PLUGIN_DIR/inc/class-nh-core-tracking.php"
 
 # class-nh-core-tracking.php enqueue: 'X.Y.Z', (wp_enqueue_script version param)
-sed -i "/wp_enqueue_script/,/nh-datalayer-cart/{s/'[0-9]*\.[0-9]*\.[0-9]*',/'$VERSION',/}" "$PLUGIN_DIR/inc/class-nh-core-tracking.php"
+sed -i "/wp_enqueue_script(/,/true/{s/'[0-9]*\.[0-9]*\.[0-9]*',/'$VERSION',/}" "$PLUGIN_DIR/inc/class-nh-core-tracking.php"
 
 # assets/js/nh-datalayer-cart.js header: @version X.Y.Z
 sed -i "s|@version [0-9]*\.[0-9]*\.[0-9]*|@version $VERSION|" "$PLUGIN_DIR/assets/js/nh-datalayer-cart.js"
