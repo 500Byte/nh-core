@@ -77,6 +77,49 @@
 
     document.addEventListener('DOMContentLoaded', initAjaxATC);
 
+    /* ── Sync variación → data-nh-* (tracking preciso) ─────────────────────── */
+    function initVariationSync() {
+        if (typeof jQuery === 'undefined') return;
+        var $ = jQuery;
+
+        // Cuando WooCommerce resuelve una variación, actualizar precio + id en botones
+        $(document).on('found_variation', 'form.variations_form', function (e, variation) {
+            if (!variation) return;
+
+            var $form   = $(this);
+            var price   = variation.display_price;
+            var varId   = variation.variation_id;
+
+            // Actualizar ATC button
+            $form.find('.single_add_to_cart_button')
+                .attr('data-nh-product-price', price)
+                .attr('data-nh-product-id', varId);
+
+            // Actualizar Buy Now button
+            $form.closest('.nh-add-to-cart__layout')
+                .find('.nh-add-to-cart__buy-now')
+                .attr('data-nh-product-price', price)
+                .attr('data-nh-product-id', varId);
+        });
+
+        // Cuando se resetea la variación, volver al precio del padre
+        $(document).on('reset_data', 'form.variations_form', function () {
+            var $form = $(this);
+            var productId = $form.data('product_id');
+
+            $form.find('.single_add_to_cart_button')
+                .attr('data-nh-product-id', productId)
+                .removeAttr('data-nh-product-price');
+
+            $form.closest('.nh-add-to-cart__layout')
+                .find('.nh-add-to-cart__buy-now')
+                .attr('data-nh-product-id', productId)
+                .removeAttr('data-nh-product-price');
+        });
+    }
+
+    document.addEventListener('DOMContentLoaded', initVariationSync);
+
     document.addEventListener('DOMContentLoaded', function () {
         var buttons = document.querySelectorAll('.nh-add-to-cart__buy-now');
         if (!buttons.length) return;
@@ -165,7 +208,10 @@
                             jQuery(document.body).trigger('nh_buy_now_initiated', [$btn]);
                         }
 
-                        window.location.href = res.data.checkout_url;
+                        // Delay antes de redirect para que tracking pixels completen su push
+                        setTimeout(function () {
+                            window.location.href = res.data.checkout_url;
+                        }, 150);
                     })
                     .catch(function (err) {
                         console.error('[NH Buy Now]', err);

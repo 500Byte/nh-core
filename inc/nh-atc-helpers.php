@@ -88,6 +88,9 @@ function nh_render_atc_block( string $block_name, WC_Product $product, array $se
 			break;
 
 		case 'add_to_cart':
+			$terms    = get_the_terms( $product->get_id(), 'product_cat' );
+			$category = ( $terms && ! is_wp_error( $terms ) ) ? $terms[0]->name : '';
+
 			if ( $product->is_type( 'external' ) ) {
 				printf(
 					'<div class="nh-add-to-cart__button"><a href="%s" target="_blank" rel="nofollow" class="single_add_to_cart_button button alt nh-btn nh-btn-primary" data-nh-product-id="%s" data-nh-product-name="%s" data-nh-product-price="%s" data-nh-currency="COP" data-nh-category="%s">%s</a></div>',
@@ -99,9 +102,7 @@ function nh_render_atc_block( string $block_name, WC_Product $product, array $se
 					esc_html( $product->single_add_to_cart_text() )
 				);
 			} else {
-				$label      = apply_filters( 'woocommerce_product_single_add_to_cart_text', $product->single_add_to_cart_text(), $product );
-				$terms      = get_the_terms( $product->get_id(), 'product_cat' );
-				$category   = ( $terms && ! is_wp_error( $terms ) ) ? $terms[0]->name : '';
+				$label = apply_filters( 'woocommerce_product_single_add_to_cart_text', $product->single_add_to_cart_text(), $product );
 				printf(
 					'<div class="nh-add-to-cart__button"><button type="submit" name="add-to-cart" value="%d" class="single_add_to_cart_button button alt nh-btn nh-btn-primary" data-nh-product-id="%s" data-nh-product-name="%s" data-nh-product-price="%s" data-nh-currency="COP" data-nh-category="%s">%s</button>%s</div>',
 					absint( $product->get_id() ),
@@ -117,11 +118,14 @@ function nh_render_atc_block( string $block_name, WC_Product $product, array $se
 
 		case 'buy_now':
 			if ( 'yes' !== ( $settings['show_buy_now'] ?? '' ) ) break;
+			$bn_terms    = get_the_terms( $product->get_id(), 'product_cat' );
+			$bn_category = ( $bn_terms && ! is_wp_error( $bn_terms ) ) ? $bn_terms[0]->name : '';
 			printf(
-				'<div class="nh-add-to-cart__buy-now-wrapper"><button type="button" class="nh-btn nh-btn-secondary nh-add-to-cart__buy-now" data-nh-product-id="%d" data-nh-product-name="%s" data-nh-product-price="%s" data-is-variable="%s">%s</button></div>',
+				'<div class="nh-add-to-cart__buy-now-wrapper"><button type="button" class="nh-btn nh-btn-secondary nh-add-to-cart__buy-now" data-nh-product-id="%d" data-nh-product-name="%s" data-nh-product-price="%s" data-nh-currency="COP" data-nh-category="%s" data-is-variable="%s">%s</button></div>',
 				absint( $product->get_id() ),
 				esc_attr( $product->get_name() ),
 				esc_attr( (string) $product->get_price() ),
+				esc_attr( $bn_category ),
 				$product->is_type( 'variable' ) ? 'true' : 'false',
 				esc_html( $settings['buy_now_text'] ?? __( 'Comprar Ahora', 'nh-core' ) )
 			);
