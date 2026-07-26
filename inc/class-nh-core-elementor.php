@@ -218,6 +218,14 @@ class NH_Core_Elementor {
             '2.1.1'
         );
 
+        // Phosphor Icons (fill weight — para ::after pseudo-elements)
+        wp_enqueue_style(
+            'phosphor-icons-fill',
+            NH_CORE_URL . 'assets/phosphor/fill/fill.css',
+            [],
+            '2.1.1'
+        );
+
         // wc-cart-fragments solo está registrado en el frontend, no en el editor de Elementor.
         // Declararlo como dependencia cuando no está registrado genera Notice en WP 6.9.1.
         $js_deps = [ 'jquery' ];
@@ -289,6 +297,16 @@ class NH_Core_Elementor {
             wp_enqueue_style(
                 'phosphor-icons',
                 NH_CORE_URL . 'assets/phosphor/phosphor-light.css',
+                [],
+                '2.1.1'
+            );
+        }
+
+        // Phosphor Icons (fill weight — para ::after pseudo-elements)
+        if ( ! wp_style_is( 'phosphor-icons-fill', 'enqueued' ) ) {
+            wp_enqueue_style(
+                'phosphor-icons-fill',
+                NH_CORE_URL . 'assets/phosphor/fill/fill.css',
                 [],
                 '2.1.1'
             );

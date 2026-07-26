@@ -244,6 +244,7 @@
 
     /* ─── Apertura automática tras "Añadir al carrito" ───────────────────── */
     $(document.body).on('added_to_cart', function (e, fragments, cart_hash, $button) {
+        if (window.elementor) return;
         refresh(true);
     });
 

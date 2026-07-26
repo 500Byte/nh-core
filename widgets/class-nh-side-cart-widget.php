@@ -68,16 +68,10 @@ class NH_Side_Cart_Widget extends \Elementor\Widget_Base {
 
         $this->add_control( 'trigger_icon', [
             'label'   => esc_html__( 'Ícono', 'nh-core' ),
-            'type'    => \Elementor\Controls_Manager::SELECT,
-            'default' => 'shopping-bag',
-            'options' => [
-                'shopping-bag'  => esc_html__( 'Bolsa de compra', 'nh-core' ),
-                'shopping-cart' => esc_html__( 'Carrito', 'nh-core' ),
-                'basket'        => esc_html__( 'Canasta', 'nh-core' ),
-                'tote'          => esc_html__( 'Tote', 'nh-core' ),
-                'handbag'       => esc_html__( 'Bolsa de mano', 'nh-core' ),
-                'package'       => esc_html__( 'Paquete', 'nh-core' ),
-                'storefront'    => esc_html__( 'Fachada', 'nh-core' ),
+            'type'    => \Elementor\Controls_Manager::ICONS,
+            'default' => [
+                'value'   => 'ph-light ph-shopping-bag',
+                'library' => 'phosphor-light',
             ],
         ] );
 
@@ -500,7 +494,7 @@ class NH_Side_Cart_Widget extends \Elementor\Widget_Base {
         $show_bar       = 'yes' === ( $settings['show_free_shipping_bar'] ?? 'yes' );
         $show_subtotal  = 'yes' === ( $settings['show_subtotal_in_trigger'] ?? '' );
         $threshold      = $this->get_shipping_threshold( $settings );
-        $icon           = sanitize_key( $settings['trigger_icon'] ?? 'bag' );
+        $trigger_icon   = $settings['trigger_icon'] ?? [];
 
         $cart_count   = WC()->cart->get_cart_contents_count();
         $cart_url     = wc_get_cart_url();
@@ -527,7 +521,7 @@ class NH_Side_Cart_Widget extends \Elementor\Widget_Base {
                         data-count="<?php echo esc_attr( $cart_count ); ?>"
                         aria-label="<?php printf( esc_attr__( '%d artículos en el carrito', 'nh-core' ), $cart_count ); ?>"
                     ><?php echo esc_html( $cart_count ); ?></span>
-                    <?php echo $this->get_cart_icon_svg( $icon ); // phpcs:ignore ?>
+                    <?php echo $this->get_cart_icon_html( $trigger_icon ); // phpcs:ignore ?>
                 </span>
             </button>
 
@@ -718,33 +712,17 @@ class NH_Side_Cart_Widget extends \Elementor\Widget_Base {
     }
 
     /**
-     * Phosphor icon para el trigger.
+     * Renderiza el ícono del trigger usando Icons_Manager.
      */
-    private function get_cart_icon_svg( string $type ): string {
-        $valid = [
-            'shopping-bag', 'shopping-cart', 'basket', 'tote',
-            'handbag', 'package', 'storefront',
-        ];
-        $icon = in_array( $type, $valid, true ) ? $type : 'shopping-bag';
-        return '<i class="ph-light ph-' . esc_attr( $icon ) . ' nh-side-cart__icon" aria-hidden="true"></i>';
+    private function get_cart_icon_html( array $icon_data ): string {
+        if ( ! class_exists( '\Elementor\Icons_Manager' ) || empty( $icon_data['value'] ) ) {
+            return '<i class="ph-light ph-shopping-bag nh-side-cart__icon" aria-hidden="true"></i>';
+        }
+        ob_start();
+        \Elementor\Icons_Manager::render_icon( $icon_data, [ 'aria-hidden' => 'true' ] );
+        $rendered = ob_get_clean();
+        return '<span class="nh-side-cart__icon" aria-hidden="true">' . $rendered . '</span>';
     }
 
-    /**
-     * Elementor editor live preview (sin datos reales).
-     */
-    protected function content_template() {
-        ?>
-        <div class="nh-side-cart">
-            <button class="nh-side-cart__trigger" aria-label="Abrir carrito">
-                <span class="nh-side-cart__trigger-icon-wrap">
-                    <span class="nh-side-cart__badge" data-count="3">3</span>
-                    <i class="ph-light ph-shopping-bag nh-side-cart__icon" aria-hidden="true"></i>
-                </span>
-            </button>
-            <p style="font-family: sans-serif; font-size: 12px; color: #888; margin-top: 8px; text-align: center;">
-                NH Side Cart — el drawer se abre en el front-end
-            </p>
-        </div>
-        <?php
-    }
+
 }

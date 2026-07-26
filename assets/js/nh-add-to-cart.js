@@ -1,11 +1,81 @@
 /**
- * NH Add to Cart — Buy Now handler
+ * NH Add to Cart — Buy Now + AJAX ATC handler
  *
- * Agnostic of analytics. Fires standard WooCommerce/jQuery events
- * so external layers (GTM, GA4, Pixel) can listen via added_to_cart.
+ * 1. Buy Now: intercepts .nh-add-to-cart__buy-now clicks
+ * 2. AJAX ATC: intercepts form.cart submit on single product pages
+ *    (Elementor breaks WC's native wc-add-to-cart.js event handlers)
+ *
+ * Fires standard WooCommerce/jQuery events so external layers
+ * (GTM, GA4, Pixel, side cart) can listen via added_to_cart.
  */
 (function () {
     'use strict';
+
+    /* ── AJAX Add to Cart (reemplaza wc-add-to-cart.js roto por Elementor) ── */
+    function initAjaxATC() {
+        if (typeof jQuery === 'undefined') return;
+
+        var $ = jQuery;
+
+        // Solo en single product pages (con form.cart)
+        $('body.product-template-default form.cart, form.cart[data-product_id]').on('submit', function (e) {
+            // No interceptar si el form ya está siendo manejado por AJAX de NH ATC widget
+            if (this.dataset.nhAtcAjax === 'true') return;
+
+            var $form = $(this);
+            var $btn  = $form.find('.single_add_to_cart_button');
+
+            if (!$btn.length || $btn.hasClass('disabled')) return;
+
+            e.preventDefault();
+
+            var productId   = parseInt($form.find('input[name="product_id"], button[name="add-to-cart"]').val()) || 0;
+            var variationId = parseInt($form.find('input[name="variation_id"]').val()) || 0;
+            var quantity    = parseInt($form.find('input.qty').val()) || 1;
+
+            // Para productos variables, recoger variaciones
+            var variations = {};
+            $form.find('.variations select').each(function () {
+                if (this.value) variations[this.name] = this.value;
+            });
+
+            if (!productId) return;
+
+            $btn.addClass('loading').prop('disabled', true);
+
+            $.ajax({
+                type: 'POST',
+                url:  (window.nh_cart_params || {}).ajax_url || '/wp-admin/admin-ajax.php',
+                data: {
+                    action:      'nh_add_to_cart',
+                    nonce:       (window.nh_cart_params || {}).nonce || '',
+                    product_id:  productId,
+                    variation_id: variationId,
+                    quantity:    quantity,
+                    variations:  variations,
+                },
+                success: function (res) {
+                    $btn.removeClass('loading').prop('disabled', false);
+
+                    if (res.success) {
+                        $(document.body).trigger('added_to_cart', [
+                            res.data.fragments || {},
+                            res.data.cart_hash || '',
+                            $btn,
+                        ]);
+                        $(document.body).trigger('wc_fragment_refresh');
+                    } else {
+                        $(document.body).trigger('wc_fragment_refresh');
+                    }
+                },
+                error: function () {
+                    $btn.removeClass('loading').prop('disabled', false);
+                },
+            });
+        });
+    }
+
+    document.addEventListener('DOMContentLoaded', initAjaxATC);
 
     document.addEventListener('DOMContentLoaded', function () {
         var buttons = document.querySelectorAll('.nh-add-to-cart__buy-now');
@@ -110,4 +180,58 @@
             });
         });
     });
+
+    /* ── RE-SYNC DE SWATCHES ─────────────────────────────────────────────── */
+
+    /**
+     * Re-inicializa WVS swatches después de re-renders de Elementor
+     * o contextos AJAX externos (Quick View, etc.).
+     *
+     * Guard clause: WC marca los forms inicializados con jQuery.data() (no un
+     * atributo HTML data-). Verificamos con jQuery.data() que depende de jQuery
+     * estar cargado, lo cual garantizamos con la dependencia del enqueue.
+     * Esto evita reset de selección y peticiones AJAX duplicadas
+     * en modo AJAX (>30 variaciones).
+     */
+    function reinitSwatches() {
+        document.querySelectorAll('.variations_form').forEach(function (form) {
+            var alreadyInit = window.jQuery && jQuery.data(form, 'wc_variation_form');
+            if (alreadyInit) return;
+
+            if (window.jQuery && jQuery.fn.wc_variation_form) {
+                try {
+                    jQuery(form).wc_variation_form();
+                } catch (err) {
+                    console.error('[NH ATC] wc_variation_form() ERROR:', err);
+                }
+            }
+        });
+
+        if (window.jQuery) {
+            jQuery(document).trigger('woo_variation_swatches_init');
+        }
+    }
+
+    // Re-init en el editor de Elementor (cada vez que se guarda/preview)
+    document.addEventListener('DOMContentLoaded', function () {
+        if (window.elementorFrontend && elementorFrontend.hooks) {
+            elementorFrontend.hooks.addAction(
+                'frontend/element_ready/nh-add-to-cart.default',
+                reinitSwatches
+            );
+        }
+
+        // Siempre intentar re-init en DOMContentLoaded:
+        // WC's wc-add-to-cart-variation.js puede ejecutarse antes de que
+        // Elementor renderice el widget, dejando forms sin inicializar.
+        setTimeout(function () {
+            reinitSwatches();
+        }, 500);
+    });
+
+    // Re-init en contextos AJAX externos (Quick View, etc.)
+    if (window.jQuery) {
+        jQuery(document.body).on('wc_quick_view_open nh_atc_ajax_loaded', reinitSwatches);
+    }
+
 })();

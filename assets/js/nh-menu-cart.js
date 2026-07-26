@@ -113,6 +113,7 @@
 
     // ─── Sincronización con wc-cart-fragments ─────────────────────────────────
     function onFragmentsRefreshed() {
+        if (window.elementor) return;
         updateHeaderCount();
 
         // Si Elementor abrió el drawer automáticamente tras "add to cart"
@@ -135,8 +136,8 @@
         injectHeader();
 
         // Verificar si Elementor ya lo tiene como "shown" (auto-open on add to cart)
-        if ($(SEL.wrapper).closest('.elementor-menu-cart--shown').length ||
-            $(SEL.container).attr('aria-hidden') === 'false') {
+        if (!window.elementor && ($(SEL.wrapper).closest('.elementor-menu-cart--shown').length ||
+            $(SEL.container).attr('aria-hidden') === 'false')) {
             openCart();
         }
     }
@@ -173,6 +174,7 @@
 
         // Elementor abre el drawer automáticamente (after add to cart)
         $(document.body).on('added_to_cart', function () {
+            if (window.elementor) return;
             // Pequeño delay para que el fragment se refresque
             setTimeout(function () {
                 updateHeaderCount();

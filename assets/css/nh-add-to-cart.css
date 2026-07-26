@@ -4,7 +4,7 @@
    This file handles ONLY: layout, flex sizing, responsive, loading spinner.
    ========================================================================== */
 
-/* ── Block: .nh-add-to-cart (wrapper) ──────────────────────────────────────── */
+   /* ── Block: .nh-add-to-cart (wrapper) ──────────────────────────────────────── */
 .nh-add-to-cart {
     display: flex;
     flex-direction: column;
@@ -12,47 +12,188 @@
     box-sizing: border-box;
 }
 
-/* ── Desktop (>768px): row layout ──────────────────────────────────────────── */
-.woocommerce div.product form.cart {
+/* ── Reset de márgenes heredados de WC/tema en el bloque de variación ────── */
+.nh-add-to-cart__variations table.variations,.nh-add-to-cart__variations table.variations tr:last-child {
+    margin-bottom: 0 !important;
+}
+
+.single_variation_wrap {
+    margin-top: 0 !important;
+}
+
+.single_variation_wrap .woocommerce-variation {
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+.single_variation_wrap .woocommerce-variation-availability {
+    margin: 0 !important;
+    padding: 8px 0 !important; /* un poco de aire, no cero total */
+}
+
+.single_variation_wrap .woocommerce-variation-availability .available-on-backorder {
+    display: inline-flex;
+    align-items: center;
+    padding: 0 !important;
+}
+
+.variations tbody tr:last-child {
+    margin-bottom: 0;
+}
+
+/* ── Desktop (>768px): layout con wrap ─────────────────────────────────────── */
+.woocommerce div.product .nh-add-to-cart__layout {
     display: flex !important;
     flex-direction: row !important;
+    flex-wrap: wrap !important;
     align-items: center !important;
     gap: 8px !important;
-    flex-wrap: nowrap !important;
     width: 100% !important;
     box-sizing: border-box !important;
 }
 
-.woocommerce div.product form.cart .quantity,
-.woocommerce div.product form.cart .nh-qty {
+/* Bloques que SIEMPRE ocupan una línea completa (fuerzan salto antes/después) */
+.nh-add-to-cart__variations,
+.nh-add-to-cart__price,
+.nh-add-to-cart__promo,
+.nh-add-to-cart__stock,
+.nh-add-to-cart__backorder,
+.single_variation_wrap {
+    flex: 1 1 100% !important;
+    width: 100% !important;
+}
+
+.single_variation_wrap .stock,
+.single_variation_wrap .woocommerce-variation-availability,
+.single_variation_wrap .woocommerce-variation-price,
+.single_variation_wrap .woocommerce-variation-description {
+    margin: 0;
+}
+
+.single_variation_wrap .woocommerce-variation-description:empty,
+.single_variation_wrap .woocommerce-variation-price:empty {
+    display: none;
+}
+
+/* Fila de acciones: cantidad + botón(es) comparten línea */
+.nh-add-to-cart__quantity {
     flex: 0 0 auto !important;
 }
 
-/* Both buttons: equal weight, share available space */
-.woocommerce div.product form.cart .single_add_to_cart_button,
-.woocommerce div.product form.cart .nh-add-to-cart__buy-now {
-    flex: 1 1 0 !important;
-    min-width: 0 !important;
+.nh-add-to-cart__button,
+.nh-add-to-cart__buy-now-wrapper {
+    flex: 1 1 180px !important;
+    min-width: 180px !important;
 }
 
-/* ── Element: .nh-add-to-cart__promo ──────────────────────────────────────── */
+/* ── Element: .nh-add-to-cart__promo ────────────────────────────────────────
+   Estilo notice success alineado al DS (.nh-alert--success / .woocommerce-message)
+   ─────────────────────────────────────────────────────────────────────────── */
 .nh-add-to-cart__promo {
     margin-top: 15px;
-    padding: 10px 12px;
-    font-size: 0.9rem;
-    color: #333;
-    background-color: #f7f9fa;
-    border: 1px solid #e1e8ed;
-    border-radius: 4px;
-    display: inline-flex;
+    padding: 14px 18px;
+    font-family: var(--font-body);
+    font-size: 13px;
+    line-height: 1.5;
+    color: var(--nh-feedback-success-text);
+    background-color: var(--nh-feedback-success-bg);
+    border: 1px solid #A7F3D0;
+    border-radius: var(--nh-radius);
+    display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 10px;
+    box-shadow: var(--nh-shadow-xs);
 }
 
 .nh-add-to-cart__promo-icon {
-    color: #2ecc71;
-    font-weight: bold;
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--nh-moss-500);
+    font-size: 18px;
+    line-height: 1;
 }
+
+.nh-add-to-cart__promo-icon i,
+.nh-add-to-cart__promo-icon svg {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+}
+
+/* ── Bloque: variaciones ────────────────────────────────────────────────────── */
+.nh-add-to-cart__variations table.variations {
+    width: 100%;
+    border: none;
+}
+.nh-add-to-cart__variations .label label {
+    font-weight: 600;
+    font-size: .875rem;
+}
+.nh-add-to-cart__variations .woo-selected-variation-item-name {
+    color: #666;
+    font-size: .875rem;
+}
+
+/* ── Bloque: acciones (quantity + botones) ─────────────────────────────────── */
+.nh-add-to-cart__quantity,
+.nh-add-to-cart__button,
+.nh-add-to-cart__buy-now-wrapper {
+    display: flex;
+    align-items: center;
+    gap: .75rem;
+}
+
+.nh-add-to-cart__button .single_add_to_cart_button,
+.nh-add-to-cart__buy-now {
+    flex: 1;
+    cursor: pointer;
+    transition: opacity 150ms ease;
+}
+.nh-add-to-cart__button .single_add_to_cart_button:disabled {
+    opacity: .5;
+    cursor: not-allowed;
+}
+
+/* ── Loading spinner — reemplaza texto con ph-spinner mientras AJAX procesa ── */
+.nh-add-to-cart__button .single_add_to_cart_button.loading {
+    color: transparent !important;
+    pointer-events: none;
+}
+.nh-add-to-cart__button .single_add_to_cart_button.loading::after {
+    content: '\E66A' !important;
+    font-family: "Phosphor-Fill" !important;
+    color: var(--nh-color-gray-900);
+    font-size: 1.4em;
+    animation: nh-spin .6s linear infinite;
+}
+
+/* ── "Ver carrito" — oculto, side-cart lo reemplaza ────────────────────────── */
+.nh-add-to-cart__button .added_to_cart,
+.woocommerce .added_to_cart.wc-forward {
+    display: none !important;
+}
+
+/* ── Override: WC .added::after — reemplaza font WooCommerce por Phosphor ──── */
+.nh-add-to-cart__button .single_add_to_cart_button.added {
+    display: flex;
+    gap: 0;
+}
+.woocommerce button.button.added::after,
+.woocommerce a.button.added::after,
+.woocommerce input.button.added::after,
+.woocommerce #respond input#submit.added::after {
+    font-family: "Phosphor-Fill" !important;
+    content: '\E184' !important;
+    margin-left: .35em !important;
+    vertical-align: middle !important;
+    font-size: 1.4em !important;
+}
+
+/* ── Bloque: stock/backorder ───────────────────────────────────────────────── */
+.nh-add-to-cart__stock .stock { margin: 0; }
+.nh-add-to-cart__backorder { font-size: .875rem; }
 
 /* ── Element: .nh-add-to-cart__buy-now — JS-only extras ──────────────────────
    Visual styles come from .nh-btn .nh-btn-primary.
@@ -75,20 +216,19 @@
 
 /* ── Responsive: ≤768px → column layout ────────────────────────────────────── */
 @media (max-width: 768px) {
-    .woocommerce div.product form.cart {
+    .woocommerce div.product .nh-add-to-cart__layout {
         flex-direction: column !important;
         align-items: stretch !important;
         gap: 12px !important;
     }
 
-    .woocommerce div.product form.cart .quantity,
-    .woocommerce div.product form.cart .nh-qty {
+    .nh-add-to-cart__quantity {
         width: 100% !important;
         justify-content: center !important;
     }
 
-    .woocommerce div.product form.cart .single_add_to_cart_button,
-    .woocommerce div.product form.cart .nh-add-to-cart__buy-now {
+    .nh-add-to-cart__button,
+    .nh-add-to-cart__buy-now-wrapper {
         width: 100% !important;
         margin-left: 0 !important;
         flex: none !important;

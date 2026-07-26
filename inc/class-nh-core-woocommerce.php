@@ -54,6 +54,10 @@ class NH_Core_Woocommerce {
         // AJAX endpoint para Buy Now (Compra Rápida)
         add_action( 'wp_ajax_nh_buy_now', [ $this, 'ajax_buy_now' ] );
         add_action( 'wp_ajax_nopriv_nh_buy_now', [ $this, 'ajax_buy_now' ] );
+
+        // AJAX endpoint para Add to Cart (reemplaza wc-add-to-cart.js en Elementor)
+        add_action( 'wp_ajax_nh_add_to_cart', [ $this, 'ajax_add_to_cart' ] );
+        add_action( 'wp_ajax_nopriv_nh_add_to_cart', [ $this, 'ajax_add_to_cart' ] );
     }
 
     /**
@@ -603,6 +607,56 @@ class NH_Core_Woocommerce {
         wp_send_json_success( [
             'checkout_url' => wc_get_checkout_url(),
             'cart_item_key' => $cart_item_key,
+        ] );
+    }
+
+    /**
+     * AJAX: Add to Cart — reemplaza wc-add-to-cart.js nativo de WC.
+     * Elementor rompe los event handlers de WC al re-renderizar widgets,
+     * así que interceptamos el form submit y lo manejamos vía AJAX propio.
+     */
+    public function ajax_add_to_cart() {
+        check_ajax_referer( 'nh_cart_nonce', 'nonce' );
+
+        if ( ! function_exists( 'WC' ) || ! WC()->cart ) {
+            wp_send_json_error( [ 'message' => __( 'WooCommerce no disponible.', 'nh-core' ) ] );
+        }
+
+        $product_id   = isset( $_POST['product_id'] ) ? absint( $_POST['product_id'] ) : 0;
+        $variation_id = isset( $_POST['variation_id'] ) ? absint( $_POST['variation_id'] ) : 0;
+        $quantity     = isset( $_POST['quantity'] ) ? absint( $_POST['quantity'] ) : 1;
+        $variations   = isset( $_POST['variations'] ) ? (array) $_POST['variations'] : [];
+
+        if ( ! $product_id ) {
+            wp_send_json_error( [ 'message' => __( 'Producto no válido.', 'nh-core' ) ] );
+        }
+
+        $product = wc_get_product( $variation_id ? $variation_id : $product_id );
+        if ( ! $product || ! $product->is_purchasable() ) {
+            wp_send_json_error( [ 'message' => __( 'Producto no disponible para compra.', 'nh-core' ) ] );
+        }
+
+        if ( $product->managing_stock() && $product->backorders_allowed() && ! $product->is_in_stock() ) {
+            wp_send_json_error( [ 'message' => __( 'Agotado.', 'nh-core' ) ] );
+        }
+
+        $cart_item_key = WC()->cart->add_to_cart( $product_id, $quantity, $variation_id, $variations );
+
+        if ( ! $cart_item_key ) {
+            wp_send_json_error( [ 'message' => __( 'No se pudo añadir al carrito.', 'nh-core' ) ] );
+        }
+
+        WC()->cart->calculate_totals();
+
+        // Fragmentos para que wc-cart-fragments actualice mini cart / badges
+        $fragments = [];
+        if ( did_action( 'woocommerce_after_cart_table' ) ) {
+            // En cart page, devolver fragmentos del widget
+        }
+
+        wp_send_json_success( [
+            'fragments'  => $fragments,
+            'cart_hash'  => WC()->cart->get_cart_hash(),
         ] );
     }
 }

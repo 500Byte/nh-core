@@ -276,59 +276,5 @@ class NH_Shopify_Checkout_Widget extends \Elementor\Widget_Base {
         <?php
     }
 
-    protected function content_template() {
-        ?>
-        <div class="nh-shopify-checkout-wrapper">
-            <div class="nh-shopify-checkout-grid">
-                <div class="nh-shopify-main-col">
-                    <div class="nh-shopify-logo-bar">
-                        <span class="nh-shopify-brand-name">{{{ settings.brand_title }}}</span>
-                    </div>
-                    <div class="nh-shopify-breadcrumbs">
-                        <span>Carrito</span> <span>›</span> <span class="current">Información y Pago</span>
-                    </div>
-                    <div class="nh-shopify-express-checkout">
-                        <div class="nh-shopify-express-title">Pago Rápido / Express</div>
-                        <div class="nh-shopify-express-btns">
-                            <button type="button" class="nh-shopify-express-btn nequi">Nequi</button>
-                            <button type="button" class="nh-shopify-express-btn bancolombia">Bancolombia</button>
-                        </div>
-                    </div>
-                    <div class="nh-shopify-section">
-                        <div class="nh-shopify-section-title"><span>Información de Contacto & Envío</span></div>
-                        <div class="form-row"><label>Email / Teléfono *</label><input type="text" class="input-text" placeholder="correo@ejemplo.com"></div>
-                        <div class="form-row"><label>Dirección de Envío *</label><input type="text" class="input-text" placeholder="Dirección completa"></div>
-                    </div>
-                </div>
 
-                <div class="nh-shopify-sidebar-col">
-                    <div class="nh-shopify-product-list">
-                        <div class="nh-shopify-product-item">
-                            <div class="nh-shopify-thumb-wrapper">
-                                <div style="width:100%;height:100%;background:#eee;border-radius:6px;"></div>
-                                <span class="nh-shopify-qty-badge">2</span>
-                            </div>
-                            <div class="nh-shopify-product-info">
-                                <span class="nh-shopify-product-title">Venture</span>
-                                <span class="nh-shopify-product-meta">Color: Marfil, Talla: M</span>
-                            </div>
-                            <div class="nh-shopify-product-price">$ 220.000</div>
-                        </div>
-                    </div>
-
-                    <div class="nh-shopify-coupon-box">
-                        <input type="text" class="nh-shopify-coupon-input" placeholder="Código de descuento">
-                        <button type="button" class="nh-shopify-coupon-btn">Usar</button>
-                    </div>
-
-                    <div class="nh-shopify-summary-rows">
-                        <div class="nh-shopify-summary-row"><span>Subtotal</span><span>$ 220.000</span></div>
-                        <div class="nh-shopify-summary-row"><span>Envío</span><span>Gratis</span></div>
-                        <div class="nh-shopify-total-row"><span>Total</span><span class="nh-shopify-total-price">$ 220.000</span></div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <?php
-    }
 }
