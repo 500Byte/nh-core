@@ -4,7 +4,7 @@
  * GA4 Enhanced Ecommerce + Meta Pixel Standard Events + Google Consent Mode v2
  *
  * @package NH_Core
- * @version 1.4.0
+ * @version 1.5.0
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
