@@ -53,6 +53,9 @@ sed -i "s/^\( \* @version\) .*/\1 $VERSION/" "$PLUGIN_DIR/inc/class-nh-core-trac
 # class-nh-core-tracking.php enqueue: 'X.Y.Z', (wp_enqueue_script version param)
 sed -i "/wp_enqueue_script/,/nh-datalayer-cart/{s/'[0-9]*\.[0-9]*\.[0-9]*',/'$VERSION',/}" "$PLUGIN_DIR/inc/class-nh-core-tracking.php"
 
+# assets/js/nh-datalayer-cart.js header: @version X.Y.Z
+sed -i "s/^\( \* @version\) .*/\1 $VERSION/" "$PLUGIN_DIR/assets/js/nh-datalayer-cart.js"
+
 echo "  Files updated"
 
 # ── 2. Verify ──────────────────────────────────────────────────────────────
@@ -63,6 +66,7 @@ grep "Version: $VERSION" "$PLUGIN_DIR/nh-core.php" > /dev/null && echo "  ✓ nh
 grep "NH_CORE_VERSION', '$VERSION'" "$PLUGIN_DIR/nh-core.php" > /dev/null && echo "  ✓ nh-core.php constant"
 grep "@version $VERSION" "$PLUGIN_DIR/inc/class-nh-core-tracking.php" > /dev/null && echo "  ✓ tracking.php header"
 grep "'$VERSION'," "$PLUGIN_DIR/inc/class-nh-core-tracking.php" > /dev/null && echo "  ✓ tracking.php enqueue version"
+grep "@version $VERSION" "$PLUGIN_DIR/assets/js/nh-datalayer-cart.js" > /dev/null && echo "  ✓ nh-datalayer-cart.js version"
 
 # ── 3. Git commit + tag ────────────────────────────────────────────────────
 
@@ -76,7 +80,7 @@ if git tag -l | grep -qx "$TAG"; then
     exit 1
 fi
 
-git add nh-core.php inc/class-nh-core-tracking.php
+git add nh-core.php inc/class-nh-core-tracking.php assets/js/nh-datalayer-cart.js
 if git diff --cached --quiet; then
     echo ""
     echo "  ⚠ No changes to commit (version already $VERSION)"
