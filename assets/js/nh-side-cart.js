@@ -211,6 +211,14 @@
         const $item = $(S.items).find('[data-key="' + cartItemKey + '"]');
         $item.addClass('nh-side-cart__item--removing');
 
+        // Capture product data for tracking BEFORE removal
+        var trackData = {
+            'nh-product-id':    $item.data('nh-product-id') || '',
+            'nh-product-name':  $item.data('nh-product-name') || '',
+            'nh-product-price': parseFloat($item.data('nh-product-price')) || 0,
+            'nh-quantity':      parseInt($item.data('nh-quantity')) || 1,
+        };
+
         $.ajax({
             url:    cfg.ajax_url,
             method: 'POST',
@@ -228,6 +236,12 @@
                         // Notificar al ecosistema WooCommerce para actualizar otros widgets
                         $(document.body).trigger('wc_fragment_refresh');
                         $(document.body).trigger('wc_fragments_refreshed');
+                        // Fire removed_from_cart for tracking (nh-datalayer-cart.js listens)
+                        $(document.body).trigger('removed_from_cart', [
+                            {},               // fragments (not needed for tracking)
+                            '',               // cart_hash
+                            $('<button>').data(trackData) // synthetic button with product data
+                        ]);
                     });
                 }
             },

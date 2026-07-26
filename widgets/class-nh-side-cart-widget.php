@@ -628,7 +628,12 @@ class NH_Side_Cart_Widget extends \Elementor\Widget_Base {
                                 }
                             }
                         ?>
-                        <li class="nh-side-cart__item" data-key="<?php echo esc_attr( $key ); ?>">
+                        <li class="nh-side-cart__item" data-key="<?php echo esc_attr( $key ); ?>"
+                            data-nh-product-id="<?php echo esc_attr( $product_id ); ?>"
+                            data-nh-product-name="<?php echo esc_attr( $name ); ?>"
+                            data-nh-product-price="<?php echo esc_attr( $product ? $product->get_price() : '' ); ?>"
+                            data-nh-quantity="<?php echo esc_attr( $qty ); ?>"
+                        >
                             <a class="nh-side-cart__item-image-wrap" href="<?php echo esc_url( $product_url ); ?>" tabindex="-1" aria-hidden="true">
                                 <img
                                     class="nh-side-cart__item-image"

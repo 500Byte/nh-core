@@ -471,7 +471,7 @@ class NH_Core_Tracking {
      * For AJAX removals (side cart), the frontend JS handles it directly.
      */
     public function capture_remove_from_cart( $cart_item_key, $cart_item ) {
-        if ( $this->is_tracking_disabled() || wp_doing_ajax() || isset( $_REQUEST['wc-ajax'] ) ) {
+        if ( $this->is_tracking_disabled() ) {
             return;
         }
 
@@ -496,6 +496,13 @@ class NH_Core_Tracking {
             }
         }
 
+        // AJAX: emitir inline (el JS listener de removed_from_cart también lo maneja)
+        if ( wp_doing_ajax() || isset( $_REQUEST['wc-ajax'] ) ) {
+            // No store in session for AJAX — the JS handler fires removed_from_cart directly
+            return;
+        }
+
+        // Non-AJAX: store in session for emission on next page load
         if ( isset( WC()->session ) ) {
             WC()->session->set( 'nh_removed_from_cart_event', $event_data );
         }
