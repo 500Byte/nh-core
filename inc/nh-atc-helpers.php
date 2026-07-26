@@ -90,15 +90,25 @@ function nh_render_atc_block( string $block_name, WC_Product $product, array $se
 		case 'add_to_cart':
 			if ( $product->is_type( 'external' ) ) {
 				printf(
-					'<div class="nh-add-to-cart__button"><a href="%s" target="_blank" rel="nofollow" class="single_add_to_cart_button button alt nh-btn nh-btn-primary">%s</a></div>',
+					'<div class="nh-add-to-cart__button"><a href="%s" target="_blank" rel="nofollow" class="single_add_to_cart_button button alt nh-btn nh-btn-primary" data-nh-product-id="%s" data-nh-product-name="%s" data-nh-product-price="%s" data-nh-currency="COP" data-nh-category="%s">%s</a></div>',
 					esc_url( $product->get_product_url() ),
+					esc_attr( $product->get_id() ),
+					esc_attr( $product->get_name() ),
+					esc_attr( (string) $product->get_price() ),
+					esc_attr( $category ),
 					esc_html( $product->single_add_to_cart_text() )
 				);
 			} else {
-				$label = apply_filters( 'woocommerce_product_single_add_to_cart_text', $product->single_add_to_cart_text(), $product );
+				$label      = apply_filters( 'woocommerce_product_single_add_to_cart_text', $product->single_add_to_cart_text(), $product );
+				$terms      = get_the_terms( $product->get_id(), 'product_cat' );
+				$category   = ( $terms && ! is_wp_error( $terms ) ) ? $terms[0]->name : '';
 				printf(
-					'<div class="nh-add-to-cart__button"><button type="submit" name="add-to-cart" value="%d" class="single_add_to_cart_button button alt nh-btn nh-btn-primary">%s</button>%s</div>',
+					'<div class="nh-add-to-cart__button"><button type="submit" name="add-to-cart" value="%d" class="single_add_to_cart_button button alt nh-btn nh-btn-primary" data-nh-product-id="%s" data-nh-product-name="%s" data-nh-product-price="%s" data-nh-currency="COP" data-nh-category="%s">%s</button>%s</div>',
 					absint( $product->get_id() ),
+					esc_attr( $product->get_id() ),
+					esc_attr( $product->get_name() ),
+					esc_attr( (string) $product->get_price() ),
+					esc_attr( $category ),
 					esc_html( $label ),
 					$product->is_type( 'variable' ) ? '<input type="hidden" name="variation_id" class="variation_id" value="0" />' : ''
 				);
