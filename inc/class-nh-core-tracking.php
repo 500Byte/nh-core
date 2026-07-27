@@ -4,7 +4,7 @@
  * GA4 Enhanced Ecommerce + Meta Pixel Standard Events + Google Consent Mode v2
  *
  * @package NH_Core
- * @version 1.5.0
+ * @version 1.6.0
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -150,55 +150,8 @@ class NH_Core_Tracking {
             'functionality_storage':'denied',
             'personalization_storage':'denied',
             'security_storage':'granted',
-            'wait_for_update':500
+            'wait_for_update': 2000
         });
-        </script>
-        <script>
-        (function(){
-            var _nhConsentUpdated=false;
-            function nhReadCookieYesConsent(){
-                var m=document.cookie.match(/cookieyes-consent[^;]*consent:(yes|no)/);
-                return m?m[1]==='yes':false;
-            }
-            function nhReadCookieYesCategories(){
-                var c=document.cookie;
-                var cats={};
-                ['functional','analytics','performance','advertisement'].forEach(function(k){
-                    var re=new RegExp(k+':(yes|no)');
-                    var m=c.match(re);
-                    cats[k]=m?m[1]==='yes':false;
-                });
-                return cats;
-            }
-            function nhEmitConsentUpdate(){
-                if(_nhConsentUpdated)return;
-                var consented=nhReadCookieYesConsent();
-                if(!consented)return;
-                _nhConsentUpdated=true;
-                var cats=nhReadCookieYesCategories();
-                gtag('consent','update',{
-                    'ad_storage':cats.advertisement?'granted':'denied',
-                    'ad_user_data':cats.advertisement?'granted':'denied',
-                    'ad_personalization':cats.advertisement?'granted':'denied',
-                    'analytics_storage':cats.analytics?'granted':'denied',
-                    'functionality_storage':cats.functional?'granted':'denied',
-                    'personalization_storage':cats.performance?'granted':'denied'
-                });
-            }
-            // Check immediately (cookie may already exist from prior visit)
-            nhEmitConsentUpdate();
-            // Listen for CookieYes consent save events
-            document.addEventListener('cookieyes_consent_update',nhEmitConsentUpdate);
-            document.addEventListener('cookieyesConsentUpdated',nhEmitConsentUpdate);
-            // Fallback: poll for cookie changes (CookieYes may not fire events)
-            var lastCookie=document.cookie;
-            setInterval(function(){
-                if(document.cookie!==lastCookie){
-                    lastCookie=document.cookie;
-                    nhEmitConsentUpdate();
-                }
-            },1000);
-        })();
         </script>
         <?php
     }
@@ -411,7 +364,7 @@ class NH_Core_Tracking {
             'nh-datalayer-cart',
             NH_CORE_URL . 'assets/js/nh-datalayer-cart.js',
             [ 'jquery' ],
-            '1.5.0',
+            '1.6.0',
             true
         );
 
