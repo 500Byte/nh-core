@@ -148,14 +148,6 @@ jQuery(document).ready(function ($) {
             }
         });
 
-        // 10. Backward-compatible custom event
-        window.dataLayer.push({
-            'event': 'agregar_carrito',
-            'product_id': productId,
-            'item_is_variant': isVariant,
-            'item_variant': itemVariant
-        });
-
         // Meta Pixel: AddToCart — fired via GTM (tag 20)
     });
 

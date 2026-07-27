@@ -1,7 +1,8 @@
 <?php
 /**
  * NH Core — Tracking Class
- * GA4 Enhanced Ecommerce + Meta Pixel Standard Events + Google Consent Mode v2
+ * GA4 Enhanced Ecommerce + Meta Pixel Standard Events
+ * Consent Mode v2 handled by Pressidium Cookie Consent plugin
  *
  * @package NH_Core
  * @version 1.6.0
@@ -31,9 +32,6 @@ class NH_Core_Tracking {
     private function init_hooks() {
         // Page context — BEFORE Consent Mode (-10000) and GTM (-9999)
         add_action( 'wp_head', [ $this, 'inject_page_context' ], -10001 );
-
-        // Google Consent Mode v2 — BEFORE GTM (-9999)
-        add_action( 'wp_head', [ $this, 'inject_consent_mode' ], -10000 );
 
         // Google Tag Manager
         add_action( 'wp_head', [ $this, 'inject_gtm_head' ], -9999 );
@@ -129,30 +127,6 @@ class NH_Core_Tracking {
         <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-N5G49CWP"
         height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         <!-- End Google Tag Manager (noscript) -->
-        <?php
-    }
-
-    // ============================================================
-    // GOOGLE CONSENT MODE v2
-    // ============================================================
-
-    public function inject_consent_mode() {
-        if ( $this->is_tracking_disabled() ) return;
-        ?>
-        <script>
-        window.dataLayer = window.dataLayer || [];
-        function gtag(){dataLayer.push(arguments);}
-        gtag('consent','default',{
-            'ad_storage':'denied',
-            'ad_user_data':'denied',
-            'ad_personalization':'denied',
-            'analytics_storage':'denied',
-            'functionality_storage':'granted',
-            'personalization_storage':'denied',
-            'security_storage':'granted',
-            'wait_for_update': 2000
-        });
-        </script>
         <?php
     }
 
@@ -264,20 +238,6 @@ class NH_Core_Tracking {
                 }]
             }
         });
-        // Backward-compatible custom event
-        window.dataLayer.push({
-            'event': 'ver_producto',
-            'ecommerce': {
-                'currency': 'COP',
-                'value': <?php echo esc_js( $price ); ?>,
-                'items': [{
-                    'item_id': '<?php echo esc_js( $id ); ?>',
-                    'item_name': '<?php echo esc_js( $name ); ?>',
-                    'price': <?php echo esc_js( $price ); ?>,
-                    'quantity': 1
-                }]
-            }
-        });
         // Meta Pixel: ViewContent — fired via GTM (tag 19)
         </script>
         <?php
@@ -374,12 +334,6 @@ class NH_Core_Tracking {
                     'window.dataLayer = window.dataLayer || []; window.dataLayer.push(' . wp_json_encode( $ga4_event ) . ');',
                     'before'
                 );
-                // Legacy event
-                wp_add_inline_script(
-                    'nh-datalayer-cart',
-                    'window.dataLayer.push(' . wp_json_encode( $added_event ) . ');',
-                    'before'
-                );
             }
 
             // remove_from_cart fallback
@@ -425,7 +379,7 @@ class NH_Core_Tracking {
         $price   = $product ? $product->get_price() : 0;
 
         $event_data = [
-            'event'           => 'agregar_carrito',
+            'event'           => 'add_to_cart',
             'product_id'      => $product_id_to_track,
             'item_name'       => $name,
             'price'           => $price,
@@ -550,15 +504,6 @@ class NH_Core_Tracking {
                 'items': <?php echo wp_json_encode( $items ); ?>
             }
         });
-        // Backward-compatible custom event
-        window.dataLayer.push({
-            'event': 'iniciar_pago',
-            'ecommerce': {
-                'currency': 'COP',
-                'value': <?php echo esc_js( $total ); ?>,
-                'items': <?php echo wp_json_encode( $items ); ?>
-            }
-        });
         // Meta Pixel: InitiateCheckout — fired via GTM (tag 21)
         </script>
         <?php
@@ -623,16 +568,6 @@ class NH_Core_Tracking {
                 'tax': <?php echo esc_js( $tax ); ?>,
                 'shipping': <?php echo esc_js( $shipping ); ?>,
                 'coupon': <?php echo wp_json_encode( $coupon_codes ); ?>,
-                'items': <?php echo wp_json_encode( $items ); ?>
-            }
-        });
-        // Backward-compatible custom event
-        window.dataLayer.push({
-            'event': 'compra_exitosa',
-            'ecommerce': {
-                'transaction_id': '<?php echo esc_js( $order_id ); ?>',
-                'currency': '<?php echo esc_js( $currency ); ?>',
-                'value': <?php echo esc_js( $total ); ?>,
                 'items': <?php echo wp_json_encode( $items ); ?>
             }
         });
