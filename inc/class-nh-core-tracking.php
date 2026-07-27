@@ -278,17 +278,7 @@ class NH_Core_Tracking {
                 }]
             }
         });
-        // Meta Pixel: ViewContent (with event_id for CAPI deduplication)
-        if ( typeof fbq !== 'undefined' ) {
-            fbq('track', 'ViewContent', {
-                content_name: '<?php echo esc_js( $name ); ?>',
-                content_ids: ['<?php echo esc_js( $id ); ?>'],
-                content_type: 'product',
-                value: <?php echo esc_js( $price ); ?>,
-                currency: 'COP',
-                event_id: 'view_content_<?php echo esc_js( $id ); ?>'
-            });
-        }
+        // Meta Pixel: ViewContent — fired via GTM (tag 19)
         </script>
         <?php
     }
@@ -339,16 +329,7 @@ class NH_Core_Tracking {
                 'items': <?php echo wp_json_encode( $items ); ?>
             }
         });
-        // Meta Pixel: ViewCart
-        if (typeof fbq !== 'undefined') {
-            fbq('track', 'ViewCart', {
-                value: <?php echo esc_js( $total ); ?>,
-                currency: '<?php echo esc_js( get_woocommerce_currency() ); ?>',
-                content_type: 'product',
-                content_ids: <?php echo wp_json_encode( wp_list_pluck( $items, 'item_id' ) ); ?>,
-                event_id: 'view_cart_<?php echo md5( wp_json_encode( $items ) ); ?>'
-            });
-        }
+        // Meta Pixel: ViewCart — fired via GTM
         </script>
         <?php
     }
@@ -578,18 +559,7 @@ class NH_Core_Tracking {
                 'items': <?php echo wp_json_encode( $items ); ?>
             }
         });
-        // Meta Pixel: InitiateCheckout (with event_id for CAPI deduplication)
-        if ( typeof fbq !== 'undefined' ) {
-            fbq('track', 'InitiateCheckout', {
-                value: <?php echo esc_js( $total ); ?>,
-                currency: 'COP',
-                num_items: <?php echo esc_js( count( $items ) ); ?>,
-                content_ids: <?php echo wp_json_encode( $item_ids ); ?>,
-                content_type: 'product',
-                content_name: '<?php echo esc_js( $content_name ); ?>',
-                event_id: '<?php echo esc_js( $checkout_event_id ); ?>'
-            });
-        }
+        // Meta Pixel: InitiateCheckout — fired via GTM (tag 21)
         </script>
         <?php
     }
@@ -666,16 +636,7 @@ class NH_Core_Tracking {
                 'items': <?php echo wp_json_encode( $items ); ?>
             }
         });
-        // Meta Pixel: Purchase (standard event with event_id for CAPI deduplication)
-        if ( typeof fbq !== 'undefined' ) {
-            fbq('track', 'Purchase', {
-                value: <?php echo esc_js( $total ); ?>,
-                currency: '<?php echo esc_js( $currency ); ?>',
-                content_type: 'product',
-                content_ids: <?php echo wp_json_encode( $item_ids ); ?>,
-                event_id: '<?php echo esc_js( $event_id ); ?>'
-            });
-        }
+        // Meta Pixel: Purchase — fired via GTM (tag 22)
         </script>
         <?php
         // Mark AFTER script output — if JS is disabled, mark is never set,

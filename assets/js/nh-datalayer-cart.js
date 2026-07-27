@@ -1,8 +1,8 @@
 jQuery(document).ready(function ($) {
     /**
      * NH Core — Frontend Cart Tracking
-     * Emits GA4 add_to_cart, remove_from_cart events
-     * and Meta Pixel AddToCart / RemoveFromCart.
+     * Emits GA4 add_to_cart, remove_from_cart events.
+     * Meta Pixel events are handled via GTM.
      * Reads product data from data-nh-* HTML attributes via .attr() (NOT .data(),
      * because jQuery caches .data() on first read and ignores later .attr() changes).
      *
@@ -156,18 +156,7 @@ jQuery(document).ready(function ($) {
             'item_variant': itemVariant
         });
 
-        // 11. Meta Pixel: AddToCart (with event_id for CAPI)
-        if (typeof fbq !== 'undefined') {
-            var eventId = 'add_to_cart_' + productId + '_' + (cart_hash || 'no_hash');
-            fbq('track', 'AddToCart', {
-                content_ids: [productId],
-                content_type: 'product',
-                content_name: itemName,
-                value: parseFloat((itemPrice * quantity).toFixed(2)),
-                currency: nhCurrency,
-                event_id: eventId
-            });
-        }
+        // Meta Pixel: AddToCart — fired via GTM (tag 20)
     });
 
     /* ── remove_from_cart (AJAX — side cart / cart page) ──────────────────── */
@@ -226,17 +215,7 @@ jQuery(document).ready(function ($) {
             }
         });
 
-        // Meta Pixel: RemoveFromCart (with event_id for CAPI)
-        if (typeof fbq !== 'undefined') {
-            fbq('track', 'RemoveFromCart', {
-                content_ids: [String(productId)],
-                content_type: 'product',
-                content_name: itemName,
-                value: parseFloat((itemPrice * quantity).toFixed(2)),
-                currency: nhCurrency,
-                event_id: 'remove_' + productId + '_' + Date.now()
-            });
-        }
+        // Meta Pixel: RemoveFromCart — fired via GTM
     });
 
     /* ── Session-based events (non-AJAX fallback) ─────────────────────────── */
