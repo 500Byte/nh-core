@@ -26,3 +26,7 @@ Thumbs.db
 # Tests (if added later)
 tests/
 phpunit.xml
+
+# Generated docs & scripts
+docs/
+scripts/
