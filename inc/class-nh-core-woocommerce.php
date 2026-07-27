@@ -315,7 +315,7 @@ class NH_Core_Woocommerce {
     }
 
     public function apply_price_filter_to_all_queries( $query ) {
-        if ( is_admin() ) {
+        if ( is_admin() || ! $query->is_main_query() ) {
             return;
         }
 
@@ -638,7 +638,7 @@ class NH_Core_Woocommerce {
             wp_send_json_error( [ 'message' => __( 'Producto no disponible para compra.', 'nh-core' ) ] );
         }
 
-        if ( $product->managing_stock() && $product->backorders_allowed() && ! $product->is_in_stock() ) {
+        if ( $product->managing_stock() && ! $product->backorders_allowed() && ! $product->is_in_stock() ) {
             wp_send_json_error( [ 'message' => __( 'Agotado.', 'nh-core' ) ] );
         }
 

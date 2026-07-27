@@ -46,6 +46,13 @@
     let isLoading = false;
 
     /* ─── Utils ──────────────────────────────────────────────────────────── */
+    function escapeHtml(text) {
+        if (typeof text !== 'string') return '';
+        var div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
     function formatPrice(amount) {
         return cfg.currency_symbol + '\u00a0' + Math.round(amount).toLocaleString('es-CO');
     }
@@ -146,31 +153,36 @@
                 pillsHtml = '<div class="nh-pill-group">';
                 item.variations.forEach(function (v) {
                     pillsHtml += '<span class="nh-pill">' +
-                        '<span class="nh-pill-label">' + v.label + ':</span> ' +
-                        '<span class="nh-pill-value">' + v.value + '</span>' +
+                        '<span class="nh-pill-label">' + escapeHtml(v.label) + ':</span> ' +
+                        '<span class="nh-pill-value">' + escapeHtml(v.value) + '</span>' +
                     '</span>';
                 });
                 pillsHtml += '</div>';
             }
 
+            var safeName  = escapeHtml(item.name || '');
+            var safeUrl   = escapeHtml(item.url || '');
+            var safeImage = escapeHtml(item.image || '');
+            var safeKey   = escapeHtml(item.key || '');
+
             const $li = $(
-                '<li class="nh-side-cart__item" data-key="' + item.key + '"' +
+                '<li class="nh-side-cart__item" data-key="' + safeKey + '"' +
                 ' data-nh-product-id="' + (item.product_id || '') + '"' +
-                ' data-nh-product-name="' + (item.name || '').replace(/"/g, '&quot;') + '"' +
+                ' data-nh-product-name="' + safeName.replace(/"/g, '&quot;') + '"' +
                 ' data-nh-product-price="' + (item.unit_price || 0) + '"' +
                 ' data-nh-quantity="' + (item.quantity || 1) + '">' +
-                '<a class="nh-side-cart__item-image-wrap" href="' + item.url + '">' +
-                    '<img class="nh-side-cart__item-image" src="' + item.image + '" alt="' + item.name + '" loading="lazy">' +
+                '<a class="nh-side-cart__item-image-wrap" href="' + safeUrl + '">' +
+                    '<img class="nh-side-cart__item-image" src="' + safeImage + '" alt="' + safeName + '" loading="lazy">' +
                 '</a>' +
                 '<div class="nh-side-cart__item-info">' +
-                    '<a class="nh-side-cart__item-name" href="' + item.url + '">' + item.name + '</a>' +
+                    '<a class="nh-side-cart__item-name" href="' + safeUrl + '">' + safeName + '</a>' +
                     pillsHtml +
                     '<div class="nh-side-cart__item-meta">' +
                         '<span class="nh-side-cart__item-qty">' + item.quantity + ' &times;</span>' +
-                        '<span class="nh-side-cart__item-price">' + item.price_formatted + '</span>' +
+                        '<span class="nh-side-cart__item-price">' + escapeHtml(item.price_formatted || '') + '</span>' +
                     '</div>' +
                 '</div>' +
-                '<button class="nh-side-cart__item-remove" aria-label="Eliminar ' + item.name + '" data-key="' + item.key + '">&times;</button>' +
+                '<button class="nh-side-cart__item-remove" aria-label="Eliminar ' + safeName + '" data-key="' + safeKey + '">&times;</button>' +
             '</li>'
             );
 

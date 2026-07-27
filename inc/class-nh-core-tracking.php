@@ -687,9 +687,6 @@ class NH_Core_Tracking {
         $tax      = $order->get_total_tax();
 
         $event_id = 'purchase_' . $order_id;
-
-        // Store order ID for marking AFTER script renders
-        $this->_pending_purchase_order_id = $order_id;
         ?>
         <script>
         window.dataLayer = window.dataLayer || [];
