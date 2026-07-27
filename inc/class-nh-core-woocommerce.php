@@ -116,7 +116,6 @@ class NH_Core_Woocommerce {
                 'image'           => $img_src,
                 'quantity'        => $qty,
                 'unit_price'      => $unit_price,
-                'price_formatted' => wp_strip_all_tags( wc_price( $unit_price ) ),
                 'line_total'      => $line_total,
             ];
         }

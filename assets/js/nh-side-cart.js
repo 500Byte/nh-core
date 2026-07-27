@@ -179,7 +179,7 @@
                     pillsHtml +
                     '<div class="nh-side-cart__item-meta">' +
                         '<span class="nh-side-cart__item-qty">' + item.quantity + ' &times;</span>' +
-                        '<span class="nh-side-cart__item-price">' + escapeHtml(item.price_formatted || '') + '</span>' +
+                        '<span class="nh-side-cart__item-price">' + formatPrice(item.unit_price || 0) + '</span>' +
                     '</div>' +
                 '</div>' +
                 '<button class="nh-side-cart__item-remove" aria-label="Eliminar ' + safeName + '" data-key="' + safeKey + '">&times;</button>' +
