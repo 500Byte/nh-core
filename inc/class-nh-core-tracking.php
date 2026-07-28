@@ -407,27 +407,32 @@ class NH_Core_Tracking {
      * Stores event in session for frontend emission on next page load (non-AJAX).
      * For AJAX removals (side cart), the frontend JS handles it directly.
      */
-    public function capture_remove_from_cart( $cart_item_key, $cart_item ) {
+    public function capture_remove_from_cart( $cart_item_key, $cart ) {
         if ( $this->is_tracking_disabled() ) {
             return;
         }
 
-        $_product = apply_filters( 'woocommerce_cart_item_product', $cart_item['data'], $cart_item, $cart_item_key );
-        if ( ! $_product ) return;
+        $removed_items = $cart->get_removed_cart_contents();
+        $cart_item = $removed_items[ $cart_item_key ] ?? null;
+        if ( ! $cart_item ) {
+            return;
+        }
 
-        $product_id = $_product->is_type( 'variation' ) ? $_product->get_parent_id() : $_product->get_id();
-        $variation_id = $_product->is_type( 'variation' ) ? $_product->get_id() : 0;
+        $product_id   = $cart_item['variation_id'] ?: $cart_item['product_id'];
+        $parent_id    = $cart_item['product_id'];
+        $product      = wc_get_product( $product_id );
+        if ( ! $product ) return;
 
         $event_data = [
             'event'      => 'remove_from_cart',
-            'product_id' => (string) $product_id,
-            'item_name'  => sanitize_text_field( $_product->get_name() ),
-            'price'      => $_product->get_price(),
-            'quantity'   => $cart_item['quantity'],
+            'product_id' => (string) $parent_id,
+            'item_name'  => sanitize_text_field( $product->get_name() ),
+            'price'      => floatval( $product->get_price() ),
+            'quantity'   => intval( $cart_item['quantity'] ),
         ];
 
-        if ( $variation_id ) {
-            $variant_str = $this->get_clean_variation_string( $_product, $cart_item['variation'] ?? [] );
+        if ( $cart_item['variation_id'] ) {
+            $variant_str = $this->get_clean_variation_string( $product, $cart_item['variation'] ?? [] );
             if ( $variant_str ) {
                 $event_data['item_variant'] = $variant_str;
             }
