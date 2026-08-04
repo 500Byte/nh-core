@@ -92,9 +92,8 @@ class NH_Core_Tracking {
             return false;
         }
         return (
-            ( defined( 'WP_ENVIRONMENT_TYPE' ) && WP_ENVIRONMENT_TYPE === 'local' )
+            ( defined( 'WP_ENVIRONMENT_TYPE' ) && in_array( WP_ENVIRONMENT_TYPE, [ 'local', 'development' ], true ) )
             || ( isset( $_SERVER['HTTP_HOST'] ) && strpos( $_SERVER['HTTP_HOST'], '.ddev.site' ) !== false )
-            || ( isset( $_SERVER['HTTP_HOST'] ) && preg_match( '/staging|dev\.|\.dev$/', $_SERVER['HTTP_HOST'] ) )
         );
     }
 
