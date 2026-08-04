@@ -42,6 +42,7 @@ class NH_Core_Tracking {
 
         // Cart tracking script
         add_action( 'wp_enqueue_scripts', [ $this, 'enqueue_datalayer_cart_script' ] );
+        add_action( 'wp_enqueue_scripts', [ $this, 'enqueue_early_tracking_script' ], 5 );
 
         // Non-AJAX add-to-cart fallback (session-based)
         add_action( 'woocommerce_add_to_cart', [ $this, 'capture_add_to_cart_in_session' ], 10, 6 );
@@ -365,6 +366,18 @@ class NH_Core_Tracking {
         }
     }
 
+    public function enqueue_early_tracking_script() {
+        if ( $this->is_tracking_disabled() ) return;
+
+        wp_enqueue_script(
+            'nh-tracking',
+            NH_CORE_URL . 'assets/js/nh-tracking.js',
+            [],
+            NH_CORE_VERSION,
+            false // cargado en head
+        );
+    }
+
     /**
      * Capture add-to-cart for non-AJAX requests (form submit fallback).
      * Stores a minimal event in session; the frontend script emits it on next page load.
@@ -505,10 +518,11 @@ class NH_Core_Tracking {
         // GA4 Standard Event: begin_checkout
         window.dataLayer.push({
             'event': 'begin_checkout',
+            'event_id': '<?php echo esc_js( $checkout_event_id ); ?>',
             'ecommerce': {
                 'currency': 'COP',
                 'value': <?php echo esc_js( $total ); ?>,
-                'coupon': <?php echo wp_json_encode( $coupon_codes ); ?>,
+                'coupon': '<?php echo esc_js( implode( ',', $coupon_codes ) ); ?>',
                 'items': <?php echo wp_json_encode( $items ); ?>
             }
         });
@@ -569,13 +583,14 @@ class NH_Core_Tracking {
         // GA4 Standard Event: purchase
         window.dataLayer.push({
             'event': 'purchase',
+            'event_id': '<?php echo esc_js( $event_id ); ?>',
             'ecommerce': {
                 'transaction_id': '<?php echo esc_js( $order_id ); ?>',
                 'currency': '<?php echo esc_js( $currency ); ?>',
                 'value': <?php echo esc_js( $total ); ?>,
                 'tax': <?php echo esc_js( $tax ); ?>,
                 'shipping': <?php echo esc_js( $shipping ); ?>,
-                'coupon': <?php echo wp_json_encode( $coupon_codes ); ?>,
+                'coupon': '<?php echo esc_js( implode( ',', $coupon_codes ) ); ?>',
                 'items': <?php echo wp_json_encode( $items ); ?>
             }
         });
