@@ -32,6 +32,7 @@ class NH_Core_Tracking {
     private function init_hooks() {
         // Page context — BEFORE Consent Mode (-10000) and GTM (-9999)
         add_action( 'wp_head', [ $this, 'inject_page_context' ], -10001 );
+        add_action( 'wp_head', [ $this, 'inject_tracking_js_inline' ], -10000 );
 
         // Google Tag Manager
         add_action( 'wp_head', [ $this, 'inject_gtm_head' ], -9999 );
@@ -42,7 +43,6 @@ class NH_Core_Tracking {
 
         // Cart tracking script
         add_action( 'wp_enqueue_scripts', [ $this, 'enqueue_datalayer_cart_script' ] );
-        add_action( 'wp_enqueue_scripts', [ $this, 'enqueue_early_tracking_script' ], 5 );
 
         // Non-AJAX add-to-cart fallback (session-based)
         add_action( 'woocommerce_add_to_cart', [ $this, 'capture_add_to_cart_in_session' ], 10, 6 );
@@ -369,16 +369,35 @@ class NH_Core_Tracking {
         }
     }
 
-    public function enqueue_early_tracking_script() {
+    public function inject_tracking_js_inline() {
         if ( $this->is_tracking_disabled() ) return;
-
-        wp_enqueue_script(
-            'nh-tracking',
-            NH_CORE_URL . 'assets/js/nh-tracking.js',
-            [],
-            NH_CORE_VERSION,
-            false // cargado en head
-        );
+        ?>
+        <!-- NH Tracking (Odoo task #18 — dedup Meta / event_id) -->
+        <script>
+        (function () {
+            'use strict';
+            if (window.nhTracking) return;
+            function readCookie(name) {
+                var m = document.cookie.match(new RegExp('(?:^|; )' + name.replace(/([.$?*|{}()[\]\\/+^])/g, '\\$1') + '=([^;]*)'));
+                return m ? decodeURIComponent(m[1]) : null;
+            }
+            var fbp = readCookie('_fbp');
+            var fbc = readCookie('_fbc');
+            window.nhTracking = {
+                fbp: fbp,
+                fbc: fbc,
+                getEventId: function (prefix, value) {
+                    return prefix + '_' + (value ? String(value) : Date.now());
+                }
+            };
+            if (window.dataLayer) {
+                if (fbp) { window.dataLayer.push({ nh_fbp: fbp }); }
+                if (fbc) { window.dataLayer.push({ nh_fbc: fbc }); }
+            }
+        })();
+        </script>
+        <!-- End NH Tracking -->
+        <?php
     }
 
     /**
