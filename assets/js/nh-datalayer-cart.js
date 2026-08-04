@@ -6,7 +6,7 @@ jQuery(document).ready(function ($) {
      * Reads product data from data-nh-* HTML attributes via .attr() (NOT .data(),
      * because jQuery caches .data() on first read and ignores later .attr() changes).
      *
-     * @version 1.6.0
+     * @version 1.6.1
      */
 
     var nhCurrency = (window.nh_cart_params && window.nh_cart_params.currency) || 'COP';

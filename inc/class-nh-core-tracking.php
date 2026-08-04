@@ -5,7 +5,7 @@
  * Consent Mode v2 handled by Pressidium Cookie Consent plugin
  *
  * @package NH_Core
- * @version 1.6.0
+ * @version 1.6.1
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -55,6 +55,9 @@ class NH_Core_Tracking {
 
         // Remove from cart tracking
         add_action( 'woocommerce_cart_item_removed', [ $this, 'capture_remove_from_cart' ], 10, 2 );
+
+        // Welcome form tracking (Elementor Pro AJAX submit_success → dataLayer)
+        add_action( 'wp_footer', [ $this, 'datalayer_form_bienvenida' ] );
 
         // Meta Pixel domain verification
         add_action( 'wp_head', [ $this, 'fb_domain_verification' ], 1 );
@@ -305,7 +308,7 @@ class NH_Core_Tracking {
             'nh-datalayer-cart',
             NH_CORE_URL . 'assets/js/nh-datalayer-cart.js',
             [ 'jquery' ],
-            '1.6.0',
+            '1.6.1',
             true
         );
 
@@ -583,6 +586,45 @@ class NH_Core_Tracking {
         // so event retries on next page load (correct behavior).
         $order->update_meta_data( '_nh_tracked_purchase', 'yes' );
         $order->save();
+    }
+
+    /**
+     * Welcome form tracking bridge.
+     *
+     * Elementor Pro submits the form via AJAX (preventDefault + fetch), so
+     * GTM's native "Form Submission" auto-event does not fire. The only
+     * reliable moment is Elementor's own `submit_success` jQuery event, which
+     * fires on the <form> element ONLY after the AJAX request succeeded.
+     *
+     * Listens for it on #form-bienvenida and pushes to the dataLayer, which
+     * GTM's custom event trigger (nh_form_bienvenida_submit) consumes.
+     */
+    public function datalayer_form_bienvenida() {
+        if ( $this->is_tracking_disabled() ) {
+            return;
+        }
+        ?>
+        <script>
+        (function() {
+            var form = document.getElementById('form-bienvenida');
+            if ( ! form ) {
+                return;
+            }
+            form.addEventListener('submit_success', function() {
+                var get = function( name ) {
+                    var el = form.querySelector('[name="form_fields[' + name + ']"]');
+                    return el ? el.value : '';
+                };
+                window.dataLayer = window.dataLayer || [];
+                window.dataLayer.push({
+                    'event': 'nh_form_bienvenida_submit',
+                    'nh_name': get('name'),
+                    'nh_email': get('email')
+                });
+            });
+        })();
+        </script>
+        <?php
     }
 
     // ============================================================
