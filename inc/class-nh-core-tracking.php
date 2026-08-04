@@ -63,6 +63,9 @@ class NH_Core_Tracking {
         // Meta Pixel domain verification
         add_action( 'wp_head', [ $this, 'fb_domain_verification' ], 1 );
 
+        // Exclude Google Tag Manager from WP Rocket JS delay execution (compliance & speed)
+        add_filter( 'rocket_delay_js_exclusions', [ $this, 'exclude_gtm_from_delay_js' ] );
+
         // Inject data-nh-* attributes on add-to-cart buttons (ALWAYS — not gated by tracking disable)
         add_filter( 'woocommerce_loop_add_to_cart_args', [ $this, 'inject_tracking_data_attributes' ], 10, 2 );
         add_filter( 'woocommerce_product_add_to_cart_args', [ $this, 'inject_tracking_data_attributes' ], 10, 2 );
@@ -683,6 +686,14 @@ class NH_Core_Tracking {
         }
 
         return implode( ' / ', $clean );
+    }
+
+    public function exclude_gtm_from_delay_js( $exclusions ) {
+        $exclusions[] = 'gtm.js';
+        $exclusions[] = 'googletagmanager.com/gtm.js';
+        $exclusions[] = 'googletagmanager.com/gtag/js';
+        $exclusions[] = 'GTM-N5G49CWP';
+        return $exclusions;
     }
 }
 
