@@ -5,7 +5,7 @@
  * Consent Mode v2 handled by Pressidium Cookie Consent plugin
  *
  * @package NH_Core
- * @version 1.6.1
+ * @version 1.6.2
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
