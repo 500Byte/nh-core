@@ -376,23 +376,31 @@ class NH_Core_Tracking {
         (function () {
             'use strict';
             if (window.nhTracking) return;
-            function readCookie(name) {
-                var m = document.cookie.match(new RegExp('(?:^|; )' + name.replace(/([.$?*|{}()[\]\\/+^])/g, '\\$1') + '=([^;]*)'));
-                return m ? decodeURIComponent(m[1]) : null;
-            }
-            var fbp = readCookie('_fbp');
-            var fbc = readCookie('_fbc');
-            window.nhTracking = {
-                fbp: fbp,
-                fbc: fbc,
-                getEventId: function (prefix, value) {
-                    return prefix + '_' + (value ? String(value) : Date.now());
+            var attempts = 0;
+            function checkCookies() {
+                var mFbp = document.cookie.match(/(?:^|; )_fbp=([^;]*)/);
+                var mFbc = document.cookie.match(/(?:^|; )_fbc=([^;]*)/);
+                var fbp = mFbp ? decodeURIComponent(mFbp[1]) : null;
+                var fbc = mFbc ? decodeURIComponent(mFbc[1]) : null;
+
+                if (fbp || fbc || attempts >= 60) {
+                    window.nhTracking = {
+                        fbp: fbp,
+                        fbc: fbc,
+                        getEventId: function (prefix, value) {
+                            return prefix + '_' + (value ? String(value) : Date.now());
+                        }
+                    };
+                    if (window.dataLayer) {
+                        if (fbp) { window.dataLayer.push({ nh_fbp: fbp }); }
+                        if (fbc) { window.dataLayer.push({ nh_fbc: fbc }); }
+                    }
+                } else {
+                    attempts++;
+                    setTimeout(checkCookies, 500);
                 }
-            };
-            if (window.dataLayer) {
-                if (fbp) { window.dataLayer.push({ nh_fbp: fbp }); }
-                if (fbc) { window.dataLayer.push({ nh_fbc: fbc }); }
             }
+            checkCookies();
         })();
         </script>
         <!-- End NH Tracking -->
