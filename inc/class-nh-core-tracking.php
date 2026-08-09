@@ -857,7 +857,7 @@ class NH_Core_Tracking {
             var attempts = 0;
             function tryBind() {
                 if (bind()) return;
-                if (++attempts < 15) setTimeout(tryBind, 200); // up to ~3s
+                if (++attempts < 50) setTimeout(tryBind, 250); // up to ~12.5s (cold-cache render)
             }
             tryBind();
         })();
