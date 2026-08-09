@@ -755,45 +755,55 @@ class NH_Core_Tracking {
         (function () {
             'use strict';
             /* nh-welcome-consent */
-            var wrapper = document.getElementById('form-bienvenida');
-            if (!wrapper) return;
-            var form = wrapper.querySelector('form.elementor-form');
-            if (!form) return;
-            // Avoid double injection (e.g. popup re-render)
-            if (form.querySelector('.nh-consent-block')) return;
+            function inject() {
+                var wrapper = document.getElementById('form-bienvenida');
+                if (!wrapper) return false;
+                var form = wrapper.querySelector('form.elementor-form');
+                if (!form) return false;
+                // Avoid double injection (e.g. popup re-render)
+                if (form.querySelector('.nh-consent-block')) return true;
 
-            var block = document.createElement('div');
-            block.className = 'nh-consent-block';
-            block.style.marginTop = '12px';
-            block.style.fontSize = '12px';
-            block.style.lineHeight = '1.5';
-            block.innerHTML =
-                '<label style="display:flex;gap:8px;align-items:flex-start;cursor:pointer;">' +
-                '<input type="checkbox" name="nh_consent" style="margin-top:2px;">' +
-                '<span>He leído y acepto la <a href="/politica-de-privacidad/" target="_blank" rel="noopener">' +
-                'Política de Tratamiento de Datos Personales</a> y autorizo a Norma Hana a tratar mi correo ' +
-                'para enviarme comunicaciones comerciales.</span></label>' +
-                '<p class="nh-consent-msg" role="alert" style="display:none;color:#b91c1c;margin:6px 0 0;">' +
-                'Para recibir tu cortesía, necesitas aceptar la Política de Tratamiento de Datos Personales.</p>';
+                var block = document.createElement('div');
+                block.className = 'nh-consent-block';
+                block.style.marginTop = '12px';
+                block.style.fontSize = '12px';
+                block.style.lineHeight = '1.5';
+                block.innerHTML =
+                    '<label style="display:flex;gap:8px;align-items:flex-start;cursor:pointer;">' +
+                    '<input type="checkbox" name="nh_consent" style="margin-top:2px;">' +
+                    '<span>He leído y acepto la <a href="/politica-de-privacidad/" target="_blank" rel="noopener">' +
+                    'Política de Tratamiento de Datos Personales</a> y autorizo a Norma Hana a tratar mi correo ' +
+                    'para enviarme comunicaciones comerciales.</span></label>' +
+                    '<p class="nh-consent-msg" role="alert" style="display:none;color:#b91c1c;margin:6px 0 0;">' +
+                    'Para recibir tu cortesía, necesitas aceptar la Política de Tratamiento de Datos Personales.</p>';
 
-            // Insert above the submit row (Elementor renders buttons in .e-form__buttons)
-            var buttons = form.querySelector('.e-form__buttons');
-            if (buttons && buttons.parentNode) {
-                buttons.parentNode.insertBefore(block, buttons);
-            } else {
-                form.appendChild(block);
-            }
-
-            var checkbox = block.querySelector('input[name="nh_consent"]');
-            var msg = block.querySelector('.nh-consent-msg');
-            form.addEventListener('submit', function (e) {
-                if (!checkbox.checked) {
-                    e.preventDefault();
-                    e.stopImmediatePropagation();
-                    msg.style.display = 'block';
-                    checkbox.focus();
+                // Insert above the submit row (Elementor renders buttons in .e-form__buttons)
+                var buttons = form.querySelector('.e-form__buttons');
+                if (buttons && buttons.parentNode) {
+                    buttons.parentNode.insertBefore(block, buttons);
+                } else {
+                    form.appendChild(block);
                 }
-            }, true); // capture: runs before Elementor's own handler
+
+                var checkbox = block.querySelector('input[name="nh_consent"]');
+                var msg = block.querySelector('.nh-consent-msg');
+                form.addEventListener('submit', function (e) {
+                    if (!checkbox.checked) {
+                        e.preventDefault();
+                        e.stopImmediatePropagation();
+                        msg.style.display = 'block';
+                        checkbox.focus();
+                    }
+                }, true); // capture: runs before Elementor's own handler
+                return true;
+            }
+            // Elementor renders the popup AFTER wp_footer parses — retry until the form exists
+            var attempts = 0;
+            function tryInject() {
+                if (inject()) return;
+                if (++attempts < 15) setTimeout(tryInject, 200); // up to ~3s
+            }
+            tryInject();
         })();
         </script>
         <?php
@@ -818,24 +828,38 @@ class NH_Core_Tracking {
         <script>
         (function() {
             /* nh-welcome-form-tracking */
-            var form = document.getElementById('form-bienvenida');
-            if ( ! form ) {
-                return;
-            }
-            form.addEventListener('submit_success', function() {
-                var get = function( name ) {
-                    var el = form.querySelector('[name="form_fields[' + name + ']"]');
-                    return el ? el.value : '';
-                };
-                var consentEl = form.querySelector('input[name="nh_consent"]');
-                window.dataLayer = window.dataLayer || [];
-                window.dataLayer.push({
-                    'event': 'nh_form_bienvenida_submit',
-                    'nh_name': get('name'),
-                    'nh_email': get('email'),
-                    'nh_consent': !!(consentEl && consentEl.checked)
+            function bind() {
+                var form = document.getElementById('form-bienvenida');
+                if ( ! form ) {
+                    return false;
+                }
+                if ( form.__nh_form_tracking_bound ) {
+                    return true;
+                }
+                form.__nh_form_tracking_bound = true;
+                form.addEventListener('submit_success', function() {
+                    var get = function( name ) {
+                        var el = form.querySelector('[name="form_fields[' + name + ']"]');
+                        return el ? el.value : '';
+                    };
+                    var consentEl = form.querySelector('input[name="nh_consent"]');
+                    window.dataLayer = window.dataLayer || [];
+                    window.dataLayer.push({
+                        'event': 'nh_form_bienvenida_submit',
+                        'nh_name': get('name'),
+                        'nh_email': get('email'),
+                        'nh_consent': !!(consentEl && consentEl.checked)
+                    });
                 });
-            });
+                return true;
+            }
+            // Elementor renders the popup AFTER wp_footer parses — retry until the form exists
+            var attempts = 0;
+            function tryBind() {
+                if (bind()) return;
+                if (++attempts < 15) setTimeout(tryBind, 200); // up to ~3s
+            }
+            tryBind();
         })();
         </script>
         <?php
