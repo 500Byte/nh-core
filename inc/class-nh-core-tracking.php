@@ -61,6 +61,9 @@ class NH_Core_Tracking {
         // Welcome form tracking (Elementor Pro AJAX submit_success → dataLayer)
         add_action( 'wp_footer', [ $this, 'datalayer_form_bienvenida' ] );
 
+        // Welcome form consent injection (checkbox + pre-submit block — legal, always on)
+        add_action( 'wp_footer', [ $this, 'welcome_form_consent' ] );
+
         // Meta Pixel domain verification
         add_action( 'wp_head', [ $this, 'fb_domain_verification' ], 1 );
 
@@ -736,6 +739,66 @@ class NH_Core_Tracking {
     }
 
     /**
+     * Welcome form consent injection.
+     *
+     * Elementor is NOT edited (rule #9): the consent block is injected into
+     * the existing #form-bienvenida wrapper from code and enforced on the
+     * native submit event (capture), so Elementor's AJAX never fires without
+     * authorization. The checkbox lives INSIDE the real <form>
+     * (#form_bienvenida) so it is included in Elementor's FormData (webhook
+     * + submissions). Legal requirement (Ley 1581/2012) — always injected,
+     * not gated by is_tracking_disabled().
+     */
+    public function welcome_form_consent() {
+        ?>
+        <script>
+        (function () {
+            'use strict';
+            var wrapper = document.getElementById('form-bienvenida');
+            if (!wrapper) return;
+            var form = wrapper.querySelector('form.elementor-form');
+            if (!form) return;
+            // Avoid double injection (e.g. popup re-render)
+            if (form.querySelector('.nh-consent-block')) return;
+
+            var block = document.createElement('div');
+            block.className = 'nh-consent-block';
+            block.style.marginTop = '12px';
+            block.style.fontSize = '12px';
+            block.style.lineHeight = '1.5';
+            block.innerHTML =
+                '<label style="display:flex;gap:8px;align-items:flex-start;cursor:pointer;">' +
+                '<input type="checkbox" name="nh_consent" style="margin-top:2px;">' +
+                '<span>He leído y acepto la <a href="/politica-de-privacidad/" target="_blank" rel="noopener">' +
+                'Política de Tratamiento de Datos Personales</a> y autorizo a Norma Hana a tratar mi correo ' +
+                'para enviarme comunicaciones comerciales.</span></label>' +
+                '<p class="nh-consent-msg" role="alert" style="display:none;color:#b91c1c;margin:6px 0 0;">' +
+                'Para recibir tu cortesía, necesitas aceptar la Política de Tratamiento de Datos Personales.</p>';
+
+            // Insert above the submit row (Elementor renders buttons in .e-form__buttons)
+            var buttons = form.querySelector('.e-form__buttons');
+            if (buttons && buttons.parentNode) {
+                buttons.parentNode.insertBefore(block, buttons);
+            } else {
+                form.appendChild(block);
+            }
+
+            var checkbox = block.querySelector('input[name="nh_consent"]');
+            var msg = block.querySelector('.nh-consent-msg');
+            form.addEventListener('submit', function (e) {
+                if (!checkbox.checked) {
+                    e.preventDefault();
+                    e.stopImmediatePropagation();
+                    msg.style.display = 'block';
+                    checkbox.focus();
+                }
+            }, true); // capture: runs before Elementor's own handler
+        })();
+        </script>
+        <?php
+    }
+
+    /**
      * Welcome form tracking bridge.
      *
      * Elementor Pro submits the form via AJAX (preventDefault + fetch), so
@@ -762,11 +825,13 @@ class NH_Core_Tracking {
                     var el = form.querySelector('[name="form_fields[' + name + ']"]');
                     return el ? el.value : '';
                 };
+                var consentEl = form.querySelector('input[name="nh_consent"]');
                 window.dataLayer = window.dataLayer || [];
                 window.dataLayer.push({
                     'event': 'nh_form_bienvenida_submit',
                     'nh_name': get('name'),
-                    'nh_email': get('email')
+                    'nh_email': get('email'),
+                    'nh_consent': !!(consentEl && consentEl.checked)
                 });
             });
         })();
