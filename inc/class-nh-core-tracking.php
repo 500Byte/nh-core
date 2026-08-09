@@ -193,6 +193,23 @@ class NH_Core_Tracking {
             }
         });
 
+        // Aplicar estado guardado inmediatamente si existe la cookie (visitante recurrente)
+        var cookieVal = getCookie('pressidium_cookie_consent');
+        if (cookieVal) {
+            try {
+                var decoded = JSON.parse(decodeURIComponent(cookieVal));
+                if (decoded && decoded.categories) {
+                    applyPressidiumConsentState(decoded);
+                }
+            } catch(e) {}
+        }
+
+        function getCookie(name) {
+            var value = "; " + document.cookie;
+            var parts = value.split("; " + name + "=");
+            if (parts.length === 2) return parts.pop().split(";").shift();
+        }
+
         /* nh-consent-mode */
         </script>
         <!-- End NH Consent Mode -->
