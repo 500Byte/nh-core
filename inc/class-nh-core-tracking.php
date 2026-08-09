@@ -30,7 +30,8 @@ class NH_Core_Tracking {
      * Register all WordPress hooks and filters.
      */
     private function init_hooks() {
-        // Page context — BEFORE Consent Mode (-10000) and GTM (-9999)
+        // Page context & Consent Mode — BEFORE GTM (-9999)
+        add_action( 'wp_head', [ $this, 'inject_consent_mode' ], -10002 );
         add_action( 'wp_head', [ $this, 'inject_page_context' ], -10001 );
         add_action( 'wp_head', [ $this, 'inject_tracking_js_inline' ], -10000 );
 
@@ -112,6 +113,97 @@ class NH_Core_Tracking {
     // ============================================================
     // GOOGLE TAG MANAGER
     // ============================================================
+
+    public function inject_consent_mode() {
+        if ( $this->is_tracking_disabled() ) return;
+        ?>
+        <!-- NH Consent Mode (deterministic default) -->
+        <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){ dataLayer.push(arguments); }
+        gtag('consent', 'default', {
+            'ad_storage': 'denied',
+            'ad_user_data': 'denied',
+            'ad_personalization': 'denied',
+            'analytics_storage': 'denied',
+            'functionality_storage': 'granted',
+            'personalization_storage': 'denied',
+            'security_storage': 'granted'
+        });
+        gtag('set', 'url_passthrough', true);
+        gtag('set', 'ads_data_redaction', true);
+
+        // Listener para el banner de Pressidium Cookie Consent
+        function applyPressidiumConsentState(state) {
+            if (!state) return;
+            var categories = [];
+            if (state.categories) {
+                categories = state.categories;
+            } else if (state.cookie && state.cookie.categories) {
+                categories = state.cookie.categories;
+            } else if (typeof state.cookie === 'string') {
+                try {
+                    var parsed = JSON.parse(decodeURIComponent(state.cookie));
+                    if (parsed && parsed.categories) {
+                        categories = parsed.categories;
+                    }
+                } catch(e) {}
+            } else if (state && typeof state.cookie === 'object' && state.cookie.categories) {
+                categories = state.cookie.categories;
+            }
+            
+            var consentUpdate = {
+                'ad_storage': 'denied',
+                'ad_user_data': 'denied',
+                'ad_personalization': 'denied',
+                'analytics_storage': 'denied',
+                'personalization_storage': 'denied',
+                'functionality_storage': 'granted',
+                'security_storage': 'granted'
+            };
+            
+            if (Array.isArray(categories)) {
+                categories.forEach(function(cat) {
+                    if (cat === 'analytics') {
+                        consentUpdate['analytics_storage'] = 'granted';
+                    } else if (cat === 'targeting') {
+                        consentUpdate['ad_storage'] = 'granted';
+                        consentUpdate['ad_user_data'] = 'granted';
+                        consentUpdate['ad_personalization'] = 'granted';
+                    } else if (cat === 'preferences') {
+                        consentUpdate['personalization_storage'] = 'granted';
+                    } else if (cat === 'necessary') {
+                        consentUpdate['functionality_storage'] = 'granted';
+                        consentUpdate['security_storage'] = 'granted';
+                    }
+                });
+            }
+            gtag('consent', 'update', consentUpdate);
+        }
+
+        document.addEventListener('pressidium-cookie-consent-accepted', function() {
+            gtag('consent', 'update', {
+                'ad_storage': 'granted',
+                'ad_user_data': 'granted',
+                'ad_personalization': 'granted',
+                'analytics_storage': 'granted',
+                'personalization_storage': 'granted',
+                'functionality_storage': 'granted',
+                'security_storage': 'granted'
+            });
+        });
+
+        document.addEventListener('pressidium-cookie-consent-changed', function(event) {
+            if (event && event.detail) {
+                applyPressidiumConsentState(event.detail);
+            }
+        });
+
+        /* nh-consent-mode */
+        </script>
+        <!-- End NH Consent Mode -->
+        <?php
+    }
 
     public function inject_gtm_head() {
         if ( $this->is_tracking_disabled() ) return;
@@ -719,6 +811,7 @@ class NH_Core_Tracking {
         $exclusions[] = 'googletagmanager.com/gtm.js';
         $exclusions[] = 'googletagmanager.com/gtag/js';
         $exclusions[] = 'GTM-N5G49CWP';
+        $exclusions[] = 'nh-consent-mode';
         return $exclusions;
     }
 }
