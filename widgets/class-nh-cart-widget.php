@@ -359,28 +359,7 @@ class NH_Cart_Widget extends \Elementor\Widget_Base {
     }
 
     private function get_free_shipping_threshold() {
-        $settings = $this->get_settings_for_display();
-        $custom_threshold = floatval( $settings['free_shipping_threshold'] );
-        if ( $custom_threshold > 0 ) {
-            return $custom_threshold;
-        }
-
-        if ( ! function_exists( 'WC' ) ) {
-            return 150000;
-        }
-
-        $zones = \WC_Shipping_Zones::get_zones();
-        foreach ( $zones as $zone ) {
-            foreach ( $zone['shipping_methods'] as $method ) {
-                if ( 'free_shipping' === $method->id && 'yes' === $method->enabled ) {
-                    $min_amount = floatval( $method->min_amount );
-                    if ( $min_amount > 0 ) {
-                        return $min_amount;
-                    }
-                }
-            }
-        }
-        return 150000;
+        return nh_get_free_shipping_threshold();
     }
 
     protected function render() {

@@ -698,27 +698,8 @@ class NH_Side_Cart_Widget extends \Elementor\Widget_Base {
      * Obtener umbral de envío gratis desde Elementor o desde WooCommerce.
      */
     private function get_shipping_threshold( $settings ) {
-        $custom = floatval( $settings['free_shipping_threshold'] ?? 0 );
-        if ( $custom > 0 ) {
-            return $custom;
-        }
-        // Auto-detect desde WooCommerce shipping zones
-        if ( class_exists( 'WC_Shipping_Zones' ) ) {
-            foreach ( \WC_Shipping_Zones::get_zones() as $zone ) {
-                foreach ( $zone['shipping_methods'] as $method ) {
-                    if ( 'free_shipping' === $method->id && 'yes' === $method->enabled ) {
-                        $min = floatval( $method->min_amount );
-                        if ( $min > 0 ) return $min;
-                    }
-                }
-            }
-        }
-        return 280000; // Fallback NH
+        return nh_get_free_shipping_threshold();
     }
-
-    /**
-     * Renderiza el ícono del trigger usando Icons_Manager.
-     */
     private function get_cart_icon_html( array $icon_data ): string {
         if ( ! class_exists( '\Elementor\Icons_Manager' ) || empty( $icon_data['value'] ) ) {
             return '<i class="ph-light ph-shopping-bag nh-side-cart__icon" aria-hidden="true"></i>';

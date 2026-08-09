@@ -436,7 +436,7 @@ class NH_Checkout_Widget extends \Elementor\Widget_Base {
 
         add_filter( 'nh_checkout_free_shipping_threshold', function() use ( $settings ) {
             if ( isset( $settings['show_free_shipping_bar'] ) && 'yes' === $settings['show_free_shipping_bar'] ) {
-                return ! empty( $settings['free_shipping_threshold'] ) ? (float) $settings['free_shipping_threshold'] : 280000;
+                return nh_get_free_shipping_threshold();
             }
             return 0;
         } );

@@ -74,7 +74,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 		<!-- Barra de Progreso Envío Gratis -->
 		<?php
-		$free_shipping_threshold = (float) apply_filters( 'nh_checkout_free_shipping_threshold', 280000 );
+		$free_shipping_threshold = (float) apply_filters( "nh_checkout_free_shipping_threshold", nh_get_free_shipping_threshold() );
 		$subtotal = (float) WC()->cart->get_subtotal();
 		if ( $free_shipping_threshold > 0 && $subtotal > 0 ) :
 			$percent = min( 100, round( ( $subtotal / $free_shipping_threshold ) * 100 ) );

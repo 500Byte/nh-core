@@ -240,19 +240,8 @@ class NH_Core_Elementor {
             true
         );
 
-        // Detect free shipping threshold
-        $threshold = 280000;
-        if ( class_exists( 'WC_Shipping_Zones' ) ) {
-            foreach ( \WC_Shipping_Zones::get_zones() as $zone ) {
-                foreach ( $zone['shipping_methods'] as $method ) {
-                    if ( 'free_shipping' === $method->id && 'yes' === $method->enabled ) {
-                        $min = floatval( $method->min_amount );
-                        if ( $min > 0 ) { $threshold = $min; break 2; }
-                    }
-                }
-            }
-        }
-
+        // Detect free shipping threshold dynamically
+        $threshold = nh_get_free_shipping_threshold();
         wp_localize_script( 'nh-side-cart', 'nhSideCartParams', [
             'ajax_url'                => admin_url( 'admin-ajax.php' ),
             'nonce'                   => wp_create_nonce( 'nh_side_cart_nonce' ),

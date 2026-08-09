@@ -145,3 +145,37 @@ function nh_render_coupon_box( $input_id = 'nh_coupon_code', $btn_id = 'nh_apply
 	</div>
 	<?php
 }
+
+/**
+
+
+
+/**
+ * Obtiene el umbral de envio gratis dinamicamente desde la configuracion de WooCommerce.
+ *
+ * @return float Umbral en COP (default: 280000).
+ */
+function nh_get_free_shipping_threshold() {
+    static $cached = null;
+    if ( null !== $cached ) {
+        return $cached;
+    }
+    $threshold = 280000.0;
+    if ( class_exists( "WC_Shipping_Zones" ) ) {
+        $zones = WC_Shipping_Zones::get_zones();
+        foreach ( $zones as $zone ) {
+            if ( empty( $zone["shipping_methods"] ) ) continue;
+            foreach ( $zone["shipping_methods"] as $method ) {
+                if ( "free_shipping" === $method->id && "yes" === $method->enabled ) {
+                    $min = floatval( $method->min_amount );
+                    if ( $min > 0 ) {
+                        $threshold = $min;
+                        break 2;
+                    }
+                }
+            }
+        }
+    }
+    $cached = (float) apply_filters( "nh_free_shipping_threshold", $threshold );
+    return $cached;
+}
