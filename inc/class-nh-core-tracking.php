@@ -754,6 +754,7 @@ class NH_Core_Tracking {
         <script>
         (function () {
             'use strict';
+            /* nh-welcome-consent */
             var wrapper = document.getElementById('form-bienvenida');
             if (!wrapper) return;
             var form = wrapper.querySelector('form.elementor-form');
@@ -816,6 +817,7 @@ class NH_Core_Tracking {
         ?>
         <script>
         (function() {
+            /* nh-welcome-form-tracking */
             var form = document.getElementById('form-bienvenida');
             if ( ! form ) {
                 return;
@@ -888,6 +890,8 @@ class NH_Core_Tracking {
         $exclusions[] = 'googletagmanager.com/gtag/js';
         $exclusions[] = 'GTM-N5G49CWP';
         $exclusions[] = 'nh-consent-mode';
+        $exclusions[] = 'nh-welcome-consent';
+        $exclusions[] = 'nh-welcome-form-tracking';
         return $exclusions;
     }
 }
