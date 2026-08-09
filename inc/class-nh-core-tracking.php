@@ -181,7 +181,7 @@ class NH_Core_Tracking {
             gtag('consent', 'update', consentUpdate);
         }
 
-        document.addEventListener('pressidium-cookie-consent-accepted', function() {
+        window.addEventListener('pressidium-cookie-consent-accepted', function() {
             gtag('consent', 'update', {
                 'ad_storage': 'granted',
                 'ad_user_data': 'granted',
@@ -193,7 +193,7 @@ class NH_Core_Tracking {
             });
         });
 
-        document.addEventListener('pressidium-cookie-consent-changed', function(event) {
+        window.addEventListener('pressidium-cookie-consent-changed', function(event) {
             if (event && event.detail) {
                 applyPressidiumConsentState(event.detail);
             }
