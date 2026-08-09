@@ -181,16 +181,10 @@ class NH_Core_Tracking {
             gtag('consent', 'update', consentUpdate);
         }
 
-        window.addEventListener('pressidium-cookie-consent-accepted', function() {
-            gtag('consent', 'update', {
-                'ad_storage': 'granted',
-                'ad_user_data': 'granted',
-                'ad_personalization': 'granted',
-                'analytics_storage': 'granted',
-                'personalization_storage': 'granted',
-                'functionality_storage': 'granted',
-                'security_storage': 'granted'
-            });
+        window.addEventListener('pressidium-cookie-consent-accepted', function(event) {
+            if (event && event.detail) {
+                applyPressidiumConsentState(event.detail);
+            }
         });
 
         window.addEventListener('pressidium-cookie-consent-changed', function(event) {
