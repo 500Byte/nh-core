@@ -58,11 +58,10 @@ class NH_Core_Tracking {
         // Remove from cart tracking
         add_action( 'woocommerce_cart_item_removed', [ $this, 'capture_remove_from_cart' ], 10, 2 );
 
-        // Welcome form tracking (Elementor Pro AJAX submit_success → dataLayer)
+        // Welcome form tracking + consent enforcement (event delegation on
+        // document — survives the Elementor popup re-render; the consent field
+        // is the native acceptance added in the Elementor editor, rule #9)
         add_action( 'wp_footer', [ $this, 'datalayer_form_bienvenida' ] );
-
-        // Welcome form consent injection (checkbox + pre-submit block — legal, always on)
-        add_action( 'wp_footer', [ $this, 'welcome_form_consent' ] );
 
         // Meta Pixel domain verification
         add_action( 'wp_head', [ $this, 'fb_domain_verification' ], 1 );
@@ -739,77 +738,6 @@ class NH_Core_Tracking {
     }
 
     /**
-     * Welcome form consent injection.
-     *
-     * Elementor is NOT edited (rule #9): the consent block is injected into
-     * the existing #form-bienvenida wrapper from code and enforced on the
-     * native submit event (capture), so Elementor's AJAX never fires without
-     * authorization. The checkbox lives INSIDE the real <form>
-     * (#form_bienvenida) so it is included in Elementor's FormData (webhook
-     * + submissions). Legal requirement (Ley 1581/2012) — always injected,
-     * not gated by is_tracking_disabled().
-     */
-    public function welcome_form_consent() {
-        ?>
-        <script>
-        (function () {
-            'use strict';
-            /* nh-welcome-consent */
-            function inject() {
-                var wrapper = document.getElementById('form-bienvenida');
-                if (!wrapper) return false;
-                var form = wrapper.querySelector('form.elementor-form');
-                if (!form) return false;
-                // Avoid double injection (e.g. popup re-render)
-                if (form.querySelector('.nh-consent-block')) return true;
-
-                var block = document.createElement('div');
-                block.className = 'nh-consent-block';
-                block.style.marginTop = '12px';
-                block.style.fontSize = '12px';
-                block.style.lineHeight = '1.5';
-                block.innerHTML =
-                    '<label style="display:flex;gap:8px;align-items:flex-start;cursor:pointer;">' +
-                    '<input type="checkbox" name="nh_consent" style="margin-top:2px;">' +
-                    '<span>He leído y acepto la <a href="/politica-de-privacidad/" target="_blank" rel="noopener">' +
-                    'Política de Tratamiento de Datos Personales</a> y autorizo a Norma Hana a tratar mi correo ' +
-                    'para enviarme comunicaciones comerciales.</span></label>' +
-                    '<p class="nh-consent-msg" role="alert" style="display:none;color:#b91c1c;margin:6px 0 0;">' +
-                    'Para recibir tu cortesía, necesitas aceptar la Política de Tratamiento de Datos Personales.</p>';
-
-                // Insert above the submit row (Elementor renders buttons in .e-form__buttons)
-                var buttons = form.querySelector('.e-form__buttons');
-                if (buttons && buttons.parentNode) {
-                    buttons.parentNode.insertBefore(block, buttons);
-                } else {
-                    form.appendChild(block);
-                }
-
-                var checkbox = block.querySelector('input[name="nh_consent"]');
-                var msg = block.querySelector('.nh-consent-msg');
-                form.addEventListener('submit', function (e) {
-                    if (!checkbox.checked) {
-                        e.preventDefault();
-                        e.stopImmediatePropagation();
-                        msg.style.display = 'block';
-                        checkbox.focus();
-                    }
-                }, true); // capture: runs before Elementor's own handler
-                return true;
-            }
-            // Elementor renders the popup AFTER wp_footer parses — retry until the form exists
-            var attempts = 0;
-            function tryInject() {
-                if (inject()) return;
-                if (++attempts < 15) setTimeout(tryInject, 200); // up to ~3s
-            }
-            tryInject();
-        })();
-        </script>
-        <?php
-    }
-
-    /**
      * Welcome form tracking bridge.
      *
      * Elementor Pro submits the form via AJAX (preventDefault + fetch), so
@@ -817,49 +745,105 @@ class NH_Core_Tracking {
      * reliable moment is Elementor's own `submit_success` jQuery event, which
      * fires on the <form> element ONLY after the AJAX request succeeded.
      *
-     * Listens for it on #form-bienvenida and pushes to the dataLayer, which
-     * GTM's custom event trigger (nh_form_bienvenida_submit) consumes.
+     * Both handlers are delegated on `document` because Elementor re-renders
+     * the popup after each submit, orphaning any listener bound to its nodes:
+     *
+     * 1. BLOCK — native `submit` in CAPTURE phase (no jQuery required). Runs
+     *    before Elementor's own handler, so the AJAX never fires without
+     *    consent. The consent field is the native Elementor acceptance
+     *    (form_fields[field_d392365], added in the editor — rule #9, no
+     *    injection). Always active, not gated by is_tracking_disabled().
+     * 2. PUSH — `submit_success` is a jQuery CUSTOM event, not a native DOM
+     *    event, so it only propagates through jQuery's internal registry and
+     *    NOT through the native DOM path. Delegation must therefore be
+     *    jQuery: jQuery(document).on('submit_success', ...). WP Rocket JS
+     *    delay may postpone jQuery, so the bind retries until it exists.
      */
     public function datalayer_form_bienvenida() {
-        if ( $this->is_tracking_disabled() ) {
-            return;
-        }
+        $tracking_disabled = $this->is_tracking_disabled();
         ?>
         <script>
-        (function() {
+        (function () {
+            'use strict';
             /* nh-welcome-form-tracking */
-            function bind() {
-                var form = document.getElementById('form-bienvenida');
-                if ( ! form ) {
-                    return false;
+            var CONSENT_NAME = 'form_fields[field_d392365]';
+
+            function isWelcomeForm(form) {
+                return form && form.id === 'form_bienvenida' &&
+                    form.classList.contains('elementor-form');
+            }
+
+            function getConsent(form) {
+                var el = form.querySelector('[name="' + CONSENT_NAME + '"]');
+                return !!(el && el.checked);
+            }
+
+            function getField(form, name) {
+                var el = form.querySelector('[name="form_fields[' + name + ']"]');
+                return el ? el.value : '';
+            }
+
+            function showConsentMessage(form) {
+                var msg = form.querySelector('.nh-consent-msg');
+                if (!msg) {
+                    msg = document.createElement('p');
+                    msg.className = 'nh-consent-msg';
+                    msg.setAttribute('role', 'alert');
+                    msg.style.cssText = 'display:block;color:#b91c1c;margin:6px 0 0;font-size:12px;line-height:1.5;';
+                    msg.textContent = 'Para recibir tu cortesía, necesitas aceptar la Política de Tratamiento de Datos Personales.';
+                    var buttons = form.querySelector('.e-form__buttons');
+                    if (buttons && buttons.parentNode) {
+                        buttons.parentNode.insertBefore(msg, buttons);
+                    } else {
+                        form.appendChild(msg);
+                    }
+                } else {
+                    msg.style.display = 'block';
                 }
-                if ( form.__nh_form_tracking_bound ) {
-                    return true;
+            }
+
+            // BLOCK — native submit, capture phase, delegated on document
+            // (survives the popup re-render). Always active: legal consent.
+            document.addEventListener('submit', function (e) {
+                var form = e.target;
+                if (!isWelcomeForm(form)) {
+                    return;
                 }
-                form.__nh_form_tracking_bound = true;
-                form.addEventListener('submit_success', function() {
-                    var get = function( name ) {
-                        var el = form.querySelector('[name="form_fields[' + name + ']"]');
-                        return el ? el.value : '';
-                    };
-                    var consentEl = form.querySelector('input[name="nh_consent"]');
-                    window.dataLayer = window.dataLayer || [];
-                    window.dataLayer.push({
-                        'event': 'nh_form_bienvenida_submit',
-                        'nh_name': get('name'),
-                        'nh_email': get('email'),
-                        'nh_consent': !!(consentEl && consentEl.checked)
+                if (getConsent(form)) {
+                    return;
+                }
+                e.preventDefault();
+                e.stopPropagation();
+                showConsentMessage(form);
+                var cb = form.querySelector('[name="' + CONSENT_NAME + '"]');
+                if (cb) {
+                    cb.focus();
+                }
+            }, true);
+
+            <?php if ( ! $tracking_disabled ) : ?>
+            // PUSH — submit_success is a jQuery custom event: delegation must
+            // be jQuery on document. WP Rocket delay may postpone jQuery.
+            (function bindPush() {
+                if (window.jQuery) {
+                    jQuery(document).on('submit_success', function (e) {
+                        var form = e.target;
+                        if (!isWelcomeForm(form)) {
+                            return;
+                        }
+                        window.dataLayer = window.dataLayer || [];
+                        window.dataLayer.push({
+                            'event': 'nh_form_bienvenida_submit',
+                            'nh_name': getField(form, 'name'),
+                            'nh_email': getField(form, 'email'),
+                            'nh_consent': getConsent(form)
+                        });
                     });
-                });
-                return true;
-            }
-            // Elementor renders the popup AFTER wp_footer parses — retry until the form exists
-            var attempts = 0;
-            function tryBind() {
-                if (bind()) return;
-                if (++attempts < 50) setTimeout(tryBind, 250); // up to ~12.5s (cold-cache render)
-            }
-            tryBind();
+                    return;
+                }
+                setTimeout(bindPush, 250);
+            })();
+            <?php endif; ?>
         })();
         </script>
         <?php
@@ -914,7 +898,6 @@ class NH_Core_Tracking {
         $exclusions[] = 'googletagmanager.com/gtag/js';
         $exclusions[] = 'GTM-N5G49CWP';
         $exclusions[] = 'nh-consent-mode';
-        $exclusions[] = 'nh-welcome-consent';
         $exclusions[] = 'nh-welcome-form-tracking';
         return $exclusions;
     }
