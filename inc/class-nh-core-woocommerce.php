@@ -58,6 +58,23 @@ class NH_Core_Woocommerce {
         // AJAX endpoint para Add to Cart (reemplaza wc-add-to-cart.js en Elementor)
         add_action( 'wp_ajax_nh_add_to_cart', [ $this, 'ajax_add_to_cart' ] );
         add_action( 'wp_ajax_nopriv_nh_add_to_cart', [ $this, 'ajax_add_to_cart' ] );
+
+        // AJAX endpoint para refrescar nonces (páginas cacheadas por WP Rocket)
+        add_action( 'wp_ajax_nh_get_cart_nonce', [ $this, 'ajax_get_cart_nonce' ] );
+        add_action( 'wp_ajax_nopriv_nh_get_cart_nonce', [ $this, 'ajax_get_cart_nonce' ] );
+    }
+
+    /**
+     * AJAX: Devuelve nonces frescos para el carrito.
+     * Las páginas cacheadas (WP Rocket) sirven un nonce inline que caduca
+     * (~12h), rompiendo silenciosamente el add-to-cart AJAX. admin-ajax.php
+     * nunca se cachea, así que refrescamos el nonce justo antes del submit.
+     */
+    public function ajax_get_cart_nonce() {
+        wp_send_json_success( [
+            'cart_nonce'    => wp_create_nonce( 'nh_cart_nonce' ),
+            'side_cart_nonce' => wp_create_nonce( 'nh_side_cart_nonce' ),
+        ] );
     }
 
     /**

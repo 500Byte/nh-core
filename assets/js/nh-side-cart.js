@@ -194,6 +194,47 @@
         updateShippingBar(totalRaw);
     }
 
+    /* ─── Refresco de nonces (páginas cacheadas por WP Rocket) ────────────── */
+    // El HTML cacheado lleva nonces inline que caducan (~12h). admin-ajax nunca
+    // se cachea: pedimos nonces frescos para que el side cart no falle
+    // silenciosamente por nonce expirado.
+    var _pendingNonces = null;
+
+    function getFreshNonces() {
+        if (_pendingNonces) return _pendingNonces;
+
+        _pendingNonces = new Promise(function (resolve) {
+            if (typeof window.fetch !== 'function') {
+                resolve({
+                    nonce:      cfg.nonce,
+                    cart_nonce: cfg.cart_nonce,
+                });
+                return;
+            }
+
+            fetch(cfg.ajax_url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8' },
+                credentials: 'same-origin',
+                body: 'action=nh_get_cart_nonce',
+            })
+                .then(function (r) { return r.json(); })
+                .then(function (res) {
+                    _pendingNonces = null;
+                    resolve({
+                        nonce:      (res && res.data && res.data.side_cart_nonce) || cfg.nonce,
+                        cart_nonce: (res && res.data && res.data.cart_nonce) || cfg.cart_nonce,
+                    });
+                })
+                .catch(function () {
+                    _pendingNonces = null;
+                    resolve({ nonce: cfg.nonce, cart_nonce: cfg.cart_nonce });
+                });
+        });
+
+        return _pendingNonces;
+    }
+
     /* ─── Cargar Items desde el servidor ─────────────────────────────────── */
     function refresh(andOpen) {
         if (isLoading) return;
@@ -201,26 +242,25 @@
 
         $(S.body).addClass('nh-side-cart__body--loading');
 
-        $.ajax({
-            url:    cfg.ajax_url,
-            method: 'POST',
-            data: {
-                action: 'nh_side_cart_get_items',
-                nonce:  cfg.nonce,
-            },
-            success: function (res) {
-                if (res.success) {
-                    renderItems(res.data.items);
-                    if (andOpen) open();
-                }
-            },
-            error: function () {
-                console.warn('[NHSideCart] Error al obtener items del carrito.');
-            },
-            complete: function () {
-                isLoading = false;
-                $(S.body).removeClass('nh-side-cart__body--loading');
-            },
+        getFreshNonces().then(function (nonces) {
+            return $.ajax({
+                url:    cfg.ajax_url,
+                method: 'POST',
+                data: {
+                    action: 'nh_side_cart_get_items',
+                    nonce:  nonces.nonce,
+                },
+            });
+        }).then(function (res) {
+            if (res && res.success) {
+                renderItems(res.data.items);
+                if (andOpen) open();
+            }
+        }).catch(function () {
+            console.warn('[NHSideCart] Error al obtener items del carrito.');
+        }).then(function () {
+            isLoading = false;
+            $(S.body).removeClass('nh-side-cart__body--loading');
         });
     }
 
@@ -237,39 +277,39 @@
             'nh-quantity':      parseInt($item.attr('data-nh-quantity')) || 1,
         };
 
-        $.ajax({
-            url:    cfg.ajax_url,
-            method: 'POST',
-            data: {
-                action:        'nh_remove_cart_item',
-                nonce:         cfg.cart_nonce,   // ← nh_cart_nonce (handler existente)
-                cart_item_key: cartItemKey,       // ← campo que espera el handler PHP
-            },
-            success: function (res) {
-                if (res.success) {
-                    // Animar salida y luego refrescar
-                    $item.animate({ opacity: 0, height: 0 }, 220, function () {
-                        $item.remove();
-                        refresh(false);
-                        // Notificar al ecosistema WooCommerce para actualizar otros widgets
-                        $(document.body).trigger('wc_fragment_refresh');
-                        $(document.body).trigger('wc_fragments_refreshed');
-                        // Fire removed_from_cart for tracking (nh-datalayer-cart.js listens)
-                        $(document.body).trigger('removed_from_cart', [
-                            {},               // fragments (not needed for tracking)
-                            '',               // cart_hash
-                            $('<button>')
-                                .attr('data-nh-product-id',    trackData['nh-product-id'])
-                                .attr('data-nh-product-name',  trackData['nh-product-name'])
-                                .attr('data-nh-product-price', trackData['nh-product-price'])
-                                .attr('data-nh-quantity',      trackData['nh-quantity'])
-                        ]);
-                    });
-                }
-            },
-            error: function () {
-                $item.removeClass('nh-side-cart__item--removing');
-            },
+        getFreshNonces().then(function (nonces) {
+            return $.ajax({
+                url:    cfg.ajax_url,
+                method: 'POST',
+                data: {
+                    action:        'nh_remove_cart_item',
+                    nonce:         nonces.cart_nonce,   // ← nh_cart_nonce (handler existente)
+                    cart_item_key: cartItemKey,          // ← campo que espera el handler PHP
+                },
+            });
+        }).then(function (res) {
+            if (res && res.success) {
+                // Animar salida y luego refrescar
+                $item.animate({ opacity: 0, height: 0 }, 220, function () {
+                    $item.remove();
+                    refresh(false);
+                    // Notificar al ecosistema WooCommerce para actualizar otros widgets
+                    $(document.body).trigger('wc_fragment_refresh');
+                    $(document.body).trigger('wc_fragments_refreshed');
+                    // Fire removed_from_cart for tracking (nh-datalayer-cart.js listens)
+                    $(document.body).trigger('removed_from_cart', [
+                        {},               // fragments (not needed for tracking)
+                        '',               // cart_hash
+                        $('<button>')
+                            .attr('data-nh-product-id',    trackData['nh-product-id'])
+                            .attr('data-nh-product-name',  trackData['nh-product-name'])
+                            .attr('data-nh-product-price', trackData['nh-product-price'])
+                            .attr('data-nh-quantity',      trackData['nh-quantity'])
+                    ]);
+                });
+            }
+        }).catch(function () {
+            $item.removeClass('nh-side-cart__item--removing');
         });
     }
 

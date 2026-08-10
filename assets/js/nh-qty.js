@@ -99,6 +99,44 @@
     }
 
     /**
+     * Refresco de nonce (páginas cacheadas por WP Rocket).
+     * admin-ajax nunca se cachea: pedimos nonce fresco antes de cada update.
+     */
+    let _pendingNonce = null;
+
+    function getFreshNonce() {
+        if (_pendingNonce) return _pendingNonce;
+
+        _pendingNonce = new Promise((resolve) => {
+            const params = window.nh_cart_params || window.nhSideCartParams || {};
+            const ajaxUrl = params.ajax_url || '/wp-admin/admin-ajax.php';
+
+            if (typeof window.fetch !== 'function') {
+                resolve(params.nonce || '');
+                return;
+            }
+
+            fetch(ajaxUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8' },
+                credentials: 'same-origin',
+                body: 'action=nh_get_cart_nonce',
+            })
+                .then((r) => r.json())
+                .then((res) => {
+                    _pendingNonce = null;
+                    resolve((res && res.data && res.data.cart_nonce) || params.nonce || '');
+                })
+                .catch(() => {
+                    _pendingNonce = null;
+                    resolve(params.nonce || '');
+                });
+        });
+
+        return _pendingNonce;
+    }
+
+    /**
      * Send AJAX qty update.
      */
     function ajaxUpdate(wrapper, newQty) {
@@ -110,17 +148,18 @@
 
         const params = window.nh_cart_params || window.nhSideCartParams || {};
         const ajaxUrl = params.ajax_url || '/wp-admin/admin-ajax.php';
-        const nonce = params.nonce || '';
 
-        fetch(ajaxUrl, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-            body: new URLSearchParams({
-                action: 'nh_update_cart_item',
-                cart_item_key: key,
-                quantity: newQty,
-                nonce: nonce,
-            }),
+        getFreshNonce().then((nonce) => {
+            return fetch(ajaxUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: new URLSearchParams({
+                    action: 'nh_update_cart_item',
+                    cart_item_key: key,
+                    quantity: newQty,
+                    nonce: nonce,
+                }),
+            });
         })
             .then((r) => r.json())
             .then((res) => {

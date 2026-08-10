@@ -11,6 +11,43 @@
 (function () {
     'use strict';
 
+    /* ── Refresco de nonce (páginas cacheadas por WP Rocket) ──────────────── */
+    // El HTML cacheado lleva un nonce inline que caduca (~12h). admin-ajax
+    // nunca se cachea: pedimos un nonce fresco antes de cada submit para que
+    // el add-to-cart no falle silenciosamente por nonce expirado.
+    var _pendingNonce = null;
+
+    function getFreshNonce() {
+        if (_pendingNonce) return _pendingNonce;
+
+        _pendingNonce = new Promise(function (resolve) {
+            if (typeof window.fetch !== 'function') {
+                resolve((window.nh_cart_params || {}).nonce || '');
+                return;
+            }
+
+            var ajaxUrl = (window.nh_cart_params || {}).ajax_url || '/wp-admin/admin-ajax.php';
+
+            fetch(ajaxUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8' },
+                credentials: 'same-origin',
+                body: 'action=nh_get_cart_nonce',
+            })
+                .then(function (r) { return r.json(); })
+                .then(function (res) {
+                    _pendingNonce = null;
+                    resolve((res && res.data && res.data.cart_nonce) || (window.nh_cart_params || {}).nonce || '');
+                })
+                .catch(function () {
+                    _pendingNonce = null;
+                    resolve((window.nh_cart_params || {}).nonce || '');
+                });
+        });
+
+        return _pendingNonce;
+    }
+
     /* ── AJAX Add to Cart (reemplaza wc-add-to-cart.js roto por Elementor) ── */
     function initAjaxATC() {
         if (typeof jQuery === 'undefined') return;
@@ -43,34 +80,34 @@
 
             $btn.addClass('loading').prop('disabled', true);
 
-            $.ajax({
-                type: 'POST',
-                url:  (window.nh_cart_params || {}).ajax_url || '/wp-admin/admin-ajax.php',
-                data: {
-                    action:      'nh_add_to_cart',
-                    nonce:       (window.nh_cart_params || {}).nonce || '',
-                    product_id:  productId,
-                    variation_id: variationId,
-                    quantity:    quantity,
-                    variations:  variations,
-                },
-                success: function (res) {
-                    $btn.removeClass('loading').prop('disabled', false);
+            getFreshNonce().then(function (nonce) {
+                return $.ajax({
+                    type: 'POST',
+                    url:  (window.nh_cart_params || {}).ajax_url || '/wp-admin/admin-ajax.php',
+                    data: {
+                        action:      'nh_add_to_cart',
+                        nonce:       nonce,
+                        product_id:  productId,
+                        variation_id: variationId,
+                        quantity:    quantity,
+                        variations:  variations,
+                    },
+                });
+            }).then(function (res) {
+                $btn.removeClass('loading').prop('disabled', false);
 
-                    if (res.success) {
-                        $(document.body).trigger('added_to_cart', [
-                            res.data.fragments || {},
-                            res.data.cart_hash || '',
-                            $btn,
-                        ]);
-                        $(document.body).trigger('wc_fragment_refresh');
-                    } else {
-                        $(document.body).trigger('wc_fragment_refresh');
-                    }
-                },
-                error: function () {
-                    $btn.removeClass('loading').prop('disabled', false);
-                },
+                if (res && res.success) {
+                    $(document.body).trigger('added_to_cart', [
+                        res.data.fragments || {},
+                        res.data.cart_hash || '',
+                        $btn,
+                    ]);
+                    $(document.body).trigger('wc_fragment_refresh');
+                } else {
+                    $(document.body).trigger('wc_fragment_refresh');
+                }
+            }).catch(function () {
+                $btn.removeClass('loading').prop('disabled', false);
             });
         });
     }
@@ -175,24 +212,25 @@
                 btn.classList.add('nh-add-to-cart__buy-now--loading');
                 btn.disabled = true;
 
-                var formData = new FormData();
-                formData.append('action', 'nh_buy_now');
-                formData.append('nonce', window.nh_cart_params.nonce);
-                formData.append('product_id', productId);
-                formData.append('quantity', quantity);
-                if (variationId) {
-                    formData.append('variation_id', variationId);
-                    Object.keys(variations).forEach(function (key) {
-                        formData.append('variations[' + key + ']', variations[key]);
-                    });
-                }
+                getFreshNonce().then(function (nonce) {
+                    var formData = new FormData();
+                    formData.append('action', 'nh_buy_now');
+                    formData.append('nonce', nonce);
+                    formData.append('product_id', productId);
+                    formData.append('quantity', quantity);
+                    if (variationId) {
+                        formData.append('variation_id', variationId);
+                        Object.keys(variations).forEach(function (key) {
+                            formData.append('variations[' + key + ']', variations[key]);
+                        });
+                    }
 
-                fetch(window.nh_cart_params.ajax_url, {
-                    method: 'POST',
-                    body: formData,
-                    credentials: 'same-origin',
+                    return fetch(window.nh_cart_params.ajax_url, {
+                        method: 'POST',
+                        body: formData,
+                        credentials: 'same-origin',
+                    }).then(function (r) { return r.json(); });
                 })
-                    .then(function (r) { return r.json(); })
                     .then(function (res) {
                         if (!res.success) {
                             throw new Error(res.data && res.data.message ? res.data.message : 'Error');

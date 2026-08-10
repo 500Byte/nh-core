@@ -4,6 +4,40 @@
 (function($) {
     'use strict';
 
+    /* ── Refresco de nonce (páginas cacheadas por WP Rocket) ──────────────── */
+    // El HTML cacheado lleva un nonce inline que caduca (~12h). admin-ajax
+    // nunca se cachea: pedimos un nonce fresco antes de cada operación.
+    let _pendingNonce = null;
+
+    function getFreshNonce() {
+        if (_pendingNonce) return _pendingNonce;
+
+        _pendingNonce = new Promise(function(resolve) {
+            if (typeof window.fetch !== 'function') {
+                resolve(nh_cart_params?.nonce || '');
+                return;
+            }
+
+            fetch(nh_cart_params?.ajax_url || '/wp-admin/admin-ajax.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8' },
+                credentials: 'same-origin',
+                body: 'action=nh_get_cart_nonce',
+            })
+                .then(r => r.json())
+                .then(res => {
+                    _pendingNonce = null;
+                    resolve((res && res.data && res.data.cart_nonce) || nh_cart_params?.nonce || '');
+                })
+                .catch(() => {
+                    _pendingNonce = null;
+                    resolve(nh_cart_params?.nonce || '');
+                });
+        });
+
+        return _pendingNonce;
+    }
+
     const NH_Cart = {
         init: function() {
             this.bindEvents();
@@ -23,18 +57,19 @@
             const key = $btn.data('key') || $item.data('key');
 
             $item.fadeOut(300, () => {
-                $.ajax({
-                    url: nh_cart_params?.ajax_url || '/wp-admin/admin-ajax.php',
-                    type: 'POST',
-                    data: {
-                        action: 'nh_remove_cart_item',
-                        cart_item_key: key,
-                        nonce: nh_cart_params?.nonce || ''
-                    },
-                    success: (response) => {
-                        if (response.success) {
-                            this.refreshCartFragments();
+                getFreshNonce().then((nonce) => {
+                    return $.ajax({
+                        url: nh_cart_params?.ajax_url || '/wp-admin/admin-ajax.php',
+                        type: 'POST',
+                        data: {
+                            action: 'nh_remove_cart_item',
+                            cart_item_key: key,
+                            nonce: nonce
                         }
+                    });
+                }).then((response) => {
+                    if (response && response.success) {
+                        this.refreshCartFragments();
                     }
                 });
             });
@@ -44,17 +79,18 @@
             e.preventDefault();
             if (!confirm('¿Estás seguro de que quieres vaciar el carrito?')) return;
 
-            $.ajax({
-                url: nh_cart_params?.ajax_url || '/wp-admin/admin-ajax.php',
-                type: 'POST',
-                data: {
-                    action: 'nh_clear_cart',
-                    nonce: nh_cart_params?.nonce || ''
-                },
-                success: (response) => {
-                    if (response.success) {
-                        window.location.reload();
+            getFreshNonce().then((nonce) => {
+                return $.ajax({
+                    url: nh_cart_params?.ajax_url || '/wp-admin/admin-ajax.php',
+                    type: 'POST',
+                    data: {
+                        action: 'nh_clear_cart',
+                        nonce: nonce
                     }
+                });
+            }).then((response) => {
+                if (response && response.success) {
+                    window.location.reload();
                 }
             });
         },
@@ -69,21 +105,22 @@
                 return;
             }
 
-            $.ajax({
-                url: nh_cart_params?.ajax_url || '/wp-admin/admin-ajax.php',
-                type: 'POST',
-                data: {
-                    action: 'nh_apply_coupon',
-                    coupon_code: code,
-                    nonce: nh_cart_params?.nonce || ''
-                },
-                success: (response) => {
-                    if (response.success) {
-                        this.refreshCartFragments();
-                        $wrapper.find('.nh-cart-coupon-input').val('');
-                    } else {
-                        this.showError(response.data?.message || 'Cupón inválido');
+            getFreshNonce().then((nonce) => {
+                return $.ajax({
+                    url: nh_cart_params?.ajax_url || '/wp-admin/admin-ajax.php',
+                    type: 'POST',
+                    data: {
+                        action: 'nh_apply_coupon',
+                        coupon_code: code,
+                        nonce: nonce
                     }
+                });
+            }).then((response) => {
+                if (response && response.success) {
+                    this.refreshCartFragments();
+                    $wrapper.find('.nh-cart-coupon-input').val('');
+                } else {
+                    this.showError(response?.data?.message || 'Cupón inválido');
                 }
             });
         },
@@ -92,18 +129,19 @@
             e.preventDefault();
             const code = $(e.currentTarget).data('coupon');
 
-            $.ajax({
-                url: nh_cart_params?.ajax_url || '/wp-admin/admin-ajax.php',
-                type: 'POST',
-                data: {
-                    action: 'nh_remove_coupon',
-                    coupon_code: code,
-                    nonce: nh_cart_params?.nonce || ''
-                },
-                success: (response) => {
-                    if (response.success) {
-                        this.refreshCartFragments();
+            getFreshNonce().then((nonce) => {
+                return $.ajax({
+                    url: nh_cart_params?.ajax_url || '/wp-admin/admin-ajax.php',
+                    type: 'POST',
+                    data: {
+                        action: 'nh_remove_coupon',
+                        coupon_code: code,
+                        nonce: nonce
                     }
+                });
+            }).then((response) => {
+                if (response && response.success) {
+                    this.refreshCartFragments();
                 }
             });
         },
