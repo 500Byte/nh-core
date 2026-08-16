@@ -662,8 +662,11 @@ function bindEvents(scope = document){
 
   const startBtn = q('#start-btn');
   if(startBtn) startBtn.onclick = () => {
+    const isMobile = window.innerWidth < 768;
     const el = document.getElementById('nh-diagnostico');
-    if(el){
+    if(isMobile && el && el.requestFullscreen && !document.fullscreenElement){
+      el.requestFullscreen().catch(()=>{});
+    } else if(el){
       el.classList.add('quiz-active');
       document.body.style.overflow = 'hidden';
     }
@@ -758,6 +761,7 @@ function bindEvents(scope = document){
 
   const restartBtn = q('#restart-btn');
   if(restartBtn) restartBtn.onclick = () => {
+    if(document.fullscreenElement) document.exitFullscreen().catch(()=>{});
     const el = document.getElementById('nh-diagnostico');
     if(el) el.classList.remove('quiz-active');
     document.body.style.overflow = '';
@@ -772,6 +776,42 @@ function bindEvents(scope = document){
     screen = 'cover';
     render();
   };
+
+  const exitBtn = q('#exit-fullscreen');
+  if(exitBtn) exitBtn.onclick = () => {
+    if(document.fullscreenElement) document.exitFullscreen().catch(()=>{});
+    const el = document.getElementById('nh-diagnostico');
+    if(el) el.classList.remove('quiz-active');
+    document.body.style.overflow = '';
+    navDir='back';
+    answers = {};
+    leadName = '';
+    leadEmail = '';
+    leadPhone = '';
+    result = null;
+    qIndex = 0;
+    actIndex = 0;
+    screen = 'cover';
+    render();
+  };
+
+  document.addEventListener('fullscreenchange', () => {
+    if(!document.fullscreenElement && screen !== 'cover'){
+      const el = document.getElementById('nh-diagnostico');
+      if(el) el.classList.remove('quiz-active');
+      document.body.style.overflow = '';
+      navDir='back';
+      answers = {};
+      leadName = '';
+      leadEmail = '';
+      leadPhone = '';
+      result = null;
+      qIndex = 0;
+      actIndex = 0;
+      screen = 'cover';
+      render();
+    }
+  });
 }
 
 preloadFlow(0);
