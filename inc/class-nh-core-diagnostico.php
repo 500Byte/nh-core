@@ -68,7 +68,6 @@ class NH_Core_Diagnostico {
             . '<div id="screens"></div>'
             . '<div class="stamp-overlay" id="stamp-overlay"><div class="seal" id="stamp-seal"><div class="seal-text">Carta de<br>Estilo</div></div></div>'
             . '</div>'
-            . '<button class="exit-btn" id="exit-fullscreen" aria-label="Salir del cuestionario" title="Salir"><i class="ph-light ph-x"></i></button>'
             . '<div class="toast" id="toast" role="status" aria-live="polite"></div>'
             . '</div>';
     }

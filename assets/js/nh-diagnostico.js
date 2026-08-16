@@ -295,6 +295,8 @@ function polishScreen(tl, entering, type, dirY, oldEl, quizSwap){
   }
 }
 
+function exitBtnHTML(){ return '<button class="exit-btn" id="exit-fullscreen" aria-label="Salir del cuestionario" title="Salir"><i class="ph-light ph-x"></i></button>'; }
+
 function renderCover(){
   return `
     <div class="screen cover">
@@ -322,6 +324,7 @@ function renderChapter(){
     <div class="screen chapter">
       <div class="bg" style="background-image:url('${act.img}')"></div>
       <div class="scrim scrim--deep"></div>
+      ${exitBtnHTML()}
       <div class="chapter-content">
         <div class="chapter-roman">${act.roman}</div>
         <h2>${act.name}</h2>
@@ -343,6 +346,7 @@ function renderQuiz(){
         <div class="quiz-top">
           <button class="back-btn" id="back-btn" aria-label="Atrás">←</button>
           <div class="q-progress"><div class="q-progress-fill" style="width:${pct}%"></div></div>
+          ${exitBtnHTML()}
         </div>
         <div class="quiz-title-wrap">
           <div class="q-eyebrow">${dimLabel}</div>
@@ -363,6 +367,7 @@ function renderGate(){
   const ar = ARCHETYPES[result.style];
   return `
     <div class="screen gate">
+      ${exitBtnHTML()}
       <div class="gate-content">
         <div class="seal-wrap">
           <div class="seal"><div class="seal-text">Tu carta<br>te espera</div></div>
@@ -409,6 +414,7 @@ function renderCard(){
   const votes = winner === 'calida' ? sv.calida : sv.fria;
   return `
     <div class="screen card-screen">
+      ${exitBtnHTML()}
       <div class="card-hero">
         <div class="bg" style="background-image:url('${ar.img}')"></div>
         <div class="scrim"></div>
