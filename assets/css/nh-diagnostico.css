@@ -846,10 +846,15 @@
 #nh-diagnostico .archetype-desc,
 #nh-diagnostico .gate-lede,
 #nh-diagnostico .card-desc,
-#nh-diagnostico .match-line,
-#nh-diagnostico .meta-note{
+#nh-diagnostico .match-line{
   font-family:var(--font-body) !important;
   color:var(--nh-text-secondary) !important;
+}
+#nh-diagnostico .meta-note{
+  font-family:var(--font-body) !important;
+}
+#nh-diagnostico .cover .meta-note{
+  color:#fff !important;
 }
 #nh-diagnostico .back-btn,
 #nh-diagnostico .back-btn:hover,
