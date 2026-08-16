@@ -660,6 +660,208 @@
 }
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
 
+/* ── Elementor isolation: !important overrides ── */
+#nh-diagnostico,
+#nh-diagnostico *,
+#nh-diagnostico *::before,
+#nh-diagnostico *::after{
+  font-family:inherit !important;
+  line-height:inherit !important;
+}
+#nh-diagnostico .option,
+#nh-diagnostico .option:hover,
+#nh-diagnostico .option:active,
+#nh-diagnostico .option:focus,
+#nh-diagnostico .option:focus-visible,
+#nh-diagnostico .option.selected{
+  background:var(--nh-surface-base) !important;
+  color:var(--nh-text-primary) !important;
+  border:1px solid var(--nh-border-default) !important;
+  border-radius:14px !important;
+  font-family:var(--font-body) !important;
+  font-size:15px !important;
+  font-weight:500 !important;
+  line-height:1.35 !important;
+  text-align:left !important;
+  box-shadow:none !important;
+  -webkit-appearance:none !important;
+  appearance:none !important;
+  cursor:pointer !important;
+  outline:none !important;
+}
+#nh-diagnostico .option:hover{
+  border-color:var(--nh-action-primary) !important;
+  background:var(--nh-surface-hover) !important;
+}
+#nh-diagnostico .option.selected{
+  border-color:var(--nh-action-primary) !important;
+  background:var(--nh-surface-secondary) !important;
+  box-shadow:0 0 0 1px var(--nh-action-primary) !important;
+}
+#nh-diagnostico .option.selected::after{
+  content:'✓' !important;
+  color:var(--nh-action-primary) !important;
+}
+#nh-diagnostico .nh-btn,
+#nh-diagnostico .nh-btn:hover,
+#nh-diagnostico .nh-btn:active,
+#nh-diagnostico .nh-btn:focus,
+#nh-diagnostico .nh-btn:focus-visible{
+  font-family:var(--font-body) !important;
+  font-weight:700 !important;
+  font-size:var(--text-sm) !important;
+  letter-spacing:0.1em !important;
+  text-transform:uppercase !important;
+  text-decoration:none !important;
+  border-radius:14px !important;
+  cursor:pointer !important;
+  -webkit-appearance:none !important;
+  appearance:none !important;
+}
+#nh-diagnostico .nh-btn--primary,
+#nh-diagnostico .nh-btn--primary:hover,
+#nh-diagnostico .nh-btn--primary:active{
+  background:var(--nh-action-primary) !important;
+  color:var(--nh-text-inverse) !important;
+  border-color:var(--nh-action-primary) !important;
+}
+#nh-diagnostico .nh-btn--secondary,
+#nh-diagnostico .nh-btn--secondary:hover,
+#nh-diagnostico .nh-btn--secondary:active{
+  background:transparent !important;
+  color:var(--nh-action-primary) !important;
+  border-color:var(--nh-action-primary) !important;
+}
+#nh-diagnostico .form-input,
+#nh-diagnostico .form-input:hover,
+#nh-diagnostico .form-input:focus{
+  font-family:var(--font-body) !important;
+  font-size:15px !important;
+  color:var(--nh-text-headings) !important;
+  background:var(--nh-surface-base) !important;
+  border:1px solid var(--nh-border-default) !important;
+  border-radius:11px !important;
+  outline:none !important;
+  box-shadow:none !important;
+  -webkit-appearance:none !important;
+  appearance:none !important;
+}
+#nh-diagnostico .form-input:focus{
+  border-color:var(--nh-action-primary) !important;
+  box-shadow:0 0 0 3px rgba(194,178,128,0.32) !important;
+}
+#nh-diagnostico .form-label{
+  font-family:var(--font-body) !important;
+  font-size:var(--text-xs-plus) !important;
+  font-weight:600 !important;
+  color:var(--nh-text-secondary) !important;
+}
+#nh-diagnostico .form-checkbox,
+#nh-diagnostico .form-checkbox *{
+  font-family:var(--font-body) !important;
+  color:var(--nh-text-secondary) !important;
+}
+#nh-diagnostico .q-msg{
+  font-family:var(--font-body) !important;
+  font-size:var(--text-xs-plus) !important;
+  color:var(--nh-text-muted) !important;
+}
+#nh-diagnostico .q-eyebrow{
+  font-family:var(--font-body) !important;
+  font-size:var(--text-xs-plus) !important;
+  font-weight:700 !important;
+  letter-spacing:0.22em !important;
+  text-transform:uppercase !important;
+  color:var(--nh-color-sand-400) !important;
+}
+#nh-diagnostico .quiz-title,
+#nh-diagnostico .cover h1,
+#nh-diagnostico .chapter h2,
+#nh-diagnostico .archetype-name,
+#nh-diagnostico .card-archetype,
+#nh-diagnostico .card-hero-name,
+#nh-diagnostico .gate h2{
+  font-family:var(--font-headings) !important;
+}
+#nh-diagnostico .back-btn,
+#nh-diagnostico .back-btn:hover,
+#nh-diagnostico .back-btn:active{
+  background:rgba(15,15,15,0.3) !important;
+  color:#fff !important;
+  border:1px solid rgba(255,255,255,0.35) !important;
+  border-radius:50% !important;
+  font-family:var(--font-body) !important;
+  -webkit-appearance:none !important;
+  appearance:none !important;
+  cursor:pointer !important;
+}
+#nh-diagnostico .share-btn,
+#nh-diagnostico .share-btn:hover,
+#nh-diagnostico .share-btn:active{
+  background:var(--nh-surface-base) !important;
+  color:var(--nh-text-secondary) !important;
+  border:1px solid var(--nh-border-default) !important;
+  border-radius:14px !important;
+  font-family:var(--font-body) !important;
+  -webkit-appearance:none !important;
+  appearance:none !important;
+  cursor:pointer !important;
+}
+#nh-diagnostico .gate-back,
+#nh-diagnostico .gate-back:hover{
+  background:none !important;
+  border:none !important;
+  font-family:var(--font-body) !important;
+  color:var(--nh-text-muted) !important;
+  cursor:pointer !important;
+  -webkit-appearance:none !important;
+  appearance:none !important;
+}
+#nh-diagnostico .restart-link,
+#nh-diagnostico .restart-link:hover{
+  background:none !important;
+  border:none !important;
+  font-family:var(--font-body) !important;
+  color:var(--nh-text-muted) !important;
+  cursor:pointer !important;
+  -webkit-appearance:none !important;
+  appearance:none !important;
+}
+#nh-diagnostico .cover-brand,
+#nh-diagnostico .cover-pillar,
+#nh-diagnostico .chapter-roman,
+#nh-diagnostico .card-hero-label,
+#nh-diagnostico .result-tag{
+  font-family:var(--font-body) !important;
+}
+#nh-diagnostico .cover-sub,
+#nh-diagnostico .chapter-sub,
+#nh-diagnostico .archetype-desc,
+#nh-diagnostico .gate-lede,
+#nh-diagnostico .card-desc,
+#nh-diagnostico .match-line,
+#nh-diagnostico .meta-note{
+  font-family:var(--font-body) !important;
+}
+#nh-diagnostico .ornament-line{
+  background:var(--nh-color-clay-300) !important;
+}
+
+/* ── Ocultar widgets de chat flotante en el quiz ── */
+.joinchat,
+.joinchat__button,
+.nta-whatsapp-floating,
+.nta-whatsapp-popup,
+.njt-whatsapp,
+#wa-widget-send-button,
+.wa__btn_popup,
+.wa__btn_popup_box{
+  display:none !important;
+  visibility:hidden !important;
+  opacity:0 !important;
+  pointer-events:none !important;
+}
+
 @media (prefers-reduced-motion: reduce){
   *,*::before,*::after{animation-duration:0.01ms !important;animation-iteration-count:1 !important;transition-duration:0.01ms !important;}
 }

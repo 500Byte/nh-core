@@ -344,7 +344,6 @@ function renderQuiz(){
         <div class="quiz-top">
           <button class="back-btn" id="back-btn" aria-label="Atrás">←</button>
           <div class="q-progress"><div class="q-progress-fill" style="width:${pct}%"></div></div>
-          <span class="q-count">${qIndex+1} / ${questions.length}</span>
         </div>
         <div class="quiz-title-wrap">
           <div class="q-eyebrow">${dimLabel}</div>
