@@ -28,6 +28,10 @@ class NH_Core_Loader {
         require_once NH_CORE_PATH . 'inc/class-nh-core-tracking.php';
         \NH_Core_Tracking::get_instance();
 
+        // Diagnóstico de Estilo (shortcode [nh_diagnostico_estilo])
+        require_once NH_CORE_PATH . 'inc/class-nh-core-diagnostico.php';
+        \NH_Core_Diagnostico::get_instance();
+
         // Template parts compartidos (Cart + Checkout)
         require_once NH_CORE_PATH . 'inc/nh-template-parts.php';
 
