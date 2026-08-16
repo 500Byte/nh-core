@@ -510,14 +510,25 @@ class NH_Core_Woocommerce {
 
     public function disable_email_for_test_coupon( $recipient, $order ) {
         if ( is_a( $order, 'WC_Order' ) && in_array( 'freetesting', $order->get_coupon_codes() ) ) {
+            error_log( sprintf(
+                '[NH_CORE_TEST_MODE] Email de notificación suprimido para order #%d (cupón freetesting).',
+                $order->get_id()
+            ) );
             return '';
         }
         return $recipient;
     }
 
     /**
-     * Restringe los cupones de testing a requests que lleven el header X-NH-Testing: true
-     * (enviado por el config de Playwright). En entornos locales (DDEV) no aplica restricción.
+     * Restringe los cupones de testing (freetesting / freetesting-noemail) fuera de
+     * entornos locales (DDEV/local no aplica restricción — no requieren nada).
+     *
+     * En producción se exigen DOS condiciones independientes (defensa en profundidad):
+     * 1) Token real (NH_TESTING_BYPASS_TOKEN, definido en wp-config.php, nunca en el
+     *    repo) enviado en el header X-NH-Testing, comparado con hash_equals().
+     * 2) Ventana temporal armada manualmente vía `wp nh-core enable-test-mode`
+     *    (nh_core_test_mode_is_active(), inc/class-nh-core-cli.php) — el bypass no
+     *    funciona 24/7 aunque el token se filtrara.
      */
     public function restrict_test_coupons( $valid, $coupon, $discount ) {
         if ( ! $valid || ! is_a( $coupon, 'WC_Coupon' ) ) {
@@ -532,7 +543,35 @@ class NH_Core_Woocommerce {
         if ( $is_local ) {
             return $valid;
         }
-        return isset( $_SERVER['HTTP_X_NH_TESTING'] ) && $_SERVER['HTTP_X_NH_TESTING'] === 'true';
+
+        if ( ! defined( 'NH_TESTING_BYPASS_TOKEN' ) || NH_TESTING_BYPASS_TOKEN === '' ) {
+            return false;
+        }
+
+        $header    = isset( $_SERVER['HTTP_X_NH_TESTING'] ) ? (string) $_SERVER['HTTP_X_NH_TESTING'] : '';
+        $token_ok  = $header !== '' && hash_equals( NH_TESTING_BYPASS_TOKEN, $header );
+        $window_ok = function_exists( 'nh_core_test_mode_is_active' ) && nh_core_test_mode_is_active();
+
+        if ( $token_ok && $window_ok ) {
+            error_log( sprintf(
+                '[NH_CORE_TEST_MODE] Cupón "%s" aplicado fuera de local (ventana armada) — IP=%s',
+                $code,
+                isset( $_SERVER['REMOTE_ADDR'] ) ? $_SERVER['REMOTE_ADDR'] : 'unknown'
+            ) );
+            return true;
+        }
+
+        if ( $header !== '' ) {
+            error_log( sprintf(
+                '[NH_CORE_TEST_MODE] Intento de bypass rechazado para cupón "%s" — token_ok=%s window_ok=%s IP=%s',
+                $code,
+                $token_ok ? 'true' : 'false',
+                $window_ok ? 'true' : 'false',
+                isset( $_SERVER['REMOTE_ADDR'] ) ? $_SERVER['REMOTE_ADDR'] : 'unknown'
+            ) );
+        }
+
+        return false;
     }
 
 
