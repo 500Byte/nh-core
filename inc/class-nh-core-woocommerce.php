@@ -34,6 +34,7 @@ class NH_Core_Woocommerce {
         add_filter( 'woocommerce_email_recipient_new_order', [ $this, 'disable_email_for_test_coupon' ], 10, 2 );
         add_filter( 'woocommerce_email_recipient_customer_processing_order', [ $this, 'disable_email_for_test_coupon' ], 10, 2 );
         add_filter( 'woocommerce_email_recipient_customer_completed_order', [ $this, 'disable_email_for_test_coupon' ], 10, 2 );
+        add_filter( 'woocommerce_coupon_is_valid', [ $this, 'restrict_test_coupons' ], 10, 3 );
 
         // AJAX endpoints para el widget NH Cart
         add_action( 'wp_ajax_nh_update_cart_item', [ $this, 'ajax_update_cart_item' ] );
@@ -512,6 +513,26 @@ class NH_Core_Woocommerce {
             return '';
         }
         return $recipient;
+    }
+
+    /**
+     * Restringe los cupones de testing a requests que lleven el header X-NH-Testing: true
+     * (enviado por el config de Playwright). En entornos locales (DDEV) no aplica restricción.
+     */
+    public function restrict_test_coupons( $valid, $coupon, $discount ) {
+        if ( ! $valid || ! is_a( $coupon, 'WC_Coupon' ) ) {
+            return $valid;
+        }
+        $code = strtolower( $coupon->get_code() );
+        if ( ! in_array( $code, [ 'freetesting', 'freetesting-noemail' ], true ) ) {
+            return $valid;
+        }
+        $is_local = ( defined( 'WP_ENVIRONMENT_TYPE' ) && in_array( WP_ENVIRONMENT_TYPE, [ 'local', 'development' ], true ) )
+            || ( isset( $_SERVER['HTTP_HOST'] ) && strpos( $_SERVER['HTTP_HOST'], '.ddev.site' ) !== false );
+        if ( $is_local ) {
+            return $valid;
+        }
+        return isset( $_SERVER['HTTP_X_NH_TESTING'] ) && $_SERVER['HTTP_X_NH_TESTING'] === 'true';
     }
 
 
