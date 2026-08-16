@@ -944,12 +944,58 @@
   pointer-events:none !important;
 }
 
-/* ── Responsive typography (desktop) ── */
+/* ── Responsive desktop ── */
 @media (min-width:768px){
-  #nh-diagnostico .cover h1{font-size:44px !important;}
-  #nh-diagnostico .chapter h2{font-size:34px !important;}
-  #nh-diagnostico .quiz-title{font-size:32px !important;}
-  #nh-diagnostico .archetype-name{font-size:36px !important;}
+  /* Cover */
+  #nh-diagnostico .cover h1{font-size:48px !important;line-height:1.1 !important;}
+  #nh-diagnostico .cover-sub{font-size:18px !important;line-height:1.5 !important;}
+  #nh-diagnostico .cover-pillar{font-size:13px !important;padding:10px 18px !important;}
+  #nh-diagnostico .cover .meta-note{font-size:13px !important;}
+  #nh-diagnostico #start-btn{font-size:16px !important;min-height:60px !important;padding:18px 32px !important;}
+
+  /* Chapter dividers */
+  #nh-diagnostico .chapter h2{font-size:38px !important;line-height:1.1 !important;}
+  #nh-diagnostico .chapter-sub{font-size:18px !important;}
+  #nh-diagnostico #act-start-btn{font-size:16px !important;min-height:60px !important;}
+
+  /* Quiz questions */
+  #nh-diagnostico .q-eyebrow{font-size:13px !important;}
+  #nh-diagnostico .quiz-title{font-size:36px !important;line-height:1.1 !important;}
+  #nh-diagnostico .q-msg{font-size:14px !important;}
+  #nh-diagnostico .option{font-size:17px !important;padding:18px 48px 18px 22px !important;border-radius:16px !important;}
+  #nh-diagnostico .quiz-sheet{padding:24px 28px calc(28px + env(safe-area-inset-bottom)) !important;}
+
+  /* Gate / form */
+  #nh-diagnostico .gate h2{font-size:16px !important;}
+  #nh-diagnostico .gate-lede{font-size:16px !important;}
+  #nh-diagnostico .form-label{font-size:14px !important;}
+  #nh-diagnostico .form-input{font-size:17px !important;padding:15px 18px !important;}
+  #nh-diagnostico .form-checkbox{font-size:14px !important;}
+  #nh-diagnostico #reveal-btn{font-size:16px !important;min-height:60px !important;}
+
+  /* Seal */
+  #nh-diagnostico .seal{width:100px !important;height:100px !important;}
+  #nh-diagnostico .seal .seal-text{font-size:14px !important;}
+
+  /* Result card */
+  #nh-diagnostico .archetype-name{font-size:42px !important;}
+  #nh-diagnostico .archetype-desc{font-size:16px !important;}
+  #nh-diagnostico .result-tag{font-size:13px !important;padding:10px 20px !important;}
+  #nh-diagnostico .match-line{font-size:16px !important;}
+  #nh-diagnostico .card-desc{font-size:17px !important;}
+  #nh-diagnostico .card-hero-name{font-size:36px !important;}
+  #nh-diagnostico .card-archetype{font-size:28px !important;}
+  #nh-diagnostico .info-card{padding:22px 26px !important;}
+  #nh-diagnostico .info-card h3{font-size:20px !important;}
+  #nh-diagnostico .info-card p{font-size:16px !important;}
+  #nh-diagnostico .share-btn{font-size:13px !important;padding:16px 10px !important;}
+  #nh-diagnostico .closing-line{font-size:17px !important;}
+
+  /* Back button */
+  #nh-diagnostico .back-btn{width:44px !important;height:44px !important;font-size:20px !important;}
+
+  /* Progress bar */
+  #nh-diagnostico .q-progress{height:5px !important;}
 }
 
 @media (prefers-reduced-motion: reduce){
