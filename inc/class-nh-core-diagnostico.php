@@ -16,6 +16,7 @@ class NH_Core_Diagnostico {
     private function __construct() {
         add_shortcode( 'nh_diagnostico_estilo', [ $this, 'render' ] );
         add_action( 'wp_enqueue_scripts', [ $this, 'register_assets' ] );
+        add_filter( 'rocket_delay_javascript_exclusions', [ $this, 'exclude_from_delay_js' ] );
     }
 
     public function register_assets() {
@@ -63,6 +64,12 @@ class NH_Core_Diagnostico {
         ] );
 
         return '<div id="nh-diagnostico"></div>';
+    }
+
+    public function exclude_from_delay_js( $exclusions ) {
+        $exclusions[] = 'nh-gsap';
+        $exclusions[] = 'nh-diagnostico';
+        return $exclusions;
     }
 
     private function get_image_urls() {
