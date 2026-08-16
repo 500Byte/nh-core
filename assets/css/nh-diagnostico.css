@@ -727,7 +727,7 @@
 #nh-diagnostico .nh-btn:focus-visible{
   font-family:var(--font-body) !important;
   font-weight:700 !important;
-  font-size:var(--text-sm) !important;
+  font-size:var(--text-body) !important;
   letter-spacing:0.1em !important;
   text-transform:uppercase !important;
   text-decoration:none !important;
@@ -773,7 +773,7 @@
 }
 #nh-diagnostico .form-label{
   font-family:var(--font-body) !important;
-  font-size:var(--text-xs-plus) !important;
+  font-size:var(--text-sm) !important;
   font-weight:600 !important;
   color:var(--nh-text-secondary) !important;
 }
@@ -784,8 +784,9 @@
 }
 #nh-diagnostico .q-msg{
   font-family:var(--font-body) !important;
-  font-size:var(--text-xs-plus) !important;
-  color:var(--nh-text-muted) !important;
+  font-size:var(--text-sm) !important;
+  color:var(--nh-text-secondary) !important;
+  line-height:var(--lh-normal) !important;
 }
 #nh-diagnostico .q-eyebrow{
   font-family:var(--font-body) !important;
@@ -795,10 +796,21 @@
   text-transform:uppercase !important;
   color:var(--nh-color-sand-400) !important;
 }
-#nh-diagnostico .quiz-title,
-#nh-diagnostico .cover h1,
+#nh-diagnostico .quiz-title{
+  font-family:var(--font-headings) !important;
+  font-size:28px !important;
+  color:#fff !important;
+  text-shadow:0 2px 18px rgba(0,0,0,0.5) !important;
+}
+#nh-diagnostico .cover h1{
+  font-family:var(--font-headings) !important;
+  font-size:38px !important;
+  color:#fff !important;
+  text-shadow:0 2px 24px rgba(0,0,0,0.45) !important;
+}
 #nh-diagnostico .chapter h2{
   font-family:var(--font-headings) !important;
+  font-size:28px !important;
   color:#fff !important;
   text-shadow:0 2px 24px rgba(0,0,0,0.45) !important;
 }
@@ -816,6 +828,7 @@
 }
 #nh-diagnostico .gate h2{
   font-family:var(--font-body) !important;
+  font-size:var(--text-body) !important;
   color:var(--nh-color-clay-500) !important;
 }
 #nh-diagnostico .cover-brand,
@@ -844,8 +857,10 @@
 #nh-diagnostico .archetype-desc,
 #nh-diagnostico .gate-lede,
 #nh-diagnostico .card-desc,
-#nh-diagnostico .match-line{
+#nh-diagnostico .match-line,
+#nh-diagnostico .info-card p{
   font-family:var(--font-body) !important;
+  font-size:var(--text-body) !important;
   color:var(--nh-text-secondary) !important;
 }
 #nh-diagnostico .meta-note{
@@ -925,10 +940,10 @@
 
 /* ── Responsive typography (desktop) ── */
 @media (min-width:768px){
-  .cover h1{font-size:44px;}
-  .chapter h2{font-size:34px;}
-  .quiz-title{font-size:32px;}
-  .archetype-name{font-size:36px;}
+  #nh-diagnostico .cover h1{font-size:44px !important;}
+  #nh-diagnostico .chapter h2{font-size:34px !important;}
+  #nh-diagnostico .quiz-title{font-size:32px !important;}
+  #nh-diagnostico .archetype-name{font-size:36px !important;}
 }
 
 @media (prefers-reduced-motion: reduce){
