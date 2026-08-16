@@ -965,16 +965,40 @@
   #nh-diagnostico .q-eyebrow{font-size:13px !important;}
   #nh-diagnostico .quiz-title{font-size:36px !important;line-height:1.1 !important;}
   #nh-diagnostico .q-msg{font-size:14px !important;}
-  #nh-diagnostico .option{font-size:17px !important;padding:18px 48px 18px 22px !important;border-radius:16px !important;}
+  #nh-diagnostico .option,
+  #nh-diagnostico .option:hover,
+  #nh-diagnostico .option:active,
+  #nh-diagnostico .option:focus,
+  #nh-diagnostico .option:focus-visible,
+  #nh-diagnostico .option.selected{
+    font-size:17px !important;
+    padding:18px 48px 18px 22px !important;
+    border-radius:16px !important;
+  }
   #nh-diagnostico .quiz-sheet{padding:24px 28px calc(28px + env(safe-area-inset-bottom)) !important;}
+
+  /* Buttons — match isolation block selectors */
+  #nh-diagnostico .nh-btn,
+  #nh-diagnostico .nh-btn:hover,
+  #nh-diagnostico .nh-btn:active,
+  #nh-diagnostico .nh-btn:focus,
+  #nh-diagnostico .nh-btn:focus-visible{
+    font-size:16px !important;
+    min-height:60px !important;
+    padding:18px 32px !important;
+  }
 
   /* Gate / form */
   #nh-diagnostico .gate h2{font-size:16px !important;}
   #nh-diagnostico .gate-lede{font-size:16px !important;}
   #nh-diagnostico .form-label{font-size:14px !important;}
-  #nh-diagnostico .form-input{font-size:17px !important;padding:15px 18px !important;}
+  #nh-diagnostico .form-input,
+  #nh-diagnostico .form-input:hover,
+  #nh-diagnostico .form-input:focus{
+    font-size:17px !important;
+    padding:15px 18px !important;
+  }
   #nh-diagnostico .form-checkbox{font-size:14px !important;}
-  #nh-diagnostico #reveal-btn{font-size:16px !important;min-height:60px !important;}
 
   /* Seal */
   #nh-diagnostico .seal{width:100px !important;height:100px !important;}
@@ -991,11 +1015,22 @@
   #nh-diagnostico .info-card{padding:22px 26px !important;}
   #nh-diagnostico .info-card h3{font-size:20px !important;}
   #nh-diagnostico .info-card p{font-size:16px !important;}
-  #nh-diagnostico .share-btn{font-size:13px !important;padding:16px 10px !important;}
+  #nh-diagnostico .share-btn,
+  #nh-diagnostico .share-btn:hover,
+  #nh-diagnostico .share-btn:active{
+    font-size:13px !important;
+    padding:16px 10px !important;
+  }
   #nh-diagnostico .closing-line{font-size:17px !important;}
 
   /* Back button */
-  #nh-diagnostico .back-btn{width:44px !important;height:44px !important;font-size:20px !important;}
+  #nh-diagnostico .back-btn,
+  #nh-diagnostico .back-btn:hover,
+  #nh-diagnostico .back-btn:active{
+    width:44px !important;
+    height:44px !important;
+    font-size:20px !important;
+  }
 
   /* Progress bar */
   #nh-diagnostico .q-progress{height:5px !important;}
