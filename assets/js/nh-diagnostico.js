@@ -663,8 +663,9 @@ function bindEvents(scope = document){
   const startBtn = q('#start-btn');
   if(startBtn) startBtn.onclick = () => {
     const el = document.getElementById('nh-diagnostico');
-    if(el && el.requestFullscreen && !document.fullscreenElement) {
-      el.requestFullscreen().catch(()=>{});
+    if(el){
+      el.classList.add('quiz-active');
+      document.body.style.overflow = 'hidden';
     }
     navDir='forward'; screen='chapter'; actIndex=0; render();
   };
@@ -757,7 +758,9 @@ function bindEvents(scope = document){
 
   const restartBtn = q('#restart-btn');
   if(restartBtn) restartBtn.onclick = () => {
-    if(document.fullscreenElement) document.exitFullscreen().catch(()=>{});
+    const el = document.getElementById('nh-diagnostico');
+    if(el) el.classList.remove('quiz-active');
+    document.body.style.overflow = '';
     navDir='back';
     answers = {};
     leadName = '';

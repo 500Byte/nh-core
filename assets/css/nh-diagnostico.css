@@ -69,7 +69,10 @@
   justify-content:center;
   width:100%;
 }
-#nh-diagnostico:fullscreen{
+#nh-diagnostico.quiz-active{
+  position:fixed;
+  inset:0;
+  z-index:9999;
   width:100vw;
   height:100vh;
   min-height:100vh;
