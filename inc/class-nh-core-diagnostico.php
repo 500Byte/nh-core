@@ -37,6 +37,7 @@ class NH_Core_Diagnostico {
             '3.12.5',
             true
         );
+        wp_script_add_data( 'nh-gsap', 'rocket-no-delay', true );
 
         wp_register_script(
             'nh-diagnostico',
@@ -45,6 +46,7 @@ class NH_Core_Diagnostico {
             file_exists( $js_path ) ? filemtime( $js_path ) : '1.0.0',
             true
         );
+        wp_script_add_data( 'nh-diagnostico', 'rocket-no-delay', true );
     }
 
     public function render() {
