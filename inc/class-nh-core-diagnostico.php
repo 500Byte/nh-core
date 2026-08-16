@@ -63,7 +63,13 @@ class NH_Core_Diagnostico {
             'img'        => $this->get_image_urls(),
         ] );
 
-        return '<div id="nh-diagnostico"></div>';
+        return '<div id="nh-diagnostico">'
+            . '<div class="stage">'
+            . '<div id="screens"></div>'
+            . '<div class="stamp-overlay" id="stamp-overlay"><div class="seal" id="stamp-seal"><div class="seal-text">Carta de<br>Estilo</div></div></div>'
+            . '</div>'
+            . '<div class="toast" id="toast" role="status" aria-live="polite"></div>'
+            . '</div>';
     }
 
     public function exclude_from_delay_js( $exclusions ) {
