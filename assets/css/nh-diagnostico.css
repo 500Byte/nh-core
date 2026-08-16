@@ -111,7 +111,7 @@
 .cover h1{
   font-family:var(--font-headings);
   font-weight:600;
-  font-size:34px;
+  font-size:38px;
   line-height:1.12;
   margin:0 0 14px;
   text-shadow:0 2px 24px rgba(0,0,0,0.45);
@@ -144,7 +144,7 @@
   width:100%;
   font-family:var(--font-body);
   font-weight:700;
-  font-size:var(--text-sm);
+  font-size:var(--text-body);
   letter-spacing:0.1em;
   text-transform:uppercase;
   border-radius:14px;
@@ -197,7 +197,7 @@
 .chapter h2{
   font-family:var(--font-headings);
   font-weight:600;
-  font-size:32px;
+  font-size:28px;
   line-height:1.15;
   margin:0 0 12px;
   text-shadow:0 2px 24px rgba(0,0,0,0.45);
@@ -263,7 +263,7 @@
 .quiz-title{
   font-family:var(--font-headings);
   font-weight:600;
-  font-size:25px;
+  font-size:28px;
   line-height:1.18;
   color:#fff;
   margin:0;
@@ -277,10 +277,11 @@
   padding:20px 20px calc(22px + env(safe-area-inset-bottom));
 }
 .q-msg{
-  font-size:var(--text-xs-plus);
-  color:var(--nh-text-muted);
+  font-size:var(--text-sm);
+  color:var(--nh-text-secondary);
   text-align:center;
   letter-spacing:0.04em;
+  line-height:var(--lh-normal);
   margin:0 0 14px;
 }
 .options{display:flex;flex-direction:column;gap:10px;}
@@ -368,7 +369,7 @@
 .gate h2{
   font-family:var(--font-body);
   font-weight:600;
-  font-size:var(--text-caption);
+  font-size:var(--text-body);
   letter-spacing:0.26em;
   text-transform:uppercase;
   text-align:center;
@@ -393,7 +394,7 @@
   margin:0 0 10px;
 }
 .archetype-desc{
-  font-size:var(--text-sm);
+  font-size:var(--text-body);
   line-height:1.6;
   text-align:center;
   color:var(--nh-text-secondary);
@@ -411,7 +412,7 @@
 .form-field{margin-bottom:10px;}
 .form-label{
   display:block;
-  font-size:var(--text-xs-plus);
+  font-size:var(--text-sm);
   font-weight:600;
   color:var(--nh-text-secondary);
   margin-bottom:6px;
@@ -525,8 +526,8 @@
 }
 .match-line{
   text-align:center;
-  font-size:var(--text-sm);
-  color:var(--nh-text-muted);
+  font-size:var(--text-body);
+  color:var(--nh-text-secondary);
   line-height:1.5;
   margin:0 0 14px;
 }
@@ -548,12 +549,12 @@
 .info-card h3{
   font-family:var(--font-headings);
   font-weight:500;
-  font-size:17px;
+  font-size:18px;
   margin:0 0 10px;
   color:var(--nh-text-headings);
 }
 .info-card p{
-  font-size:var(--text-sm);
+  font-size:var(--text-body);
   color:var(--nh-text-secondary);
   line-height:1.55;
   margin:0;
@@ -920,6 +921,14 @@
   visibility:hidden !important;
   opacity:0 !important;
   pointer-events:none !important;
+}
+
+/* ── Responsive typography (desktop) ── */
+@media (min-width:768px){
+  .cover h1{font-size:44px;}
+  .chapter h2{font-size:34px;}
+  .quiz-title{font-size:32px;}
+  .archetype-name{font-size:36px;}
 }
 
 @media (prefers-reduced-motion: reduce){
