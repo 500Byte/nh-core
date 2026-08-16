@@ -72,7 +72,6 @@
 .stage{
   position:relative;
   width:100%;
-  max-width:520px;
   height:100dvh;
   background:var(--nh-surface-base);
   overflow:hidden;
@@ -665,14 +664,12 @@
   padding:0 !important;
 }
 #nh-diagnostico .stage{
-  max-width:100% !important;
   border-radius:0 !important;
   border:none !important;
   box-shadow:none !important;
 }
 @media (min-width:431px){
   #nh-diagnostico .stage{
-    max-width:520px !important;
     border-radius:0 !important;
     border-left:1px solid var(--nh-border-subtle) !important;
     border-right:1px solid var(--nh-border-subtle) !important;
