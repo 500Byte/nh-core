@@ -34,6 +34,7 @@ class NH_Core_CLI {
      *     wp nh-core enable-test-mode --minutes=15
      *
      * @when after_wp_load
+     * @subcommand enable-test-mode
      */
     public function enable_test_mode( $args, $assoc_args ) {
         $minutes = isset( $assoc_args['minutes'] ) ? (int) $assoc_args['minutes'] : 15;
@@ -63,6 +64,7 @@ class NH_Core_CLI {
      *     wp nh-core disable-test-mode
      *
      * @when after_wp_load
+     * @subcommand disable-test-mode
      */
     public function disable_test_mode( $args, $assoc_args ) {
         delete_option( NH_CORE_TEST_MODE_OPTION );
@@ -78,6 +80,7 @@ class NH_Core_CLI {
      *     wp nh-core test-mode-status
      *
      * @when after_wp_load
+     * @subcommand test-mode-status
      */
     public function test_mode_status( $args, $assoc_args ) {
         if ( nh_core_test_mode_is_active() ) {
