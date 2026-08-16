@@ -69,6 +69,12 @@
   justify-content:center;
   width:100%;
 }
+#nh-diagnostico:fullscreen{
+  width:100vw;
+  height:100vh;
+  min-height:100vh;
+  overflow:hidden;
+}
 .stage{
   position:relative;
   width:100%;

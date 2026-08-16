@@ -661,7 +661,13 @@ function bindEvents(scope = document){
   const q = sel => scope.querySelector(sel);
 
   const startBtn = q('#start-btn');
-  if(startBtn) startBtn.onclick = () => { navDir='forward'; screen='chapter'; actIndex=0; render(); };
+  if(startBtn) startBtn.onclick = () => {
+    const el = document.getElementById('nh-diagnostico');
+    if(el && el.requestFullscreen && !document.fullscreenElement) {
+      el.requestFullscreen().catch(()=>{});
+    }
+    navDir='forward'; screen='chapter'; actIndex=0; render();
+  };
 
   const actStart = q('#act-start-btn');
   if(actStart) actStart.onclick = () => { navDir='forward'; screen='quiz'; qIndex=ACTS[actIndex].start; render(); };
@@ -751,6 +757,7 @@ function bindEvents(scope = document){
 
   const restartBtn = q('#restart-btn');
   if(restartBtn) restartBtn.onclick = () => {
+    if(document.fullscreenElement) document.exitFullscreen().catch(()=>{});
     navDir='back';
     answers = {};
     leadName = '';
