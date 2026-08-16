@@ -183,16 +183,36 @@ class NH_Core_Tracking {
             gtag('consent', 'update', consentUpdate);
         }
 
+        // Persistir la aceptación del usuario en una cookie propia de 30 días
+        // (nh_consent). Necesario porque Pressidium NO persiste el estado del
+        // usuario: sin esto, al recargar (p.ej. llegar a order-received) el
+        // consent vuelve a denied y los tags blocked dejan de medir purchases.
+        function persistConsentGranted() {
+            try {
+                var date = new Date();
+                date.setTime(date.getTime() + (30 * 24 * 60 * 60 * 1000)); // 30 days
+                document.cookie = 'nh_consent=granted' +
+                    '; expires=' + date.toUTCString() +
+                    '; path=/' +
+                    '; secure' +
+                    '; samesite=strict';
+            } catch (e) {}
+        }
+
         window.addEventListener('pressidium-cookie-consent-accepted', function(event) {
             if (event && event.detail) {
                 applyPressidiumConsentState(event.detail);
             }
+            // Cualquier aceptación (todas o necesarias) persiste el estado
+            persistConsentGranted();
         });
 
         window.addEventListener('pressidium-cookie-consent-changed', function(event) {
             if (event && event.detail) {
                 applyPressidiumConsentState(event.detail);
             }
+            // Cambio granular de categorías también queda persistido
+            persistConsentGranted();
         });
 
         // Aplicar estado guardado inmediatamente si existe la cookie (visitante recurrente)
@@ -204,6 +224,21 @@ class NH_Core_Tracking {
                     applyPressidiumConsentState(decoded);
                 }
             } catch(e) {}
+        }
+
+        // Persistencia de nh-core: si el usuario aceptó antes (30d), forzar el
+        // gran de analytics/ad ahora, aunque la cookie de Pressidium haya expirado
+        // o no esté presente en esta navegación (p.ej. order-received con cache).
+        if (getCookie('nh_consent') === 'granted') {
+            gtag('consent', 'update', {
+                'ad_storage': 'granted',
+                'ad_user_data': 'granted',
+                'ad_personalization': 'granted',
+                'analytics_storage': 'granted',
+                'personalization_storage': 'granted',
+                'functionality_storage': 'granted',
+                'security_storage': 'granted'
+            });
         }
 
         function getCookie(name) {
