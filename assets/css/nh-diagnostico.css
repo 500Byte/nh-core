@@ -660,6 +660,26 @@
 }
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
 
+/* ── Layout: full-width mobile ── */
+#nh-diagnostico{
+  padding:0 !important;
+}
+#nh-diagnostico .stage{
+  max-width:100% !important;
+  border-radius:0 !important;
+  border:none !important;
+  box-shadow:none !important;
+}
+@media (min-width:431px){
+  #nh-diagnostico .stage{
+    max-width:430px !important;
+    border-radius:0 !important;
+    border-left:1px solid var(--nh-border-subtle) !important;
+    border-right:1px solid var(--nh-border-subtle) !important;
+    box-shadow:0 24px 80px rgba(0,0,0,0.18) !important;
+  }
+}
+
 /* ── Elementor isolation: !important overrides ── */
 #nh-diagnostico,
 #nh-diagnostico *,
@@ -721,16 +741,19 @@
 #nh-diagnostico .nh-btn--primary,
 #nh-diagnostico .nh-btn--primary:hover,
 #nh-diagnostico .nh-btn--primary:active{
-  background:var(--nh-action-primary) !important;
-  color:var(--nh-text-inverse) !important;
-  border-color:var(--nh-action-primary) !important;
+  background:var(--nh-color-sand-500) !important;
+  color:var(--nh-color-gray-900) !important;
+  border-color:var(--nh-color-sand-500) !important;
+}
+#nh-diagnostico .nh-btn--primary:hover{
+  background:var(--nh-color-sand-400) !important;
 }
 #nh-diagnostico .nh-btn--secondary,
 #nh-diagnostico .nh-btn--secondary:hover,
 #nh-diagnostico .nh-btn--secondary:active{
   background:transparent !important;
-  color:var(--nh-action-primary) !important;
-  border-color:var(--nh-action-primary) !important;
+  color:var(--nh-color-sand-400) !important;
+  border-color:var(--nh-color-sand-400) !important;
 }
 #nh-diagnostico .form-input,
 #nh-diagnostico .form-input:hover,
@@ -747,7 +770,7 @@
   appearance:none !important;
 }
 #nh-diagnostico .form-input:focus{
-  border-color:var(--nh-action-primary) !important;
+  border-color:var(--nh-color-sand-500) !important;
   box-shadow:0 0 0 3px rgba(194,178,128,0.32) !important;
 }
 #nh-diagnostico .form-label{
@@ -776,12 +799,57 @@
 }
 #nh-diagnostico .quiz-title,
 #nh-diagnostico .cover h1,
-#nh-diagnostico .chapter h2,
-#nh-diagnostico .archetype-name,
-#nh-diagnostico .card-archetype,
-#nh-diagnostico .card-hero-name,
-#nh-diagnostico .gate h2{
+#nh-diagnostico .chapter h2{
   font-family:var(--font-headings) !important;
+  color:#fff !important;
+  text-shadow:0 2px 24px rgba(0,0,0,0.45) !important;
+}
+#nh-diagnostico .archetype-name{
+  font-family:var(--font-headings) !important;
+  color:var(--nh-text-headings) !important;
+}
+#nh-diagnostico .card-archetype{
+  font-family:var(--font-headings) !important;
+  color:var(--nh-color-sand-200) !important;
+}
+#nh-diagnostico .card-hero-name{
+  font-family:var(--font-headings) !important;
+  color:#fff !important;
+}
+#nh-diagnostico .gate h2{
+  font-family:var(--font-body) !important;
+  color:var(--nh-color-clay-500) !important;
+}
+#nh-diagnostico .cover-brand,
+#nh-diagnostico .cover-pillar,
+#nh-diagnostico .chapter-roman,
+#nh-diagnostico .card-hero-label,
+#nh-diagnostico .result-tag{
+  font-family:var(--font-body) !important;
+}
+#nh-diagnostico .cover-brand{
+  color:var(--nh-color-sand-400) !important;
+}
+#nh-diagnostico .cover-pillar{
+  color:var(--nh-color-sand-400) !important;
+  border-color:rgba(194,178,128,0.5) !important;
+  background:rgba(15,15,15,0.18) !important;
+}
+#nh-diagnostico .chapter-roman{
+  color:var(--nh-color-sand-400) !important;
+}
+#nh-diagnostico .cover-sub,
+#nh-diagnostico .chapter-sub{
+  font-family:var(--font-body) !important;
+  color:rgba(255,255,255,0.9) !important;
+}
+#nh-diagnostico .archetype-desc,
+#nh-diagnostico .gate-lede,
+#nh-diagnostico .card-desc,
+#nh-diagnostico .match-line,
+#nh-diagnostico .meta-note{
+  font-family:var(--font-body) !important;
+  color:var(--nh-text-secondary) !important;
 }
 #nh-diagnostico .back-btn,
 #nh-diagnostico .back-btn:hover,
@@ -827,24 +895,14 @@
   -webkit-appearance:none !important;
   appearance:none !important;
 }
-#nh-diagnostico .cover-brand,
-#nh-diagnostico .cover-pillar,
-#nh-diagnostico .chapter-roman,
-#nh-diagnostico .card-hero-label,
-#nh-diagnostico .result-tag{
-  font-family:var(--font-body) !important;
-}
-#nh-diagnostico .cover-sub,
-#nh-diagnostico .chapter-sub,
-#nh-diagnostico .archetype-desc,
-#nh-diagnostico .gate-lede,
-#nh-diagnostico .card-desc,
-#nh-diagnostico .match-line,
-#nh-diagnostico .meta-note{
-  font-family:var(--font-body) !important;
+#nh-diagnostico .card-hero-label{
+  color:var(--nh-color-sand-400) !important;
 }
 #nh-diagnostico .ornament-line{
   background:var(--nh-color-clay-300) !important;
+}
+#nh-diagnostico .ornament-diamond{
+  color:var(--nh-color-sand-500) !important;
 }
 
 /* ── Ocultar widgets de chat flotante en el quiz ── */
