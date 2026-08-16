@@ -255,7 +255,7 @@ function runTransition(oldEl, entering, type, dir){
   polishScreen(tl, entering, type, dirY, oldEl, quizSwap);
 }
 
-const STAGGER_SEL = '.cover-brand, .cover h1, .cover-sub, .cover-pillars, #start-btn, .chapter-roman, .chapter h2, .chapter-sub, #act-start-btn, .seal-wrap, .gate h2, .gate-lede, .form-field, .form-checkbox, #reveal-btn, #gate-back, .card-hero-content, .result-tag, .match-line, .card-desc, .info-cards, .share-row, .nh-btn, .restart-link';
+const STAGGER_SEL = '.cover h1, .cover-sub, .cover-pillars, #start-btn, .chapter-roman, .chapter h2, .chapter-sub, #act-start-btn, .seal-wrap, .gate h2, .gate-lede, .form-field, .form-checkbox, #reveal-btn, #gate-back, .card-hero-content, .result-tag, .match-line, .card-desc, .info-cards, .share-row, .nh-btn, .restart-link';
 
 function polishScreen(tl, entering, type, dirY, oldEl, quizSwap){
   const isQuiz = entering.classList.contains('quiz');
@@ -301,7 +301,6 @@ function renderCover(){
       <div class="bg" style="background-image:url('${IMG.cover}')"></div>
       <div class="scrim"></div>
       <div class="cover-content">
-        <div class="cover-brand">Norma Hana</div>
         <div class="cover-mid">
           <h1>¿Qué prenda de Norma Hana eres?</h1>
           <p class="cover-sub">Un ritual de 12 momentos para descubrir la paleta que te habita, la silueta que te viste y el arquetipo de estilo que vive en ti.</p>
@@ -312,7 +311,7 @@ function renderCover(){
           </div>
         </div>
         <button class="nh-btn nh-btn--primary" id="start-btn">Comenzar el juego <span class="btn-arrow">→</span></button>
-        <p class="meta-note" style="color:rgba(255,255,255,0.7);">12 momentos · tu carta al final · menos de 3 minutos</p>
+        <p class="meta-note" style="color:#fff;">12 momentos · tu carta al final · menos de 3 minutos</p>
       </div>
     </div>`;
 }
