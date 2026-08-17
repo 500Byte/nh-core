@@ -296,7 +296,7 @@ function polishScreen(tl, entering, type, dirY, oldEl, quizSwap){
   }
 }
 
-function exitBtnHTML(){ return '<button class="exit-btn" id="exit-fullscreen" aria-label="Salir del cuestionario" title="Salir"><i class="ph-light ph-x"></i></button>'; }
+function exitBtnHTML(){ return '<button class="exit-btn" id="exit-fullscreen" aria-label="Expandir/contraer pantalla" title="Expandir"><i class="ph-light ph-corners-out"></i></button>'; }
 
 function renderCover(){
   return `
@@ -786,19 +786,37 @@ function bindEvents(scope = document){
 
   const exitBtn = q('#exit-fullscreen');
   if(exitBtn) exitBtn.onclick = () => {
-    if(document.fullscreenElement) document.exitFullscreen().catch(()=>{});
     const el = document.getElementById('nh-diagnostico');
-    if(el) el.classList.remove('quiz-active');
-    document.body.style.overflow = '';
+    const isMobile = window.innerWidth < 768;
+    if(document.fullscreenElement){
+      document.exitFullscreen().catch(()=>{});
+    } else if(isMobile && el && el.requestFullscreen){
+      el.requestFullscreen().catch(()=>{});
+    } else {
+      el.classList.toggle('quiz-active');
+      document.body.style.overflow = el.classList.contains('quiz-active') ? 'hidden' : '';
+    }
+    updateFullscreenIcon();
   };
 
   document.addEventListener('fullscreenchange', () => {
-    if(!document.fullscreenElement){
-      const el = document.getElementById('nh-diagnostico');
+    const el = document.getElementById('nh-diagnostico');
+    if(document.fullscreenElement){
       if(el) el.classList.remove('quiz-active');
+    } else {
       document.body.style.overflow = '';
     }
+    updateFullscreenIcon();
   });
+
+  function updateFullscreenIcon(){
+    const btn = q('#exit-fullscreen');
+    if(!btn) return;
+    const icon = btn.querySelector('i');
+    if(!icon) return;
+    const isFs = !!document.fullscreenElement || document.getElementById('nh-diagnostico')?.classList.contains('quiz-active');
+    icon.className = isFs ? 'ph-light ph-corners-in' : 'ph-light ph-corners-out';
+  }
 }
 
 preloadFlow(0);
