@@ -312,7 +312,7 @@ function renderCover(){
             <span class="cover-pillar">Estilo</span>
           </div>
         </div>
-        <button class="nh-btn nh-btn--primary" id="start-btn">Comenzar el juego <span class="btn-arrow">→</span></button>
+        <button class="nh-btn nh-btn--primary" id="start-btn">Comenzar el juego <i class="btn-arrow ph-light ph-caret-right"></i></button>
         <p class="meta-note" style="color:#fff;">12 momentos · tu carta al final · menos de 3 minutos</p>
       </div>
     </div>`;
@@ -329,7 +329,7 @@ function renderChapter(){
         <div class="chapter-roman">${act.roman}</div>
         <h2>${act.name}</h2>
         <p class="chapter-sub">${act.sub}</p>
-        <button class="nh-btn nh-btn--primary" id="act-start-btn">Entrar al acto <span class="btn-arrow">→</span></button>
+        <button class="nh-btn nh-btn--primary" id="act-start-btn">Entrar al acto <i class="btn-arrow ph-light ph-caret-right"></i></button>
       </div>
     </div>`;
 }
@@ -344,7 +344,7 @@ function renderQuiz(){
         <div class="bg" style="background-image:url('${q.img}')"></div>
         <div class="scrim"></div>
         <div class="quiz-top">
-          <button class="back-btn" id="back-btn" aria-label="Atrás">←</button>
+          <button class="back-btn" id="back-btn" aria-label="Atrás"><i class="ph-light ph-caret-left"></i></button>
           <div class="q-progress"><div class="q-progress-fill" style="width:${pct}%"></div></div>
           ${exitBtnHTML()}
         </div>
@@ -399,7 +399,7 @@ function renderGate(){
           <div class="form-error" id="consent-error">Debes aceptar la Política de Privacidad para ver tu carta.</div>
           <button class="nh-btn nh-btn--primary" id="reveal-btn" type="submit">Sellar mi carta</button>
         </form>
-        <button class="gate-back" id="gate-back">← Volver al final del ritual</button>
+        <button class="gate-back" id="gate-back"><i class="ph-light ph-caret-left"></i> Volver al final del ritual</button>
         <p class="meta-note">No compartimos tus datos. Puedes darte de baja cuando quieras.</p>
       </div>
     </div>`;
@@ -457,8 +457,8 @@ function renderCard(){
         </div>
         <a class="nh-btn nh-btn--primary" href="https://wa.me/573043510019" target="_blank" rel="noopener">Agenda tu asesoría 1:1</a>
         <a class="nh-btn nh-btn--secondary" style="margin-top:10px;" href="https://www.normahana.com/tienda/">Descubre prendas para tu perfil</a>
-        <button class="restart-link" id="restart-btn">↻ Repetir el juego</button>
-        <p class="meta-note">Este resultado es una guía orientativa y puede tener margen de error — nada reemplaza el ojo experto de una asesoría personalizada.</p>
+        <button class="restart-link" id="restart-btn"><i class="ph-light ph-arrow-clockwise"></i> Repetir el juego</button>
+        <p class="meta-note" style="font-style:italic;color:#8A7D6B;">Tu carta es el primer capítulo. La asesoría es donde todo cobra forma.</p>
         <p class="meta-note">Tu carta también llegó a ${esc(leadEmail)}.</p>
       </div>
     </div>`;
