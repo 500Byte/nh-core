@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<title>Tu Carta de Estilo — Norma Hana</title>
+<meta name="color-scheme" content="light">
+<!--[if mso]>
+<style>table,td{font-family:system-ui,-apple-system,'Segoe UI',Arial,Helvetica,sans-serif!important}</style>
+<![endif]-->
+</head>
+<body style="margin:0;padding:0;background:#F8F8F8;font-family:system-ui,-apple-system,'Segoe UI',Arial,Helvetica,sans-serif;color:#0F0F0F;-webkit-text-size-adjust:100%;-ms-text-size-adjust:100%;">
+
+<div style="max-width:600px;margin:0 auto;background:#FFFFFF;">
+
+<!-- ═══════════════════════════════════════════════════════════════
+     1. HERO — imagen editorial + overlay + nombre
+     ═══════════════════════════════════════════════════════════════ -->
+<div style="position:relative;height:400px;background-image:url('https://www.normahana.com/wp-content/plugins/nh-core/assets/email/images/cover.jpg');background-size:cover;background-position:center;">
+  <div style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,0.55) 0%,rgba(0,0,0,0.15) 40%,rgba(0,0,0,0.6) 100%);"></div>
+  <div style="position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;padding:0 32px;text-align:center;">
+    <img src="https://www.normahana.com/wp-content/plugins/nh-core/assets/email/images/logo-white.png" alt="Norma Hana" width="180" style="width:180px;height:auto;display:block;margin:0 auto 12px;">
+    <p style="margin:0 0 8px;font-size:13px;font-weight:400;letter-spacing:0.08em;color:rgba(255,255,255,0.85);">Tu carta de estilo</p>
+    <h1 style="margin:0;font-family:Georgia,'Times New Roman',Times,serif;font-size:28px;font-weight:700;font-style:italic;line-height:1.15;color:#FFFFFF;">La carta de estilo de {{name}}</h1>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     2. REVELADO — momento emocional del arquetipo
+     ═══════════════════════════════════════════════════════════════ -->
+<div style="background:#F5F0D8;padding:48px 32px 44px;text-align:center;">
+  <!-- Decorative line -->
+  <p style="margin:0 auto 24px;width:60px;font-size:14px;color:#D4C99A;letter-spacing:0.3em;">✦ ✦ ✦</p>
+  <!-- Archetype name -->
+  <h2 style="margin:0 0 16px;font-family:Georgia,'Times New Roman',Times,serif;font-size:28px;font-weight:600;line-height:1.15;color:#0F0F0F;text-wrap:balance;">{{archetype_title}}</h2>
+  <!-- Emotional hook -->
+  <p style="margin:0 0 20px;font-family:Georgia,'Times New Roman',Times,serif;font-size:18px;font-style:italic;line-height:1.4;color:#555555;max-width:400px;margin-left:auto;margin-right:auto;">{{archetype_tag}}</p>
+  <!-- Match line -->
+  <p style="margin:0;font-size:13px;font-weight:600;color:#555555;">{{match_line}}</p>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     3. DESCRIPCIÓN — quién eres
+     ═══════════════════════════════════════════════════════════════ -->
+<div style="padding:36px 40px 40px;background:#FFFFFF;">
+  <p style="margin:0;font-size:14px;line-height:1.7;color:#0F0F0F;text-align:center;">{{archetype_description}}</p>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     4. PALETA DE COLORES — temporada + swatches
+     ═══════════════════════════════════════════════════════════════ -->
+<div style="padding:36px 32px 40px;background:#FFFFFF;border-top:1px solid #EAEAEA;">
+  <p style="margin:0 0 6px;font-size:10px;font-weight:600;letter-spacing:0.15em;text-transform:uppercase;color:#555555;text-align:center;">Tu paleta</p>
+  <h3 style="margin:0 0 24px;font-family:Georgia,'Times New Roman',Times,serif;font-size:22px;font-weight:700;text-align:center;color:#0F0F0F;">Tons de {{season_name}}</h3>
+  <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="width:100%;margin:0 auto;">
+    <tr>{{palette_swatches_html}}</tr>
+  </table>
+  <p style="margin:20px 0 0;font-size:13px;line-height:1.6;color:#555555;text-align:center;">{{season_explanation}}</p>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     5. FULL-BLEED EDITORIAL — momento de transición visual
+     ═══════════════════════════════════════════════════════════════ -->
+<div style="position:relative;height:200px;background-image:url('{{act_image_url}}');background-size:cover;background-position:center;">
+  <div style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,0.08) 0%,rgba(0,0,0,0.35) 100%);"></div>
+  <div style="position:absolute;bottom:24px;left:32px;right:32px;">
+    <p style="margin:0;font-family:Georgia,'Times New Roman',Times,serif;font-size:16px;font-style:italic;color:#FFFFFF;line-height:1.5;">"Elegir bien es elegirse a una misma."</p>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     6. GUÍA DE COLORES — 3 tarjetas editoriales
+     ═══════════════════════════════════════════════════════════════ -->
+<div style="padding:40px 32px;background:#FFFFFF;">
+  <p style="margin:0 0 6px;font-size:10px;font-weight:600;letter-spacing:0.15em;text-transform:uppercase;color:#555555;text-align:center;">Guía de color</p>
+  <h3 style="margin:0 0 28px;font-family:Georgia,'Times New Roman',Times,serif;font-size:22px;font-weight:700;text-align:center;color:#0F0F0F;">Cómo llevar tu paleta</h3>
+  {{color_guide_html}}
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     7. SILUETA — reglas específicas y accionables
+     ═══════════════════════════════════════════════════════════════ -->
+<div style="padding:36px 40px;background:#F5F0D8;">
+  <p style="margin:0 0 6px;font-size:10px;font-weight:600;letter-spacing:0.15em;text-transform:uppercase;color:#555555;text-align:center;">Tu silueta</p>
+  <h3 style="margin:0 0 20px;font-family:Georgia,'Times New Roman',Times,serif;font-size:22px;font-weight:700;text-align:center;color:#0F0F0F;">{{silhouette_name}}</h3>
+  <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="width:100%;max-width:440px;margin:0 auto;">
+    {{silhouette_rules_html}}
+  </table>
+  <p style="margin:20px 0 0;font-size:13px;line-height:1.5;color:#555555;text-align:center;font-style:italic;">Como {{archetype_title}}, {{silhouette_closing}}</p>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     8. PRENDAS CURADAS — 3 productos reales con match reason
+     ═══════════════════════════════════════════════════════════════ -->
+<div style="padding:40px 32px;background:#FFFFFF;border-top:1px solid #EAEAEA;">
+  <p style="margin:0 0 6px;font-size:10px;font-weight:600;letter-spacing:0.15em;text-transform:uppercase;color:#555555;text-align:center;">Para ti</p>
+  <h3 style="margin:0 0 28px;font-family:Georgia,'Times New Roman',Times,serif;font-size:22px;font-weight:700;text-align:center;color:#0F0F0F;">Piezas que hablan tu idioma</h3>
+  {{products_html}}
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     9. BIENVENIDA — cupón reframado como regalo
+     ═══════════════════════════════════════════════════════════════ -->
+<div style="padding:40px 32px;background:#F5F0D8;text-align:center;">
+  <p style="margin:0 0 10px;font-family:Georgia,'Times New Roman',Times,serif;font-size:20px;font-weight:700;font-style:italic;color:#0F0F0F;">Tu estilo merece una bienvenida especial</p>
+  <p style="margin:0 0 20px;font-size:14px;line-height:1.6;color:#555555;">Usa el código <strong style="color:#0F0F0F;">BIENVENIDA</strong> y recibe 10% en tu primera pieza de autor.</p>
+  <a href="https://www.normahana.com/tienda/" style="display:inline-block;padding:12px 28px;background:#0F0F0F;color:#FFFFFF;font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;text-decoration:none;border-radius:6px;">Explorar la tienda →</a>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     10. CTA WHATSAPP — "Habla con nosotras"
+     ═══════════════════════════════════════════════════════════════ -->
+<div style="padding:36px 32px;background:#FFFFFF;text-align:center;border-top:1px solid #EAEAEA;">
+  <p style="margin:0 0 8px;font-family:Georgia,'Times New Roman',Times,serif;font-size:18px;font-weight:700;color:#0F0F0F;">¿Quieres que te acompañemos?</p>
+  <p style="margin:0 0 20px;font-size:14px;line-height:1.5;color:#555555;">Habla con nosotras por WhatsApp — es gratis y sin compromiso.</p>
+  <a href="https://wa.me/573043510019?text=Hola%20Norma%20Hana%2C%20complet%C3%A9%20el%20diagn%C3%B3stico%20de%20estilo%20y%20quiero%20asesor%C3%ADa%20personalizada." style="display:inline-block;padding:14px 32px;background:#25D366;color:#FFFFFF;font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;text-decoration:none;border-radius:6px;">Habla con nosotras</a>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     11. EL UMBRAL — "Tu carta es el primer capítulo"
+     ═══════════════════════════════════════════════════════════════ -->
+<div style="padding:36px 40px;background:#F5F0D8;text-align:center;border-top:1px solid #EAEAEA;">
+  <p style="margin:0 0 16px;font-family:Georgia,'Times New Roman',Times,serif;font-size:18px;font-weight:700;font-style:italic;color:#0F0F0F;line-height:1.4;">Tu carta es el primer capítulo.</p>
+  <p style="margin:0 0 16px;font-size:14px;line-height:1.7;color:#555555;max-width:440px;margin-left:auto;margin-right:auto;">Este diagnóstico abre una puerta — pero el verdadero viaje se construye en conversación, cuando una profesional lee tu historia completa y diseña contigo una estrategia a tu medida.</p>
+  <p style="margin:0;font-size:14px;line-height:1.6;color:#555555;">Si sientes que esto resuena contigo, nos encantaría conocerte en persona.</p>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     12. CIERRE — frase editorial
+     ═══════════════════════════════════════════════════════════════ -->
+<div style="padding:32px 40px;background:#F5F0D8;text-align:center;">
+  <p style="margin:0;font-family:Georgia,'Times New Roman',Times,serif;font-size:16px;font-style:italic;line-height:1.6;color:#555555;">{{editorial_quote}}</p>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     13. FOOTER
+     ═══════════════════════════════════════════════════════════════ -->
+<div style="padding:24px 32px;background:#0F0F0F;text-align:center;">
+  <img src="https://www.normahana.com/wp-content/plugins/nh-core/assets/email/images/logo.png" alt="Norma Hana" width="140" style="width:140px;height:auto;display:block;margin:0 auto 10px;opacity:0.7;">
+  <p style="margin:0 0 10px;font-size:10px;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;color:rgba(255,255,255,0.5);">Santa Marta, Colombia</p>
+  <p style="margin:0 0 12px;">
+    <a href="https://www.normahana.com" style="font-size:12px;color:rgba(255,255,255,0.6);text-decoration:underline;margin:0 8px;">normahana.com</a>
+    <a href="https://www.normahana.com/tienda/" style="font-size:12px;color:rgba(255,255,255,0.6);text-decoration:underline;margin:0 8px;">Tienda</a>
+    <a href="https://www.normahana.com/politica-de-privacidad/" style="font-size:12px;color:rgba(255,255,255,0.6);text-decoration:underline;margin:0 8px;">Privacidad</a>
+  </p>
+  <!-- Instagram icon -->
+  <p style="margin:12px 0 0;">
+    <a href="https://www.instagram.com/normahana/" style="text-decoration:none;">
+      <img src="https://www.normahana.com/wp-content/plugins/nh-core/assets/email/images/instagram-icon.svg" alt="Instagram" width="20" style="width:20px;height:20px;opacity:0.5;display:inline-block;" onerror="this.style.display='none';">
+    </a>
+  </p>
+</div>
+
+</div><!-- /container -->
+</body>
+</html>

@@ -120,6 +120,22 @@ const SEASON_INFO = {
   'Invierno':  { colors:['#1A1A1A','#8C1F2B','#FFFFFF','#1F3A5F'], label:'Negro, rojo rubí, blanco puro y azul marino' }
 };
 
+const COLOR_GUIDE = {
+  'Clásico':   [{ img:'q1', title:'Maquillaje', copy:'Tonos tierra, dorados y terracota. Evita los rosas fríos y plateados — tu piel pide calidez.' },{ img:'q8', title:'Accesorios', copy:'Oro, bronce y cobre. Las piezas en cuero marrón o tabaco complementan tu tono natural.' },{ img:'q3', title:'Uñas', copy:'Nude cálido, ciruela o terracota. Colores que hablan sin competir con tu outfit.' }],
+  'Romántico': [{ img:'q2', title:'Maquillaje', copy:'Rosa polvo, melocotón suave y rubor cremoso. Evita los tonos greyssy y los labios demasiado oscuros.' },{ img:'q9', title:'Accesorios', copy:'Plata suave, perlas y pedrería delicada. Los detalles femeninos complementan tu esencia.' },{ img:'q4', title:'Uñas', copy:'Rosa ballet, nude rosado o cereza suave. Colores que reflejan tu dulzura natural.' }],
+  'Creativo':  [{ img:'q1', title:'Maquillaje', copy:'Labios rojos intensos, delineado gráfico o sombras metallizadas. Tu cara es tu lienzo.' },{ img:'q10', title:'Accesorios', copy:'Plata oscura, grafito y piezas escultóricas. Los accesorios que cuentan historias.' },{ img:'q5', title:'Uñas', copy:'Negro mate, cobre o estampado abstracto. Uñas que son declaración de principios.' }],
+  'Natural':   [{ img:'q3', title:'Maquillaje', copy:'Base ligera, bronceador sutil y labios nude. Tu piel es tu mejor accesorio — no la cubras.' },{ img:'q11', title:'Accesorios', copy:'Cuero natural, fibras vegetales y madera. Piezas que parecen haber sido hechas por el mar.' },{ img:'q6', title:'Uñas', copy:'Transparente, nude arena o verde salvia. Colores que no compiten con tu naturaleza.' }],
+  'Elegante':  [{ img:'q1', title:'Maquillaje', copy:'Tonos tierra, dorados y terracota. Evita los rosas fríos y plateados — tu piel pide calidez.' },{ img:'q8', title:'Accesorios', copy:'Oro, bronce y cobre. Las piezas en cuero marrón o tabaco complementan tu tono natural.' },{ img:'q3', title:'Uñas', copy:'Nude cálido, ciruela o terracota. Colores que hablan sin competir con tu outfit.' }]
+};
+
+const PRODUCT_IDS = {
+  'Clásico':   [10733, 10641, 10442],
+  'Romántico': [10733, 10641, 10442],
+  'Creativo':  [10733, 10641, 10442],
+  'Natural':   [10733, 10641, 10442],
+  'Elegante':  [10733, 10641, 10442]
+};
+
 let screen = 'cover';
 let qIndex = 0;
 let actIndex = 0;
@@ -417,7 +433,7 @@ function renderCard(){
     <div class="screen card-screen">
       ${exitBtnHTML()}
       <div class="card-hero">
-        <div class="bg" style="background-image:url('${ar.img}')"></div>
+        <div class="bg" style="background-image:url('${IMG.cover}')"></div>
         <div class="scrim"></div>
         <div class="card-hero-content">
           <div class="card-hero-label">La carta de estilo de</div>
@@ -441,6 +457,25 @@ function renderCard(){
             <h3>Tu silueta · ${esc(r.shape)}</h3>
             <p>${esc(SHAPE_INFO[r.shape])}</p>
           </div>
+        </div>
+        <div class="color-guide-section">
+          <p class="section-eyebrow">Guía de color</p>
+          <h3 class="section-title">Cómo llevar tu paleta</h3>
+          ${(COLOR_GUIDE[r.style] || COLOR_GUIDE['Elegante']).map(g => `
+            <div class="color-guide-row">
+              <img src="${IMG[g.img]}" alt="${esc(g.title)}" class="color-guide-img" loading="lazy">
+              <div class="color-guide-text">
+                <p class="color-guide-title">${esc(g.title)}</p>
+                <p class="color-guide-copy">${esc(g.copy)}</p>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+        <div class="product-section" id="product-section">
+          <p class="section-eyebrow">Para ti</p>
+          <h3 class="section-title">Piezas que hablan tu idioma</h3>
+          <div class="product-loading" id="product-loading"><i class="ph-light ph-spinner"></i> Buscando prendas para ti…</div>
+          <div class="product-cards" id="product-cards"></div>
         </div>
         <div class="share-row">
           <button class="share-btn" id="share-wa" aria-label="Compartir en WhatsApp">
@@ -541,6 +576,7 @@ function revealCard(){
     navDir = 'forward';
     screen = 'card';
     render();
+    fetchProducts();
     confetti([...SEASON_INFO[result.season].colors, '#C2B280', '#4A5D4E']);
     sendLead();
   }, 850);
@@ -549,6 +585,35 @@ function revealCard(){
 function shareText(){
   const ar = ARCHETYPES[result.style];
   return `Mi carta de estilo: ${ar.name} ✦ Paleta ${result.season} ✦ Silueta ${result.shape}. ¿Cuál es la tuya? Descúbrela en Norma Hana → ${QUIZ_URL}`;
+}
+
+async function fetchProducts(){
+  const ids = PRODUCT_IDS[result.style];
+  if(!ids || !ids.length) return;
+  const container = document.getElementById('product-cards');
+  const loading = document.getElementById('product-loading');
+  if(!container) return;
+  try {
+    const base = (typeof nhDiagnostico !== 'undefined' && nhDiagnostico.siteUrl) ? nhDiagnostico.siteUrl : 'https://www.normahana.com';
+    const res = await fetch(`${base}/wp-json/cocart/v2/products?include=${ids.join(',')}&per_page=3`);
+    if(!res.ok) throw new Error(res.status);
+    const products = await res.json();
+    if(!products.length){ if(loading) loading.style.display='none'; return; }
+    container.innerHTML = products.map(p => {
+      const price = p.price_html || `$${p.price}`;
+      const img = (p.images && p.images[0]) ? p.images[0].src : '';
+      const link = p.permalink || '#';
+      return `<div class="product-card">
+        ${img ? `<img src="${img}" alt="${esc(p.name)}" class="product-img" loading="lazy">` : ''}
+        <p class="product-name">${esc(p.name)}</p>
+        <p class="product-price">${price}</p>
+        <a href="${link}" target="_blank" rel="noopener" class="product-cta">Descúbrela <i class="ph-light ph-caret-right"></i></a>
+      </div>`;
+    }).join('');
+    if(loading) loading.style.display='none';
+  } catch(e){
+    if(loading) loading.innerHTML = '';
+  }
 }
 
 function shareWhatsApp(){

@@ -610,6 +610,131 @@
 }
 .swatches{display:flex;gap:8px;margin-bottom:10px;}
 .swatch{width:30px;height:30px;border-radius:50%;border:1px solid rgba(0,0,0,0.15);}
+
+.section-eyebrow{
+  font-family:var(--font-body);
+  font-size:11px;
+  font-weight:600;
+  letter-spacing:0.12em;
+  text-transform:uppercase;
+  color:var(--nh-text-secondary);
+  text-align:center;
+  margin:0 0 6px;
+}
+.section-title{
+  font-family:var(--font-headings);
+  font-weight:500;
+  font-size:20px;
+  text-align:center;
+  color:var(--nh-text-headings);
+  margin:0 0 20px;
+}
+
+.color-guide-section{
+  margin:0 0 24px;
+  padding:20px;
+  border:1px solid var(--nh-border-subtle);
+  border-radius:16px;
+  background:var(--nh-surface-secondary);
+}
+.color-guide-row{
+  display:flex;
+  gap:14px;
+  align-items:flex-start;
+  margin:0 0 16px;
+}
+.color-guide-row:last-child{margin-bottom:0;}
+.color-guide-img{
+  width:80px;
+  height:68px;
+  object-fit:cover;
+  border-radius:10px;
+  flex-shrink:0;
+  border:1px solid var(--nh-border-subtle);
+}
+.color-guide-text{flex:1;min-width:0;}
+.color-guide-title{
+  font-family:var(--font-body);
+  font-weight:700;
+  font-size:14px;
+  color:var(--nh-text-headings);
+  margin:0 0 4px;
+}
+.color-guide-copy{
+  font-family:var(--font-body);
+  font-size:13px;
+  line-height:1.5;
+  color:var(--nh-text-secondary);
+  margin:0;
+}
+
+.product-section{
+  margin:0 0 24px;
+}
+.product-loading{
+  text-align:center;
+  padding:16px;
+  font-size:13px;
+  color:var(--nh-text-secondary);
+}
+.product-loading .ph-spinner{
+  display:inline-block;
+  animation:spin 1s linear infinite;
+}
+@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+.product-cards{
+  display:flex;
+  flex-direction:column;
+  gap:16px;
+}
+.product-card{
+  border:1px solid var(--nh-border-subtle);
+  border-radius:16px;
+  overflow:hidden;
+  background:var(--nh-surface-secondary);
+}
+.product-img{
+  width:100%;
+  height:220px;
+  object-fit:cover;
+  display:block;
+}
+.product-name{
+  font-family:var(--font-headings);
+  font-weight:500;
+  font-size:16px;
+  color:var(--nh-text-headings);
+  margin:14px 20px 4px;
+}
+.product-price{
+  font-family:var(--font-body);
+  font-weight:600;
+  font-size:15px;
+  color:var(--nh-text-headings);
+  margin:0 20px 10px;
+}
+.product-cta{
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  margin:0 20px 18px;
+  padding:8px 18px;
+  font-family:var(--font-body);
+  font-size:13px;
+  font-weight:700;
+  text-transform:uppercase;
+  letter-spacing:0.06em;
+  color:var(--nh-text-headings);
+  border:1px solid var(--nh-border-default);
+  border-radius:6px;
+  text-decoration:none;
+  transition:background 0.2s,color 0.2s;
+}
+.product-cta:hover{
+  background:var(--nh-text-headings);
+  color:var(--nh-surface-primary);
+}
+
 .share-row{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:0 0 22px;}
 .share-btn{
   display:flex;flex-direction:column;align-items:center;gap:8px;
@@ -922,6 +1047,28 @@
 #nh-diagnostico .cover .meta-note{
   color:#fff !important;
 }
+#nh-diagnostico .section-eyebrow,
+#nh-diagnostico .section-title,
+#nh-diagnostico .color-guide-title,
+#nh-diagnostico .color-guide-copy,
+#nh-diagnostico .product-name,
+#nh-diagnostico .product-price,
+#nh-diagnostico .product-cta,
+#nh-diagnostico .product-loading{
+  font-family:inherit !important;
+}
+#nh-diagnostico .product-cta,
+#nh-diagnostico .product-cta:hover,
+#nh-diagnostico .product-cta:active{
+  background:var(--nh-surface-base) !important;
+  color:var(--nh-text-headings) !important;
+  border:1px solid var(--nh-border-default) !important;
+  text-decoration:none !important;
+}
+#nh-diagnostico .product-cta:hover{
+  background:var(--nh-text-headings) !important;
+  color:var(--nh-surface-primary) !important;
+}
 #nh-diagnostico .back-btn,
 #nh-diagnostico .back-btn:hover,
 #nh-diagnostico .back-btn:active{
@@ -1079,6 +1226,24 @@
 
   /* Progress bar */
   #nh-diagnostico .q-progress{height:5px !important;}
+
+  /* Color guide */
+  #nh-diagnostico .section-eyebrow{font-size:12px !important;}
+  #nh-diagnostico .section-title{font-size:24px !important;margin-bottom:24px !important;}
+  #nh-diagnostico .color-guide-img{width:100px !important;height:84px !important;}
+  #nh-diagnostico .color-guide-title{font-size:15px !important;}
+  #nh-diagnostico .color-guide-copy{font-size:14px !important;}
+
+  /* Products — 3-col grid on desktop */
+  #nh-diagnostico .product-cards{
+    display:grid !important;
+    grid-template-columns:repeat(3,1fr) !important;
+    gap:16px !important;
+  }
+  #nh-diagnostico .product-img{height:260px !important;}
+  #nh-diagnostico .product-name{font-size:17px !important;}
+  #nh-diagnostico .product-price{font-size:16px !important;}
+  #nh-diagnostico .product-cta{font-size:14px !important;padding:10px 22px !important;}
 }
 
 @media (prefers-reduced-motion: reduce){

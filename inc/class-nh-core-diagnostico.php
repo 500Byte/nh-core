@@ -58,7 +58,7 @@ class NH_Core_Diagnostico {
 
         // Pasar configuración al JS
         wp_localize_script( 'nh-diagnostico', 'nhDiagnostico', [
-            'webhookUrl' => apply_filters( 'nh_diagnostico_webhook_url', '' ),
+            'webhookUrl' => apply_filters( 'nh_diagnostico_webhook_url', $this->get_webhook_url() ),
             'quizUrl'    => 'https://www.normahana.com/diagnostico-estilo/',
             'img'        => $this->get_image_urls(),
         ] );
@@ -76,6 +76,11 @@ class NH_Core_Diagnostico {
         $exclusions[] = 'nh-gsap';
         $exclusions[] = 'nh-diagnostico';
         return $exclusions;
+    }
+
+    private function get_webhook_url() {
+        $url = getenv( 'N8N_DIAGNOSTICO_WEBHOOK_URL' );
+        return $url ? $url : '';
     }
 
     private function get_image_urls() {
