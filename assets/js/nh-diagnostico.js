@@ -678,6 +678,7 @@ function bindEvents(scope = document){
       document.body.style.overflow = 'hidden';
     }
     navDir='forward'; screen='chapter'; actIndex=0; render();
+    updateFullscreenIcon();
   };
 
   const actStart = q('#act-start-btn');
