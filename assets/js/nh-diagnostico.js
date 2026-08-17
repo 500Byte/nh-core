@@ -179,6 +179,7 @@ const REDUCED = window.matchMedia && window.matchMedia('(prefers-reduced-motion:
 let navDir = 'forward';
 let busy = false;
 let activeScreen = null;
+let suppressFullscreenReset = false;
 
 function getContent(){
   if(screen === 'cover') return renderCover();
@@ -789,33 +790,13 @@ function bindEvents(scope = document){
     const el = document.getElementById('nh-diagnostico');
     if(el) el.classList.remove('quiz-active');
     document.body.style.overflow = '';
-    navDir='back';
-    answers = {};
-    leadName = '';
-    leadEmail = '';
-    leadPhone = '';
-    result = null;
-    qIndex = 0;
-    actIndex = 0;
-    screen = 'cover';
-    render();
   };
 
   document.addEventListener('fullscreenchange', () => {
-    if(!document.fullscreenElement && screen !== 'cover'){
+    if(!document.fullscreenElement){
       const el = document.getElementById('nh-diagnostico');
       if(el) el.classList.remove('quiz-active');
       document.body.style.overflow = '';
-      navDir='back';
-      answers = {};
-      leadName = '';
-      leadEmail = '';
-      leadPhone = '';
-      result = null;
-      qIndex = 0;
-      actIndex = 0;
-      screen = 'cover';
-      render();
     }
   });
 }
