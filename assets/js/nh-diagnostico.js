@@ -815,7 +815,7 @@ function bindEvents(scope = document){
     const icon = btn.querySelector('i');
     if(!icon) return;
     const isFs = !!document.fullscreenElement || document.getElementById('nh-diagnostico')?.classList.contains('quiz-active');
-    icon.className = isFs ? 'ph-light ph-corners-in' : 'ph-light ph-corners-out';
+    icon.className = isFs ? 'ph-light ph-x' : 'ph-light ph-corners-out';
   }
 }
 
