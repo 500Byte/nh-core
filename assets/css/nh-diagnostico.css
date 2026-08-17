@@ -98,6 +98,9 @@
   cursor:pointer;
   transition:background 0.2s, transform 0.2s;
   flex-shrink:0;
+  display:flex;
+  align-items:center;
+  justify-content:center;
 }
 .exit-btn:hover{
   background:rgba(15,15,15,0.8);
