@@ -329,7 +329,7 @@ function renderCover(){
             <span class="cover-pillar">Estilo</span>
           </div>
         </div>
-        <button class="nh-btn nh-btn--primary" id="start-btn">Comenzar el juego <i class="btn-arrow ph-light ph-caret-right"></i></button>
+        <button class="nh-btn nh-btn--primary" id="start-btn">Iniciar el diagnóstico <i class="btn-arrow ph-light ph-caret-right"></i></button>
         <p class="meta-note" style="color:#fff;">12 momentos · tu carta al final · menos de 3 minutos</p>
       </div>
     </div>`;
@@ -499,7 +499,7 @@ function renderCard(){
         </div>
         <a class="nh-btn nh-btn--primary" href="https://wa.me/573043510019" target="_blank" rel="noopener">Agenda tu asesoría 1:1</a>
         <a class="nh-btn nh-btn--secondary" style="margin-top:10px;" href="https://www.normahana.com/tienda/">Descubre prendas para tu perfil</a>
-        <button class="restart-link" id="restart-btn"><i class="ph-light ph-arrow-clockwise"></i> Repetir el juego</button>
+        <button class="restart-link" id="restart-btn"><i class="ph-light ph-arrow-clockwise"></i> Repetir el diagnóstico</button>
         <p class="meta-note" style="font-style:italic;color:#8A7D6B;">Tu carta es el primer capítulo. La asesoría es donde todo cobra forma.</p>
         <p class="meta-note">Tu carta también llegó a ${esc(leadEmail)}.</p>
       </div>
