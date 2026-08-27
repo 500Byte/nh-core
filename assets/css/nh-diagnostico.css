@@ -373,15 +373,25 @@
 /* Swatches styles */
 .option--with-swatches {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
+  flex-direction: column;
+  align-items: flex-start;
   text-align: left;
-  gap: 12px;
+  gap: 8px;
+  padding-right: 44px;
 }
 .option-swatches {
   display: flex;
   gap: 4px;
   flex-shrink: 0;
+}
+
+@media (min-width: 431px) {
+  .option--with-swatches {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+  }
 }
 .swatch-circle {
   width: 14px;
