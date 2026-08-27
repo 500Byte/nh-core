@@ -348,6 +348,8 @@
   line-height:1.35;
   color:var(--nh-text-primary);
   cursor:pointer;
+  white-space:normal;
+  word-break:break-word;
   transition:border-color var(--transition-fast), background var(--transition-fast), transform var(--transition-fast), box-shadow var(--transition-fast);
 }
 .option:hover{border-color:var(--nh-action-primary);background:var(--nh-surface-hover);transform:translateY(-1px);}
