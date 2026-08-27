@@ -370,6 +370,27 @@
 @keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
 @keyframes optPop{0%{transform:scale(1)}50%{transform:scale(.985)}100%{transform:scale(1)}}
 
+/* Swatches styles */
+.option--with-swatches {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  text-align: left;
+  gap: 12px;
+}
+.option-swatches {
+  display: flex;
+  gap: 4px;
+  flex-shrink: 0;
+}
+.swatch-circle {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 1px solid rgba(0,0,0,0.15);
+  display: inline-block;
+}
+
 /* ── Gate ── */
 .gate{
   background:

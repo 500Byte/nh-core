@@ -28,21 +28,21 @@ const PROGRESS_MSGS = {
 };
 
 const questions = [
-  { id:'ojos', dim:'color', axis:'subtono', weight:1, img:IMG.q1, title:'Tus ojos son…', options:[
-    { label:'Café, miel o verde oliva', value:'calida' },
-    { label:'Azules, grises o verde claro', value:'fria' }
+  { id:'p1_ojos', dim:'color', axis:'subtono', weight:1, img:IMG.q1, title:'¿Con cuál color de ojos te identificas más?', options:[
+    { label:'Café miel, café claro, avellana, verde oliva', value:'calida', swatches:['#B5651D', '#C9A66B', '#8A9A5B'] },
+    { label:'Café oscuro casi negro, verde intenso, azul grisáceo, negro profundo', value:'fria', swatches:['#2B1B0E', '#1B4D3E', '#5C6B73'] }
   ]},
-  { id:'cabello', dim:'color', axis:'subtono', weight:2, img:IMG.q2, title:'El color natural de tu cabello tiene reflejos…', options:[
-    { label:'Dorados, cobrizos o rojizos', value:'calida' },
-    { label:'Cenizos o grisáceos (sin tonos cálidos)', value:'fria' }
+  { id:'p2_cabello_color', dim:'color', axis:'subtono', weight:2, img:IMG.q2, title:'¿Cuál se parece más al color de tu cabello actual (aunque sea tinturado)?', options:[
+    { label:'Castaño cálido, rojizo, caoba, rubio dorado', value:'calida', swatches:['#7B3F00', '#A85C32', '#D4A24C'] },
+    { label:'Rubio platino, rubio ceniza, negro azabache, gris/blanco', value:'fria', swatches:['#D8D0C0', '#A9A9A9', '#0B0B0B'] }
   ]},
-  { id:'piel', dim:'color', axis:'subtono', weight:3, img:IMG.q3, title:'Mira las venas de tu muñeca con luz natural. ¿De qué color se ven?', options:[
-    { label:'Verdosas', value:'calida' },
-    { label:'Azules o moradas', value:'fria' }
+  { id:'p3_piel', dim:'color', axis:'subtono', weight:3, img:IMG.q3, title:'¿Cuál describe mejor el tono de tu piel (rostro, cuello y escote)?', options:[
+    { label:'Dorada, morena cálida, beige durazno, canela cálida', value:'calida', swatches:['#E8B98C', '#C08552', '#8D5524'] },
+    { label:'Clara rosada, marfil azulado, morena fría, piel oscura con base azulada/grisácea', value:'fria', swatches:['#F1D9CE', '#6F4E37', '#3B2F2F'] }
   ]},
-  { id:'claridad', dim:'color', axis:'claridad', img:IMG.q4, title:'Tu cabello natural (sin tinte) es más bien…', options:[
-    { label:'Claro — rubio, castaño claro o pelirrojo claro', value:'claro' },
-    { label:'Oscuro — castaño oscuro, negro o muy oscuro', value:'oscuro' }
+  { id:'p4_cabello_claridad', dim:'color', axis:'claridad', img:IMG.q4, title:'Sin importar el color, ¿tu cabello es más...?', options:[
+    { label:'Claro (rubios, castaños claros, canas claras)', value:'claro' },
+    { label:'Oscuro (castaños oscuros, negros, canela oscuro)', value:'oscuro' }
   ]},
   { id:'hombros_caderas', dim:'body', img:IMG.q5, title:'¿Cómo se comparan tus hombros con tus caderas?', options:[
     { label:'Son igual de anchos', value:'igual' },
@@ -98,11 +98,11 @@ const questions = [
 ];
 
 const ARCHETYPES = {
-  'Clásico':   { name:'La Primera de la Ciudad', tag:'Orden, autoridad y estructura', img:IMG.arch_clasico, desc:'Transmites firmeza, profesionalismo y prudencia. Las líneas limpias y los cortes bien definidos son tu lenguaje natural.' },
-  'Romántico': { name:'La Perla de la Bahía', tag:'Dulzura, delicadeza y afectividad', img:IMG.arch_romantico, desc:'Tu naturaleza amorosa y empática se refleja en texturas suaves, detalles delicados y siluetas femeninas.' },
-  'Creativo':  { name:'La Musa del Puerto', tag:'Visión, inspiración y originalidad', img:IMG.arch_creativo, desc:'Mezclas texturas, colores y formas con libertad. Tu estilo habla de una mujer con sensibilidad artística.' },
+  'Clásico':   { name:'La Primera de la Ciudad', tag:'Orden, autoridad y estructura', img:IMG.arch_clasico, desc:'Transmites firmeza, profesionalismo y prudencia. Las líneas limpias y los cortes bien definidos son tu lenguaje natural — con la firmeza de la ciudad más antigua, la primera en sostenerse.' },
+  'Romántico': { name:'La Perla de la Bahía', tag:'Dulzura, delicadeza y afectividad', img:IMG.arch_romantico, desc:'Tu naturaleza amorosa y empática se refleja en texturas suaves, detalles delicados y siluetas femeninas, con el brillo discreto de una perla que el mar pule con paciencia.' },
+  'Creativo':  { name:'La Musa del Puerto', tag:'Visión, inspiración y originalidad', img:IMG.arch_creativo, desc:'Mezclas texturas, colores y formas con libertad. Tu estilo habla de una mujer con sensibilidad artística, la misma que llegaba en cada barco al puerto con historias nuevas por contar.' },
   'Natural':   { name:'La Costeña Libre', tag:'Paz, sencillez y autenticidad', img:IMG.arch_natural, desc:'Valoras lo cómodo y funcional. Tu estilo es práctico, relajado y genuino — con el mar como espejo.' },
-  'Elegante':  { name:'La Dama del Malecón', tag:'Refinamiento, madurez y señorío', img:IMG.arch_elegante, desc:'Sobria y sofisticada, transmites excelencia sin esfuerzo. Menos es más.' }
+  'Elegante':  { name:'La Dama del Malecón', tag:'Refinamiento, madurez y señorío', img:IMG.arch_elegante, desc:'Sobria y sofisticada, transmites excelencia sin esfuerzo. Menos es más, como el andar sereno de quien camina el malecón al atardecer.' }
 };
 
 const SHAPE_INFO = {
@@ -162,10 +162,10 @@ function computeResult(){
   let calida=0, fria=0;
   questions.filter(q=>q.axis==='subtono').forEach(q=>{
     const v = answers[q.id];
-    if(v==='calida') calida += q.weight; else fria += q.weight;
+    if(v==='calida') calida += q.weight; else if(v==='fria') fria += q.weight;
   });
   const subtono = calida >= fria ? 'calida' : 'fria';
-  const season = getColorSeason(subtono, answers['claridad']);
+  const season = getColorSeason(subtono, answers['p4_cabello_claridad']);
   const shape = getBodyShape(answers['hombros_caderas'], answers['cintura']);
   const counts = {};
   questions.filter(q=>q.dim==='style').forEach(q=>{
@@ -373,7 +373,13 @@ function renderQuiz(){
       <div class="quiz-sheet">
         <div class="q-msg">${PROGRESS_MSGS[qIndex] || ''}</div>
         <div class="options">
-          ${q.options.map((o,i) => `<button class="option" style="--i:${i}" data-value="${esc(o.value)}" data-qid="${q.id}">${esc(o.label)}</button>`).join('')}
+          ${q.options.map((o,i) => {
+            const swatchHtml = o.swatches ? `<div class="option-swatches">${o.swatches.map(c => `<span class="swatch-circle" style="background:${c}"></span>`).join('')}</div>` : '';
+            return `<button class="option ${o.swatches ? 'option--with-swatches' : ''}" style="--i:${i}" data-value="${esc(o.value)}" data-qid="${q.id}">
+              <span class="option-text">${esc(o.label)}</span>
+              ${swatchHtml}
+            </button>`;
+          }).join('')}
         </div>
       </div>
     </div>`;
