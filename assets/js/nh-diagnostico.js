@@ -501,6 +501,7 @@ function renderCard(){
         <a class="nh-btn nh-btn--secondary" style="margin-top:10px;" href="https://www.normahana.com/tienda/">Descubre prendas para tu perfil</a>
         <button class="restart-link" id="restart-btn"><i class="ph-light ph-arrow-clockwise"></i> Repetir el diagnóstico</button>
         <p class="meta-note" style="font-style:italic;color:#8A7D6B;">Tu carta es el primer capítulo. La asesoría es donde todo cobra forma.</p>
+        <p class="meta-note" style="font-size:11px;opacity:0.7;margin-top:15px;margin-bottom:15px;">Este resultado es una guía orientativa y automatizada, y puede tener margen de error — nada reemplaza el ojo experto de una asesoría personalizada.</p>
         <p class="meta-note">Tu carta también llegó a ${esc(leadEmail)}.</p>
       </div>
     </div>`;
