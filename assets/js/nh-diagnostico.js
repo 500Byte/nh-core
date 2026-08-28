@@ -33,8 +33,8 @@ const questions = [
     { label:'Café oscuro casi negro, verde intenso, azul grisáceo, negro profundo', value:'fria', swatches:['#2B1B0E', '#1B4D3E', '#5C6B73'] }
   ]},
   { id:'p2_cabello_color', dim:'color', axis:'subtono', weight:2, img:IMG.q2, title:'¿Cuál se parece más al color de tu cabello actual (aunque sea tinturado)?', options:[
-    { label:'Castaño cálido, rojizo, caoba, rubio dorado', value:'calida', swatches:['#7B3F00', '#A85C32', '#D4A24C'] },
-    { label:'Rubio platino, rubio ceniza, negro azabache, gris/blanco', value:'fria', swatches:['#D8D0C0', '#A9A9A9', '#0B0B0B'] }
+    { label:'Castaño claro, rojizo, caoba, rubio dorado', value:'calida', swatches:['#7B3F00', '#A85C32', '#D4A24C'] },
+    { label:'Castaño oscuro, rubio platino, rubio ceniza, negro azabache, gris o blanco', value:'fria', swatches:['#D8D0C0', '#A9A9A9', '#0B0B0B'] }
   ]},
   { id:'p3_piel', dim:'color', axis:'subtono', weight:3, img:IMG.q3, title:'¿Cuál describe mejor el tono de tu piel (rostro, cuello y escote)?', options:[
     { label:'Dorada, morena cálida, beige durazno, canela cálida', value:'calida', swatches:['#E8B98C', '#C08552', '#8D5524'] },
