@@ -46,7 +46,12 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
     require_once plugin_dir_path( __FILE__ ) . 'inc/class-nh-core-cli.php';
 }
 
+// SEO y optimización de rendimiento (sesiones PHP y caché público)
+require_once plugin_dir_path( __FILE__ ) . 'includes/class-nh-seo-performance.php';
+add_action( 'plugins_loaded', [ 'NH_SEO_Performance', 'init' ] );
+
 // Inicializar orquestador
 add_action( 'plugins_loaded', function() {
     \NH_Core_Loader::get_instance();
 } );
+
