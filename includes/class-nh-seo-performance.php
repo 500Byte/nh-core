@@ -50,7 +50,7 @@ class NH_SEO_Performance {
         $is_cron = function_exists( 'wp_doing_cron' ) ? wp_doing_cron() : false;
         $is_rest = defined( 'REST_REQUEST' ) && REST_REQUEST;
 
-        if ( is_admin() || $is_ajax || $is_cron || $is_rest ) {
+        if ( is_admin() || $is_ajax || $is_cron || $is_rest || is_feed() ) {
             return false;
         }
 
@@ -139,6 +139,10 @@ class NH_SEO_Performance {
      */
     public static function cleanup_session_headers() {
         if ( is_admin() || wp_doing_ajax() || wp_doing_cron() ) {
+            return false;
+        }
+
+        if ( defined( 'REST_REQUEST' ) && REST_REQUEST ) {
             return false;
         }
 
@@ -513,11 +517,11 @@ class NH_SEO_Performance {
         $default_hero = 'https://www.normahana.com/wp-content/uploads/2026/07/fashionmodelstrikinghautecou202607051620.avif';
 
         $hero_mobile  = apply_filters( 'nh_lcp_hero_mobile_url', $default_hero );
-        $default_mobile_type = ( substr( parse_url( (string) $hero_mobile, PHP_URL_PATH ) ?: '', -5 ) === '.webp' ) ? 'image/webp' : 'image/avif';
+        $default_mobile_type = self::mime_type_for_url( (string) $hero_mobile );
         $mobile_type  = apply_filters( 'nh_lcp_hero_mobile_type', $default_mobile_type );
 
         $hero_desktop = apply_filters( 'nh_lcp_hero_desktop_url', $default_hero );
-        $default_desktop_type = ( substr( parse_url( (string) $hero_desktop, PHP_URL_PATH ) ?: '', -5 ) === '.webp' ) ? 'image/webp' : 'image/avif';
+        $default_desktop_type = self::mime_type_for_url( (string) $hero_desktop );
         $desktop_type = apply_filters( 'nh_lcp_hero_desktop_type', $default_desktop_type );
 
         $mobile_url  = function_exists( 'esc_url' ) ? esc_url( $hero_mobile ) : filter_var( (string) $hero_mobile, FILTER_SANITIZE_URL );
@@ -534,6 +538,26 @@ class NH_SEO_Performance {
         }
 
         return true;
+    }
+
+    /**
+     * Resolves the MIME type for an image URL based on its file extension.
+     * Supports avif, webp, jpg, jpeg, png, and gif; falls back to image/avif.
+     *
+     * @param string $url Image URL to inspect.
+     * @return string MIME type string (e.g. 'image/avif').
+     */
+    private static function mime_type_for_url( $url ) {
+        $ext_mime_map = [
+            'avif' => 'image/avif',
+            'webp' => 'image/webp',
+            'jpg'  => 'image/jpeg',
+            'jpeg' => 'image/jpeg',
+            'png'  => 'image/png',
+            'gif'  => 'image/gif',
+        ];
+        $ext = strtolower( pathinfo( parse_url( $url, PHP_URL_PATH ), PATHINFO_EXTENSION ) );
+        return $ext_mime_map[ $ext ] ?? 'image/avif';
     }
 
     /**
