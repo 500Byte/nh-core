@@ -354,9 +354,9 @@ class NH_SEO_Performance {
         'vestidos'  => 'Descubre vestidos de autor en lino caribeño premium con siluetas fluidas y confección artesanal. Diseños sostenibles hechos en Colombia.',
         'conjuntos' => 'Sets y conjuntos de lino para mujer con elegancia atemporal. Piezas versátiles de moda sostenible inspiradas en el Caribe para toda ocasión.',
         'pantalon'  => 'Pantalones de lino para mujer de tiro alto y bota recta. Comodidad, frescura y caída impecable confeccionados éticamente en Colombia.',
-        'falda'     => 'Faldas de lino con movimiento y diseño artesanal caribeño. Siluetas envolventes y sofisticadas para un estilo fresco y natural.',
+        'falda'     => 'Faldas de lino con movimiento y diseño artesanal caribeño. Siluetas envolventes y sofisticadas para un estilo fresco y sostenible.',
         'top'       => 'Tops y blusas de lino con amarres y lazos adaptables. Confección consciente en lino puro para complementar cualquier ocasión cálida.',
-        'bermudas'  => 'Bermudas de lino con calce cómodo y diseño estructurado. La prenda esencial de clima cálido para estilismos frescos y elegantes.',
+        'bermudas'  => 'Bermudas de lino con calce cómodo y diseño estructurado. La prenda esencial de clima cálido para estilismos frescos, elegantes y atemporales.',
     ];
 
     /**
