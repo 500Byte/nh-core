@@ -12,7 +12,14 @@ if ( ! defined( 'ABSPATH' ) ) {
 class NH_SEO_Performance {
 
     /**
-     * Initializes hooks for session management and cache headers.
+     * Tracks whether output buffer for drawer headings has been initiated.
+     *
+     * @var bool
+     */
+    private static $heading_buffer_started = false;
+
+    /**
+     * Initializes hooks for session management, cache headers, and output buffering.
      */
     public static function init() {
         add_action( 'init', [ __CLASS__, 'guard_php_sessions' ], 1 );
@@ -22,6 +29,13 @@ class NH_SEO_Performance {
         add_filter( 'aioseo_sitemap_exclude_posts', [ __CLASS__, 'exclude_utility_pages_from_sitemap' ], 10, 2 );
         add_action( 'template_redirect', [ __CLASS__, 'apply_noindex_to_utility_pages' ] );
         add_filter( 'robots_txt', [ __CLASS__, 'append_robots_parameter_rules' ], 20, 2 );
+
+        if ( ! is_admin() && ( ! function_exists( 'wp_doing_ajax' ) || ! wp_doing_ajax() ) && ( ! function_exists( 'wp_doing_cron' ) || ! wp_doing_cron() ) ) {
+            if ( ! self::$heading_buffer_started ) {
+                self::$heading_buffer_started = true;
+                ob_start( [ __CLASS__, 'sanitize_drawer_headings' ] );
+            }
+        }
     }
 
     /**
@@ -268,5 +282,35 @@ class NH_SEO_Performance {
         $rules .= "Disallow: /*?min_price=*\n";
         $rules .= "Disallow: /*?max_price=*\n";
         return (string) $output . $rules;
+    }
+
+    /**
+     * Sanitizes off-canvas drawer headings from <h2> to <span class="drawer-title">.
+     * Replaces drawer title headings (Tu carrito, Buscar, Lista de deseos, Menú)
+     * with a styled span tag to eliminate semantic heading pollution while preserving layout.
+     *
+     * @param string $buffer Raw HTML output buffer content.
+     * @return string Sanitized HTML content.
+     */
+    public static function sanitize_drawer_headings( $buffer ) {
+        if ( ! is_string( $buffer ) || '' === trim( $buffer ) ) {
+            return $buffer;
+        }
+
+        $searches = [
+            '/<h2([^>]*)>\s*(Tu carrito|Buscar|Lista de deseos|Menú)\s*<\/h2>/iu',
+        ];
+        $replacements = [
+            '<span class="drawer-title">$2</span>',
+        ];
+
+        return preg_replace( $searches, $replacements, $buffer );
+    }
+
+    /**
+     * Resets heading buffer flag (primarily for testing).
+     */
+    public static function reset_heading_buffer_flag() {
+        self::$heading_buffer_started = false;
     }
 }
