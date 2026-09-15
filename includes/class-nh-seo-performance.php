@@ -25,17 +25,35 @@ class NH_SEO_Performance {
         add_action( 'init', [ __CLASS__, 'guard_php_sessions' ], 1 );
         add_action( 'send_headers', [ __CLASS__, 'cleanup_session_headers' ], 999 );
         add_action( 'template_redirect', [ __CLASS__, 'cleanup_session_headers' ], 1 );
+        add_action( 'template_redirect', [ __CLASS__, 'start_drawer_heading_buffer' ], 5 );
         add_action( 'template_redirect', [ __CLASS__, 'set_public_cache_headers' ], 10 );
         add_filter( 'aioseo_sitemap_exclude_posts', [ __CLASS__, 'exclude_utility_pages_from_sitemap' ], 10, 2 );
         add_action( 'template_redirect', [ __CLASS__, 'apply_noindex_to_utility_pages' ] );
         add_filter( 'robots_txt', [ __CLASS__, 'append_robots_parameter_rules' ], 20, 2 );
+    }
 
-        if ( ! is_admin() && ( ! function_exists( 'wp_doing_ajax' ) || ! wp_doing_ajax() ) && ( ! function_exists( 'wp_doing_cron' ) || ! wp_doing_cron() ) ) {
-            if ( ! self::$heading_buffer_started ) {
-                self::$heading_buffer_started = true;
-                ob_start( [ __CLASS__, 'sanitize_drawer_headings' ] );
-            }
+    /**
+     * Starts output buffering for drawer heading sanitization on frontend HTML pages.
+     * Hooked to template_redirect.
+     *
+     * @return bool True if output buffer was started, false otherwise.
+     */
+    public static function start_drawer_heading_buffer() {
+        $is_ajax = function_exists( 'wp_doing_ajax' ) ? wp_doing_ajax() : false;
+        $is_cron = function_exists( 'wp_doing_cron' ) ? wp_doing_cron() : false;
+        $is_rest = defined( 'REST_REQUEST' ) && REST_REQUEST;
+
+        if ( is_admin() || $is_ajax || $is_cron || $is_rest ) {
+            return false;
         }
+
+        if ( ! self::$heading_buffer_started ) {
+            self::$heading_buffer_started = true;
+            ob_start( [ __CLASS__, 'sanitize_drawer_headings' ] );
+            return true;
+        }
+
+        return false;
     }
 
     /**
@@ -285,9 +303,10 @@ class NH_SEO_Performance {
     }
 
     /**
-     * Sanitizes off-canvas drawer headings from <h2> to <span class="drawer-title">.
+     * Sanitizes off-canvas drawer headings from <h2> to <span class="... drawer-title">.
      * Replaces drawer title headings (Tu carrito, Buscar, Lista de deseos, Menú)
-     * with a styled span tag to eliminate semantic heading pollution while preserving layout.
+     * with a styled span tag to eliminate semantic heading pollution while preserving
+     * all original HTML attributes (classes, IDs, ARIA, data-*).
      *
      * @param string $buffer Raw HTML output buffer content.
      * @return string Sanitized HTML content.
@@ -297,14 +316,22 @@ class NH_SEO_Performance {
             return $buffer;
         }
 
-        $searches = [
+        return preg_replace_callback(
             '/<h2([^>]*)>\s*(Tu carrito|Buscar|Lista de deseos|Menú)\s*<\/h2>/iu',
-        ];
-        $replacements = [
-            '<span class="drawer-title">$2</span>',
-        ];
-
-        return preg_replace( $searches, $replacements, $buffer );
+            function ( $matches ) {
+                $attrs = $matches[1];
+                $text  = $matches[2];
+                if ( preg_match( '/\bclass\s*=\s*["\']([^"\']*)["\']/i', $attrs, $class_match ) ) {
+                    $merged_classes = trim( $class_match[1] . ' drawer-title' );
+                    $escaped_class  = function_exists( 'esc_attr' ) ? esc_attr( $merged_classes ) : htmlspecialchars( $merged_classes, ENT_QUOTES, 'UTF-8' );
+                    $attrs = preg_replace( '/\bclass\s*=\s*["\']([^"\']*)["\']/i', 'class="' . $escaped_class . '"', $attrs, 1 );
+                } else {
+                    $attrs .= ' class="drawer-title"';
+                }
+                return '<span' . $attrs . '>' . $text . '</span>';
+            },
+            $buffer
+        );
     }
 
     /**
