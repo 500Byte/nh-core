@@ -11,46 +11,171 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 class NH_SEO_Performance {
 
+    /**
+     * Initializes hooks for session management and cache headers.
+     */
     public static function init() {
         add_action( 'init', [ __CLASS__, 'guard_php_sessions' ], 1 );
+        add_action( 'send_headers', [ __CLASS__, 'cleanup_session_headers' ], 999 );
+        add_action( 'template_redirect', [ __CLASS__, 'cleanup_session_headers' ], 1 );
         add_action( 'template_redirect', [ __CLASS__, 'set_public_cache_headers' ], 10 );
     }
 
     /**
-     * Prevents unwanted PHP session initialization for anonymous crawlers and guests.
+     * Checks if current request is from an anonymous visitor without active cart or session.
+     *
+     * @return bool True if visitor is anonymous with no cart or WooCommerce session.
      */
-    public static function guard_php_sessions() {
-        if ( is_admin() || wp_doing_ajax() || wp_doing_cron() ) {
-            return;
+    public static function is_anonymous_visitor() {
+        if ( is_user_logged_in() ) {
+            return false;
         }
 
-        $has_user_session = is_user_logged_in();
-        $has_cart_items   = isset( $_COOKIE['woocommerce_items_in_cart'] ) && '1' === $_COOKIE['woocommerce_items_in_cart'];
-        $has_wc_session   = isset( $_COOKIE['wp_woocommerce_session_' . COOKIEHASH] );
-
-        // If guest has no active cart or session, ensure session_start is not invoked
-        if ( ! $has_user_session && ! $has_cart_items && ! $has_wc_session ) {
-            if ( session_status() === PHP_SESSION_ACTIVE ) {
-                session_write_close();
-            }
+        if ( isset( $_COOKIE['woocommerce_items_in_cart'] ) && '1' === (string) $_COOKIE['woocommerce_items_in_cart'] ) {
+            return false;
         }
+
+        if ( self::has_wc_session_cookie() ) {
+            return false;
+        }
+
+        return true;
     }
 
     /**
-     * Sets public cache-control headers on static anonymous GET requests.
+     * Checks if WooCommerce session cookie is present.
+     *
+     * @return bool True if WooCommerce session cookie exists.
+     */
+    public static function has_wc_session_cookie() {
+        if ( defined( 'COOKIEHASH' ) && isset( $_COOKIE[ 'wp_woocommerce_session_' . COOKIEHASH ] ) ) {
+            return true;
+        }
+
+        foreach ( array_keys( $_COOKIE ) as $key ) {
+            if ( strpos( $key, 'wp_woocommerce_session_' ) === 0 ) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Prevents unwanted PHP session initialization for anonymous crawlers and guests at init:1.
+     * Configures PHP session ini directives early so subsequent session_start calls
+     * (e.g. from JetEngine or JetCompareWishlist at parse_request) do not transmit Set-Cookie or cache limiters.
+     *
+     * @return bool True if guard applied for anonymous visitor, false otherwise.
+     */
+    public static function guard_php_sessions() {
+        if ( is_admin() || wp_doing_ajax() || wp_doing_cron() ) {
+            return false;
+        }
+
+        if ( ! self::is_anonymous_visitor() ) {
+            return false;
+        }
+
+        if ( session_status() === PHP_SESSION_ACTIVE ) {
+            session_write_close();
+        }
+
+        // Configure PHP early to disable session cookies and cache limiter for anonymous visitors
+        ini_set( 'session.use_cookies', '0' );
+        ini_set( 'session.cache_limiter', '' );
+
+        return true;
+    }
+
+    /**
+     * Closes active sessions and strips PHPSESSID Set-Cookie headers for anonymous visitors.
+     * Hooks to send_headers (priority 999) and template_redirect (priority 1) to catch
+     * any sessions opened during parse_request or later hooks.
+     *
+     * @return bool True if cleanup ran for anonymous visitor, false otherwise.
+     */
+    public static function cleanup_session_headers() {
+        if ( is_admin() || wp_doing_ajax() || wp_doing_cron() ) {
+            return false;
+        }
+
+        if ( ! self::is_anonymous_visitor() ) {
+            return false;
+        }
+
+        if ( session_status() === PHP_SESSION_ACTIVE ) {
+            session_write_close();
+        }
+
+        if ( ! headers_sent() ) {
+            $filtered = self::filter_phpsessid_cookies( headers_list() );
+            if ( $filtered['has_phpsessid'] ) {
+                header_remove( 'Set-Cookie' );
+                foreach ( $filtered['cookies_to_keep'] as $cookie_header ) {
+                    header( $cookie_header, false );
+                }
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * Filters out PHPSESSID from cookie headers list while preserving other cookies.
+     *
+     * @param array $headers List of headers (e.g. from headers_list()).
+     * @return array Array with 'has_phpsessid' bool and 'cookies_to_keep' array.
+     */
+    public static function filter_phpsessid_cookies( array $headers ) {
+        $cookies_to_keep = [];
+        $has_phpsessid   = false;
+
+        foreach ( $headers as $header ) {
+            if ( stripos( $header, 'Set-Cookie:' ) === 0 ) {
+                if ( stripos( $header, 'PHPSESSID' ) !== false ) {
+                    $has_phpsessid = true;
+                } else {
+                    $cookies_to_keep[] = $header;
+                }
+            }
+        }
+
+        return [
+            'has_phpsessid'   => $has_phpsessid,
+            'cookies_to_keep' => $cookies_to_keep,
+        ];
+    }
+
+    /**
+     * Sets public cache-control headers on static anonymous GET and HEAD requests.
+     *
+     * @return bool True if public cache headers were set, false otherwise.
      */
     public static function set_public_cache_headers() {
+        if ( is_admin() || wp_doing_ajax() || wp_doing_cron() ) {
+            return false;
+        }
+
         if ( is_user_logged_in() || is_cart() || is_checkout() || is_account_page() ) {
-            return;
+            return false;
         }
 
-        if ( isset( $_COOKIE['woocommerce_items_in_cart'] ) && '1' === $_COOKIE['woocommerce_items_in_cart'] ) {
-            return;
+        if ( isset( $_COOKIE['woocommerce_items_in_cart'] ) && '1' === (string) $_COOKIE['woocommerce_items_in_cart'] ) {
+            return false;
         }
 
-        if ( 'GET' === $_SERVER['REQUEST_METHOD'] && ! headers_sent() ) {
+        if ( self::has_wc_session_cookie() ) {
+            return false;
+        }
+
+        $method = $_SERVER['REQUEST_METHOD'] ?? '';
+        if ( in_array( $method, [ 'GET', 'HEAD' ], true ) && ! headers_sent() ) {
             header( 'Cache-Control: public, max-age=3600, s-maxage=86400, stale-while-revalidate=600' );
             header_remove( 'Pragma' );
+            return true;
         }
+
+        return false;
     }
 }
