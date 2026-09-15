@@ -19,6 +19,9 @@ class NH_SEO_Performance {
         add_action( 'send_headers', [ __CLASS__, 'cleanup_session_headers' ], 999 );
         add_action( 'template_redirect', [ __CLASS__, 'cleanup_session_headers' ], 1 );
         add_action( 'template_redirect', [ __CLASS__, 'set_public_cache_headers' ], 10 );
+        add_filter( 'aioseo_sitemap_post_query_args', [ __CLASS__, 'exclude_utility_pages_from_sitemap' ] );
+        add_action( 'template_redirect', [ __CLASS__, 'apply_noindex_to_utility_pages' ] );
+        add_filter( 'robots_txt', [ __CLASS__, 'append_robots_parameter_rules' ], 20, 2 );
     }
 
     /**
@@ -177,5 +180,99 @@ class NH_SEO_Performance {
         }
 
         return false;
+    }
+
+    /**
+     * Excludes utility pages from AIOSEO sitemap generation.
+     *
+     * @param array $args Query arguments for AIOSEO post sitemap.
+     * @return array Modified query arguments.
+     */
+    public static function exclude_utility_pages_from_sitemap( $args = [] ) {
+        if ( ! is_array( $args ) ) {
+            $args = [];
+        }
+
+        $excluded_slugs = [
+            'yith-compare',
+            'communication-preferences',
+            'proximamente',
+            'landing',
+            'ingresar',
+            'lista-de-deseos',
+        ];
+
+        $excluded_ids = [];
+        foreach ( $excluded_slugs as $slug ) {
+            if ( function_exists( 'get_page_by_path' ) ) {
+                $page = get_page_by_path( $slug );
+                if ( $page ) {
+                    $excluded_ids[] = is_object( $page ) ? (int) $page->ID : (int) $page;
+                }
+            }
+        }
+
+        if ( ! empty( $excluded_ids ) ) {
+            $existing_not_in = isset( $args['post__not_in'] ) && is_array( $args['post__not_in'] )
+                ? $args['post__not_in']
+                : [];
+            $args['post__not_in'] = array_values( array_unique( array_merge( $existing_not_in, $excluded_ids ) ) );
+        }
+
+        return $args;
+    }
+
+    /**
+     * Enforces noindex, follow headers on utility pages.
+     *
+     * @return bool True if noindex was applied to utility page, false otherwise.
+     */
+    public static function apply_noindex_to_utility_pages() {
+        $utility_paths = [
+            '/yith-compare',
+            '/communication-preferences',
+            '/proximamente',
+            '/landing',
+            '/ingresar',
+            '/lista-de-deseos',
+            '/c/sin-categorizar',
+        ];
+
+        $current_uri = $_SERVER['REQUEST_URI'] ?? '';
+        foreach ( $utility_paths as $path ) {
+            if ( str_starts_with( $current_uri, $path ) ) {
+                if ( ! headers_sent() ) {
+                    header( 'X-Robots-Tag: noindex, follow', true );
+                }
+                if ( function_exists( 'add_filter' ) ) {
+                    add_filter( 'aioseo_robots_meta', function( $meta = [] ) {
+                        if ( is_array( $meta ) ) {
+                            $meta['noindex']  = 'noindex';
+                            $meta['nofollow'] = 'follow';
+                            return $meta;
+                        }
+                        return [ 'noindex' => 'noindex', 'nofollow' => 'follow' ];
+                    } );
+                }
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Protects crawl budget against faceted query spam.
+     *
+     * @param string $output Existing robots.txt output.
+     * @param bool   $public Whether the site is public.
+     * @return string Modified robots.txt output.
+     */
+    public static function append_robots_parameter_rules( $output, $public = true ) {
+        $rules  = "\n# Crawl Budget Faceted Filter Protection\n";
+        $rules .= "Disallow: /*?filter_*\n";
+        $rules .= "Disallow: /*?min_price=*\n";
+        $rules .= "Disallow: /*?max_price=*\n";
+        return (string) $output . $rules;
     }
 }
