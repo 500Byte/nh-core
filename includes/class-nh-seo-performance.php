@@ -33,6 +33,7 @@ class NH_SEO_Performance {
         add_filter( 'aioseo_schema_output', [ __CLASS__, 'filter_aioseo_schema' ] );
         add_filter( 'aioseo_description', [ __CLASS__, 'filter_aioseo_description' ] );
         add_filter( 'term_description', [ __CLASS__, 'filter_term_description' ], 10, 3 );
+        add_action( 'wp_head', [ __CLASS__, 'inject_responsive_lcp_preload' ], 1 );
     }
 
     /**
@@ -485,6 +486,51 @@ class NH_SEO_Performance {
         }
 
         return $description;
+    }
+
+    /**
+     * Injects responsive image preload tags for Hero banner to optimize LCP without duplicate downloads.
+     * Hooked to wp_head at priority 1 on the front page.
+     *
+     * @return bool True if preloads were emitted, false otherwise.
+     */
+    public static function inject_responsive_lcp_preload() {
+        $is_ajax = function_exists( 'wp_doing_ajax' ) ? wp_doing_ajax() : false;
+        $is_cron = function_exists( 'wp_doing_cron' ) ? wp_doing_cron() : false;
+        $is_rest = defined( 'REST_REQUEST' ) && REST_REQUEST;
+
+        if ( is_admin() || $is_ajax || $is_cron || $is_rest ) {
+            return false;
+        }
+
+        if ( ! function_exists( 'is_front_page' ) || ! is_front_page() ) {
+            return false;
+        }
+
+        $default_hero = 'https://www.normahana.com/wp-content/uploads/2026/07/fashionmodelstrikinghautecou202607051620.avif';
+
+        $hero_mobile  = apply_filters( 'nh_lcp_hero_mobile_url', $default_hero );
+        $default_mobile_type = ( substr( parse_url( (string) $hero_mobile, PHP_URL_PATH ) ?: '', -5 ) === '.webp' ) ? 'image/webp' : 'image/avif';
+        $mobile_type  = apply_filters( 'nh_lcp_hero_mobile_type', $default_mobile_type );
+
+        $hero_desktop = apply_filters( 'nh_lcp_hero_desktop_url', $default_hero );
+        $default_desktop_type = ( substr( parse_url( (string) $hero_desktop, PHP_URL_PATH ) ?: '', -5 ) === '.webp' ) ? 'image/webp' : 'image/avif';
+        $desktop_type = apply_filters( 'nh_lcp_hero_desktop_type', $default_desktop_type );
+
+        $mobile_url  = function_exists( 'esc_url' ) ? esc_url( $hero_mobile ) : filter_var( (string) $hero_mobile, FILTER_SANITIZE_URL );
+        $desktop_url = function_exists( 'esc_url' ) ? esc_url( $hero_desktop ) : filter_var( (string) $hero_desktop, FILTER_SANITIZE_URL );
+        $mobile_type_attr  = function_exists( 'esc_attr' ) ? esc_attr( $mobile_type ) : htmlspecialchars( (string) $mobile_type, ENT_QUOTES, 'UTF-8' );
+        $desktop_type_attr = function_exists( 'esc_attr' ) ? esc_attr( $desktop_type ) : htmlspecialchars( (string) $desktop_type, ENT_QUOTES, 'UTF-8' );
+
+        if ( ! empty( $mobile_url ) ) {
+            echo '<link rel="preload" as="image" href="' . $mobile_url . '" type="' . $mobile_type_attr . '" fetchpriority="high" media="(max-width: 767px)">' . "\n";
+        }
+
+        if ( ! empty( $desktop_url ) ) {
+            echo '<link rel="preload" as="image" href="' . $desktop_url . '" type="' . $desktop_type_attr . '" fetchpriority="high" media="(min-width: 768px)">' . "\n";
+        }
+
+        return true;
     }
 
     /**
