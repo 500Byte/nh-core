@@ -30,6 +30,9 @@ class NH_SEO_Performance {
         add_filter( 'aioseo_sitemap_exclude_posts', [ __CLASS__, 'exclude_utility_pages_from_sitemap' ], 10, 2 );
         add_action( 'template_redirect', [ __CLASS__, 'apply_noindex_to_utility_pages' ] );
         add_filter( 'robots_txt', [ __CLASS__, 'append_robots_parameter_rules' ], 20, 2 );
+        add_filter( 'aioseo_schema_output', [ __CLASS__, 'filter_aioseo_schema' ] );
+        add_filter( 'aioseo_description', [ __CLASS__, 'filter_aioseo_description' ] );
+        add_filter( 'term_description', [ __CLASS__, 'filter_term_description' ], 10, 3 );
     }
 
     /**
@@ -332,6 +335,156 @@ class NH_SEO_Performance {
             },
             $buffer
         );
+    }
+
+    /**
+     * Fallback meta descriptions for primary product categories.
+     *
+     * @var array<string, string>
+     */
+    private static $category_meta_descriptions = [
+        'vestidos'  => 'Descubre vestidos de autor en lino caribeño premium con siluetas fluidas y confección artesanal. Diseños sostenibles hechos en Colombia.',
+        'conjuntos' => 'Sets y conjuntos de lino para mujer con elegancia atemporal. Piezas versátiles de moda sostenible inspiradas en el Caribe para toda ocasión.',
+        'pantalon'  => 'Pantalones de lino para mujer de tiro alto y bota recta. Comodidad, frescura y caída impecable confeccionados éticamente en Colombia.',
+        'falda'     => 'Faldas de lino con movimiento y diseño artesanal caribeño. Siluetas envolventes y sofisticadas para un estilo fresco y natural.',
+        'top'       => 'Tops y blusas de lino con amarres y lazos adaptables. Confección consciente en lino puro para complementar cualquier ocasión cálida.',
+        'bermudas'  => 'Bermudas de lino con calce cómodo y diseño estructurado. La prenda esencial de clima cálido para estilismos frescos y elegantes.',
+    ];
+
+    /**
+     * Returns the array of configured category meta descriptions.
+     *
+     * @return array<string, string> Map of category slug => description.
+     */
+    public static function get_category_meta_descriptions() {
+        return self::$category_meta_descriptions;
+    }
+
+    /**
+     * Enriches AIOSEO schema output with OnlineStore, Santa Marta address, and Merchant specs.
+     *
+     * @param array $graphs Array of Schema.org graph items.
+     * @return array Enriched Schema.org graph items.
+     */
+    public static function filter_aioseo_schema( $graphs ) {
+        if ( ! is_array( $graphs ) ) {
+            return $graphs;
+        }
+
+        foreach ( $graphs as &$graph ) {
+            if ( ! is_array( $graph ) || ! isset( $graph['@type'] ) ) {
+                continue;
+            }
+
+            $types = (array) $graph['@type'];
+            if ( in_array( 'Organization', $types, true ) || in_array( 'LocalBusiness', $types, true ) ) {
+                $graph['@type'] = [ 'Organization', 'OnlineStore', 'LocalBusiness' ];
+                $graph['address'] = [
+                    '@type'           => 'PostalAddress',
+                    'streetAddress'   => 'Santa Marta',
+                    'addressLocality' => 'Santa Marta',
+                    'addressRegion'   => 'Magdalena',
+                    'postalCode'      => '470001',
+                    'addressCountry'  => 'CO',
+                ];
+                $graph['hasMerchantReturnPolicy'] = [
+                    '@type'                  => 'MerchantReturnPolicy',
+                    'applicableCountry'      => 'CO',
+                    'returnPolicyCategory'   => 'https://schema.org/MerchantReturnFiniteReturnWindow',
+                    'merchantReturnDays'     => 30,
+                    'returnMethod'           => 'https://schema.org/ReturnByMail',
+                    'returnFees'             => 'https://schema.org/FreeReturn',
+                ];
+            }
+        }
+        unset( $graph );
+
+        return $graphs;
+    }
+
+    /**
+     * Resolves the current category slug from query object or request URI.
+     *
+     * @return string Category slug if on a category archive, empty string otherwise.
+     */
+    public static function get_current_category_slug() {
+        if ( function_exists( 'is_product_category' ) && is_product_category() ) {
+            $term = function_exists( 'get_queried_object' ) ? get_queried_object() : null;
+            if ( $term && isset( $term->slug ) ) {
+                return (string) $term->slug;
+            }
+        }
+
+        if ( function_exists( 'is_tax' ) && is_tax( 'product_cat' ) ) {
+            $term = function_exists( 'get_queried_object' ) ? get_queried_object() : null;
+            if ( $term && isset( $term->slug ) ) {
+                return (string) $term->slug;
+            }
+        }
+
+        if ( isset( $_SERVER['REQUEST_URI'] ) ) {
+            $path = parse_url( $_SERVER['REQUEST_URI'], PHP_URL_PATH );
+            if ( preg_match( '#/c/([^/]+)/?#', (string) $path, $matches ) ) {
+                return (string) $matches[1];
+            }
+        }
+
+        return '';
+    }
+
+    /**
+     * Filters AIOSEO meta description, injecting fallback category description if empty.
+     *
+     * @param string $description Current meta description.
+     * @return string Filtered meta description.
+     */
+    public static function filter_aioseo_description( $description ) {
+        if ( is_string( $description ) && '' !== trim( $description ) ) {
+            return $description;
+        }
+
+        $slug = self::get_current_category_slug();
+        if ( $slug && isset( self::$category_meta_descriptions[ $slug ] ) ) {
+            return self::$category_meta_descriptions[ $slug ];
+        }
+
+        return (string) $description;
+    }
+
+    /**
+     * Filters WordPress term description, injecting fallback category description if empty.
+     *
+     * @param string $description Current term description.
+     * @param int    $term_id     Term ID.
+     * @param string $taxonomy    Taxonomy name.
+     * @return string Filtered term description.
+     */
+    public static function filter_term_description( $description, $term_id = 0, $taxonomy = 'product_cat' ) {
+        if ( is_string( $description ) && '' !== trim( $description ) ) {
+            return $description;
+        }
+
+        if ( $taxonomy && 'product_cat' !== $taxonomy ) {
+            return $description;
+        }
+
+        $slug = '';
+        if ( $term_id && function_exists( 'get_term' ) ) {
+            $term = get_term( $term_id, 'product_cat' );
+            if ( $term && ! is_wp_error( $term ) && isset( $term->slug ) ) {
+                $slug = $term->slug;
+            }
+        }
+
+        if ( ! $slug ) {
+            $slug = self::get_current_category_slug();
+        }
+
+        if ( $slug && isset( self::$category_meta_descriptions[ $slug ] ) ) {
+            return self::$category_meta_descriptions[ $slug ];
+        }
+
+        return $description;
     }
 
     /**
