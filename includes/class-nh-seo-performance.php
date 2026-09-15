@@ -19,7 +19,7 @@ class NH_SEO_Performance {
         add_action( 'send_headers', [ __CLASS__, 'cleanup_session_headers' ], 999 );
         add_action( 'template_redirect', [ __CLASS__, 'cleanup_session_headers' ], 1 );
         add_action( 'template_redirect', [ __CLASS__, 'set_public_cache_headers' ], 10 );
-        add_filter( 'aioseo_sitemap_post_query_args', [ __CLASS__, 'exclude_utility_pages_from_sitemap' ] );
+        add_filter( 'aioseo_sitemap_exclude_posts', [ __CLASS__, 'exclude_utility_pages_from_sitemap' ], 10, 2 );
         add_action( 'template_redirect', [ __CLASS__, 'apply_noindex_to_utility_pages' ] );
         add_filter( 'robots_txt', [ __CLASS__, 'append_robots_parameter_rules' ], 20, 2 );
     }
@@ -185,14 +185,11 @@ class NH_SEO_Performance {
     /**
      * Excludes utility pages from AIOSEO sitemap generation.
      *
-     * @param array $args Query arguments for AIOSEO post sitemap.
-     * @return array Modified query arguments.
+     * @param array  $ids  List of excluded post IDs.
+     * @param string $type Sitemap type (e.g. 'general').
+     * @return array Modified array of post IDs to exclude.
      */
-    public static function exclude_utility_pages_from_sitemap( $args = [] ) {
-        if ( ! is_array( $args ) ) {
-            $args = [];
-        }
-
+    public static function exclude_utility_pages_from_sitemap( $ids = [], $type = 'general' ) {
         $excluded_slugs = [
             'yith-compare',
             'communication-preferences',
@@ -212,14 +209,7 @@ class NH_SEO_Performance {
             }
         }
 
-        if ( ! empty( $excluded_ids ) ) {
-            $existing_not_in = isset( $args['post__not_in'] ) && is_array( $args['post__not_in'] )
-                ? $args['post__not_in']
-                : [];
-            $args['post__not_in'] = array_values( array_unique( array_merge( $existing_not_in, $excluded_ids ) ) );
-        }
-
-        return $args;
+        return array_values( array_unique( array_merge( (array) $ids, $excluded_ids ) ) );
     }
 
     /**
@@ -239,8 +229,12 @@ class NH_SEO_Performance {
         ];
 
         $current_uri = $_SERVER['REQUEST_URI'] ?? '';
+        $req_path    = parse_url( $current_uri, PHP_URL_PATH );
+        $req_path    = '/' . trim( (string) $req_path, '/' );
+
         foreach ( $utility_paths as $path ) {
-            if ( str_starts_with( $current_uri, $path ) ) {
+            $clean_path = '/' . trim( $path, '/' );
+            if ( $req_path === $clean_path || str_starts_with( $req_path, $clean_path . '/' ) ) {
                 if ( ! headers_sent() ) {
                     header( 'X-Robots-Tag: noindex, follow', true );
                 }
