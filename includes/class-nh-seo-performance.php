@@ -23,6 +23,9 @@ class NH_SEO_Performance {
      */
     public static function init() {
         add_action( 'init', [ __CLASS__, 'guard_php_sessions' ], 1 );
+        add_action( 'init', [ __CLASS__, 'register_llms_txt_rewrite' ] );
+        add_filter( 'query_vars', [ __CLASS__, 'register_llms_txt_query_var' ] );
+        add_action( 'template_redirect', [ __CLASS__, 'serve_llms_txt' ], 0 );
         add_action( 'send_headers', [ __CLASS__, 'cleanup_session_headers' ], 999 );
         add_action( 'template_redirect', [ __CLASS__, 'cleanup_session_headers' ], 1 );
         add_action( 'template_redirect', [ __CLASS__, 'start_drawer_heading_buffer' ], 5 );
@@ -528,6 +531,132 @@ class NH_SEO_Performance {
 
         if ( ! empty( $desktop_url ) ) {
             echo '<link rel="preload" as="image" href="' . $desktop_url . '" type="' . $desktop_type_attr . '" fetchpriority="high" media="(min-width: 768px)">' . "\n";
+        }
+
+        return true;
+    }
+
+    /**
+     * Default standard llms.txt manifest content.
+     *
+     * @var string
+     */
+    private static $default_llms_manifest = <<<TEXT
+# Norma Hana
+
+> Marca colombiana de moda de autor, diseño consciente y sastrería femenina en lino caribeño premium. Confección artesanal desde Santa Marta, Colombia.
+
+## Catálogo y Colecciones
+- Vestidos de Lino: https://www.normahana.com/c/vestidos/
+- Conjuntos y Sets de Dos Piezas: https://www.normahana.com/c/conjuntos/
+- Pantalones y Bermudas: https://www.normahana.com/c/pantalon/
+- Blusas y Tops Adaptables: https://www.normahana.com/c/top/
+
+## Filosofía de Marca y Materiales
+- Confección 100% lino natural transpirable de alta densidad.
+- Siluetas acogedoras con sistemas de amarre ajustables que acompañan los cambios del cuerpo femenino.
+- Sostenibilidad, producción justa y comercio ético en el Caribe colombiano.
+
+## Políticas de Servicio
+- Envíos a todo el territorio nacional en Colombia (2 a 5 días hábiles).
+- Envíos internacionales disponibles.
+- Cambios y garantías: 30 días calendario para prendas sin uso.
+TEXT;
+
+    /**
+     * Registers custom rewrite rule for /llms.txt endpoint.
+     */
+    public static function register_llms_txt_rewrite() {
+        if ( function_exists( 'add_rewrite_rule' ) ) {
+            add_rewrite_rule( '^llms\.txt$', 'index.php?nh_llms_txt=1', 'top' );
+        }
+    }
+
+    /**
+     * Registers query variable for llms.txt request detection.
+     *
+     * @param array $vars Public query variables.
+     * @return array Modified query variables.
+     */
+    public static function register_llms_txt_query_var( $vars ) {
+        if ( is_array( $vars ) ) {
+            $vars[] = 'nh_llms_txt';
+        }
+        return $vars;
+    }
+
+    /**
+     * Checks if current request is for /llms.txt.
+     *
+     * @return bool True if requesting /llms.txt, false otherwise.
+     */
+    public static function is_llms_txt_request() {
+        if ( function_exists( 'get_query_var' ) && (bool) get_query_var( 'nh_llms_txt' ) ) {
+            return true;
+        }
+
+        $current_uri = $_SERVER['REQUEST_URI'] ?? '';
+        $req_path    = parse_url( $current_uri, PHP_URL_PATH );
+        $clean_path  = '/' . trim( (string) $req_path, '/' );
+
+        return ( '/llms.txt' === $clean_path );
+    }
+
+    /**
+     * Resolves and returns the content for llms.txt.
+     * Checks filesystem locations first, falling back to embedded standard manifest.
+     *
+     * @return string Manifest content.
+     */
+    public static function get_llms_txt_content() {
+        $paths_to_check = [];
+        if ( defined( 'ABSPATH' ) ) {
+            $paths_to_check[] = ABSPATH . 'llms.txt';
+        }
+        $paths_to_check[] = dirname( __DIR__, 3 ) . '/llms.txt';
+
+        foreach ( $paths_to_check as $path ) {
+            if ( file_exists( $path ) && is_readable( $path ) ) {
+                $content = file_get_contents( $path );
+                if ( false !== $content && '' !== trim( $content ) ) {
+                    return $content;
+                }
+            }
+        }
+
+        return self::$default_llms_manifest;
+    }
+
+    /**
+     * Serves standard /llms.txt manifest with text/plain header and HTTP 200.
+     *
+     * @param bool $echo      Whether to echo the content.
+     * @param bool $terminate Whether to terminate execution (exit) after serving.
+     * @return bool True if served, false if not an llms.txt request.
+     */
+    public static function serve_llms_txt( $echo = true, $terminate = true ) {
+        if ( ! self::is_llms_txt_request() ) {
+            return false;
+        }
+
+        if ( ! headers_sent() ) {
+            if ( function_exists( 'status_header' ) ) {
+                status_header( 200 );
+            } elseif ( function_exists( 'http_response_code' ) ) {
+                http_response_code( 200 );
+            }
+            header( 'Content-Type: text/plain; charset=utf-8' );
+            header( 'Cache-Control: public, max-age=3600, s-maxage=86400, stale-while-revalidate=600' );
+            header( 'X-Robots-Tag: all', true );
+        }
+
+        $content = self::get_llms_txt_content();
+        if ( $echo ) {
+            echo $content;
+        }
+
+        if ( $terminate ) {
+            exit;
         }
 
         return true;
