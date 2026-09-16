@@ -41,6 +41,7 @@ class NH_SEO_Performance {
         add_filter( 'term_description', [ __CLASS__, 'filter_term_description' ], 10, 3 );
         add_action( 'wp_head', [ __CLASS__, 'inject_responsive_lcp_preload' ], 1 );
         add_action( 'init', [ __CLASS__, 'enforce_single_llms_txt_source' ], 20 );
+        add_filter( 'woocommerce_after_shop_loop', [ __CLASS__, 'inject_cluster_link' ], 20 );
     }
 
     /**
@@ -682,6 +683,48 @@ class NH_SEO_Performance {
         }
 
         return $description;
+    }
+
+    /**
+     * Emits a single editorial link from the `vestidos` category archive to the
+     * linen properties pillar post (internal cluster linking, category -> pillar).
+     *
+     * Scope is strictly the `vestidos` product category (never sitewide). The
+     * pillar post is created in a later task and published by a human, so the
+     * link is emitted ONLY when the target exists and is published; otherwise
+     * this method emits nothing, guaranteeing no broken (404) internal link is
+     * ever shipped to production.
+     *
+     * @return bool True if the link was emitted, false otherwise.
+     */
+    public static function inject_cluster_link() {
+        if ( ! function_exists( 'is_product_category' ) || ! is_product_category( 'vestidos' ) ) {
+            return false;
+        }
+
+        if ( ! function_exists( 'get_page_by_path' ) ) {
+            return false;
+        }
+
+        $pillar = get_page_by_path( 'propiedades-del-lino', OBJECT, 'post' );
+        if ( ! $pillar || ! isset( $pillar->ID ) ) {
+            return false;
+        }
+
+        if ( ! function_exists( 'get_post_status' ) || 'publish' !== get_post_status( $pillar->ID ) ) {
+            return false;
+        }
+
+        $url = function_exists( 'home_url' ) ? home_url( '/propiedades-del-lino/' ) : '/propiedades-del-lino/';
+        $url = function_exists( 'esc_url' ) ? esc_url( $url ) : filter_var( (string) $url, FILTER_SANITIZE_URL );
+
+        $label = function_exists( 'esc_html__' )
+            ? esc_html__( 'Conoce cómo cuidamos cada tejido de lino', 'nh-core' )
+            : 'Conoce cómo cuidamos cada tejido de lino';
+
+        echo '<p class="nh-cluster-link"><a href="' . $url . '">' . $label . '</a></p>';
+
+        return true;
     }
 
     /**
