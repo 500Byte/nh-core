@@ -450,7 +450,116 @@ class NH_SEO_Performance {
         }
         unset( $graph );
 
+        // Editorial schema for single posts: the Article must credit a real human
+        // author (Person) and reference the brand Organization as publisher.
+        self::enrich_post_article_schema( $graphs );
+
         return $graphs;
+    }
+
+    /**
+     * Enriches a singular post Article/BlogPosting graph node with editorial authorship.
+     *
+     * Per the content-cluster spec, `Article.author` must be a Person representing the
+     * human author (never the brand), `publisher` must reference the Organization `@id`,
+     * and the temporal/media/page bindings (datePublished, dateModified, image,
+     * mainEntityOfPage) must be populated from the post.
+     *
+     * @param array $graphs Array of Schema.org graph items (passed by reference).
+     * @return void
+     */
+    private static function enrich_post_article_schema( array &$graphs ) {
+        if ( ! function_exists( 'is_singular' ) || ! is_singular( 'post' ) ) {
+            return;
+        }
+
+        $post_id = function_exists( 'get_the_ID' ) ? (int) get_the_ID() : 0;
+        if ( $post_id <= 0 ) {
+            return;
+        }
+
+        $author_id = function_exists( 'get_post_field' ) ? (int) get_post_field( 'post_author', $post_id ) : 0;
+        if ( $author_id <= 0 ) {
+            return;
+        }
+
+        $author_url  = get_author_posts_url( $author_id );
+        $author_name = get_the_author_meta( 'display_name', $author_id );
+        if ( '' === trim( (string) $author_name ) ) {
+            return;
+        }
+
+        $author_person = [
+            '@type' => 'Person',
+            '@id'   => $author_url . '#person',
+            'name'  => $author_name,
+            'url'   => $author_url,
+        ];
+
+        $publisher_id = '';
+        foreach ( $graphs as $graph ) {
+            if ( ! is_array( $graph ) || ! isset( $graph['@type'] ) ) {
+                continue;
+            }
+            if ( in_array( 'Organization', (array) $graph['@type'], true ) && ! empty( $graph['@id'] ) ) {
+                $publisher_id = (string) $graph['@id'];
+                break;
+            }
+        }
+        if ( '' === $publisher_id && function_exists( 'home_url' ) ) {
+            $publisher_id = home_url( '/#organization' );
+        }
+
+        foreach ( $graphs as &$graph ) {
+            if ( ! is_array( $graph ) || ! isset( $graph['@type'] ) ) {
+                continue;
+            }
+
+            $types = (array) $graph['@type'];
+            if ( ! in_array( 'Article', $types, true )
+                && ! in_array( 'BlogPosting', $types, true )
+                && ! in_array( 'NewsArticle', $types, true ) ) {
+                continue;
+            }
+
+            $graph['author'] = $author_person;
+            if ( '' !== $publisher_id ) {
+                $graph['publisher'] = [ '@id' => $publisher_id ];
+            }
+            if ( function_exists( 'get_the_date' ) ) {
+                $graph['datePublished'] = get_the_date( 'c', $post_id );
+            }
+            if ( function_exists( 'get_the_modified_date' ) ) {
+                $graph['dateModified'] = get_the_modified_date( 'c', $post_id );
+            }
+
+            $image_url = function_exists( 'get_the_post_thumbnail_url' ) ? get_the_post_thumbnail_url( $post_id, 'full' ) : '';
+            if ( $image_url ) {
+                $graph['image'] = [
+                    '@type' => 'ImageObject',
+                    'url'   => $image_url,
+                ];
+            }
+
+            if ( function_exists( 'get_permalink' ) ) {
+                $graph['mainEntityOfPage'] = [ '@id' => get_permalink( $post_id ) ];
+            }
+        }
+        unset( $graph );
+
+        // Expose the human author as a first-class graph node (referenced by @id),
+        // unless AIOSEO already emitted an equivalent Person node.
+        foreach ( $graphs as $graph ) {
+            if ( is_array( $graph )
+                && isset( $graph['@type'] )
+                && in_array( 'Person', (array) $graph['@type'], true )
+                && isset( $graph['@id'] )
+                && $graph['@id'] === $author_person['@id'] ) {
+                return;
+            }
+        }
+
+        $graphs[] = $author_person;
     }
 
     /**
