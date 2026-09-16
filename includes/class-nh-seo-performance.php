@@ -25,9 +25,8 @@ class NH_SEO_Performance {
         add_action( 'init', [ __CLASS__, 'guard_php_sessions' ], 1 );
         add_action( 'init', [ __CLASS__, 'register_llms_txt_rewrite' ] );
         add_filter( 'query_vars', [ __CLASS__, 'register_llms_txt_query_var' ] );
-        // accepted_args = 0: WordPress passes '' to 1-arg action callbacks fired with
-        // no arguments, which would make serve_llms_txt()'s $echo flag falsy and serve
-        // an empty body. Register with 0 args so its own defaults (true, true) apply.
+        // template_redirect fires with no arguments, so serve_llms_txt() is invoked
+        // with its own defaults (true, true). accepted_args = 0 makes that explicit.
         add_action( 'template_redirect', [ __CLASS__, 'serve_llms_txt' ], 0, 0 );
         add_action( 'send_headers', [ __CLASS__, 'cleanup_session_headers' ], 999 );
         add_action( 'template_redirect', [ __CLASS__, 'cleanup_session_headers' ], 1 );
@@ -42,6 +41,7 @@ class NH_SEO_Performance {
         add_action( 'wp_head', [ __CLASS__, 'inject_responsive_lcp_preload' ], 1 );
         add_action( 'init', [ __CLASS__, 'enforce_single_llms_txt_source' ], 20 );
         add_filter( 'woocommerce_after_shop_loop', [ __CLASS__, 'inject_cluster_link' ], 20 );
+        add_action( 'wp_footer', [ __CLASS__, 'render_composition_disclaimer' ], 99 );
     }
 
     /**
@@ -395,7 +395,7 @@ class NH_SEO_Performance {
      * @var array<string, string>
      */
     private static $category_meta_descriptions = [
-        'vestidos'  => 'Descubre vestidos de autor en lino caribeño premium con siluetas fluidas y confección artesanal. Diseños sostenibles hechos en Colombia.',
+        'vestidos'  => 'Descubre vestidos de autor en lino caribeño con siluetas fluidas y confección artesanal. Diseños sostenibles y atemporales hechos en Colombia.',
         'conjuntos' => 'Sets y conjuntos de lino para mujer con elegancia atemporal. Piezas versátiles de moda sostenible inspiradas en el Caribe para toda ocasión.',
         'pantalon'  => 'Pantalones de lino para mujer de tiro alto y bota recta. Comodidad, frescura y caída impecable confeccionados éticamente en Colombia.',
         'falda'     => 'Faldas de lino con movimiento y diseño artesanal caribeño. Siluetas envolventes y sofisticadas para un estilo fresco y sostenible.',
@@ -725,6 +725,57 @@ class NH_SEO_Performance {
         echo '<p class="nh-cluster-link"><a href="' . $url . '">' . $label . '</a></p>';
 
         return true;
+    }
+
+    /**
+     * Renders the spec-mandated composition disclaimer on product-category archives.
+     *
+     * Spec §2.8 requires the visible notice "La composición de cada pieza figura en
+     * su ficha y en la etiqueta de cuidado." on category copy. It is deliberately kept
+     * OUT of the 130-155-char category meta description and rendered as a small,
+     * visible line instead.
+     *
+     * Hooked to `wp_footer`, not a WooCommerce loop hook: the category grid is a
+     * JetEngine listing (`jet-listing-grid`), which renders products without the
+     * WooCommerce product loop, so neither `woocommerce_after_shop_loop` nor
+     * `woocommerce_product_loop_end` ever fires on these archives. `wp_footer` fires
+     * on every frontend request; the `is_product_category_context()` guard keeps the
+     * output strictly scoped to product categories.
+     *
+     * @return bool True if the disclaimer was emitted, false otherwise.
+     */
+    public static function render_composition_disclaimer() {
+        if ( ! self::is_product_category_context() ) {
+            return false;
+        }
+
+        $default_text = 'Trabajamos con lino-algodón y algodón; no todas las prendas son la misma mezcla. '
+            . 'La composición de cada pieza figura en su ficha y en la etiqueta de cuidado.';
+
+        $text = function_exists( 'apply_filters' )
+            ? (string) apply_filters( 'nh_composition_disclaimer_text', $default_text )
+            : $default_text;
+
+        $escaped = function_exists( 'esc_html' )
+            ? esc_html( $text )
+            : htmlspecialchars( $text, ENT_QUOTES, 'UTF-8' );
+
+        echo '<p class="nh-composition-disclaimer">' . $escaped . '</p>';
+
+        return true;
+    }
+
+    /**
+     * Reports whether the current request is a product-category archive.
+     *
+     * @return bool True on a product_cat archive, false otherwise.
+     */
+    public static function is_product_category_context() {
+        if ( function_exists( 'is_product_category' ) && is_product_category() ) {
+            return true;
+        }
+
+        return function_exists( 'is_tax' ) && is_tax( 'product_cat' );
     }
 
     /**
