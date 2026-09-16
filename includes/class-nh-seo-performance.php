@@ -25,7 +25,9 @@ class NH_SEO_Performance {
         add_action( 'init', [ __CLASS__, 'guard_php_sessions' ], 1 );
         add_action( 'init', [ __CLASS__, 'register_llms_txt_rewrite' ] );
         add_filter( 'query_vars', [ __CLASS__, 'register_llms_txt_query_var' ] );
-        add_action( 'template_redirect', [ __CLASS__, 'serve_llms_txt' ], 0 );
+        // template_redirect fires with no arguments, so serve_llms_txt() is invoked
+        // with its own defaults (true, true). accepted_args = 0 makes that explicit.
+        add_action( 'template_redirect', [ __CLASS__, 'serve_llms_txt' ], 0, 0 );
         add_action( 'send_headers', [ __CLASS__, 'cleanup_session_headers' ], 999 );
         add_action( 'template_redirect', [ __CLASS__, 'cleanup_session_headers' ], 1 );
         add_action( 'template_redirect', [ __CLASS__, 'start_drawer_heading_buffer' ], 5 );
@@ -37,6 +39,48 @@ class NH_SEO_Performance {
         add_filter( 'aioseo_description', [ __CLASS__, 'filter_aioseo_description' ] );
         add_filter( 'term_description', [ __CLASS__, 'filter_term_description' ], 10, 3 );
         add_action( 'wp_head', [ __CLASS__, 'inject_responsive_lcp_preload' ], 1 );
+        add_action( 'init', [ __CLASS__, 'enforce_single_llms_txt_source' ], 20 );
+        add_action( 'wp_footer', [ __CLASS__, 'render_composition_disclaimer' ], 99 );
+        add_action( 'wp_footer', [ __CLASS__, 'inject_cluster_link' ], 100 );
+    }
+
+    /**
+     * Guarantees this module is the single source of truth for /llms.txt.
+     *
+     * AIOSEO Pro (>= 4.9) generates a physical llms.txt in ABSPATH from a scheduled
+     * action. That file is served by nginx before WordPress runs, silently overriding
+     * the rewrite registered here. Disabling AIOSEO's "sitemap.llms.enable" option is
+     * NOT enough: its generateLlmsTxt() guard uses isset() against a magic property,
+     * which returns false for the boolean false value, so already-scheduled actions
+     * keep regenerating the file. Detach the generator callbacks so nh-core wins.
+     *
+     * Because the embedded manifest is now the single source, ANY root-level llms.txt
+     * is stale by definition (it would be served statically and bypass this handler),
+     * so a plain unlink is applied rather than only removing AIOSEO-marked files.
+     *
+     * @return void
+     */
+    public static function enforce_single_llms_txt_source() {
+        if ( function_exists( 'aioseo' ) ) {
+            if ( ! empty( aioseo()->options->sitemap->llms->enable ) ) {
+                aioseo()->options->sitemap->llms->enable = false;
+                aioseo()->options->save();
+            }
+
+            if ( isset( aioseo()->llms ) ) {
+                remove_action( 'aioseo_generate_llms_txt', [ aioseo()->llms, 'generateLlmsTxt' ] );
+                remove_action( 'aioseo_generate_llms_txt_single', [ aioseo()->llms, 'generateLlmsTxt' ] );
+            }
+        }
+
+        if ( ! defined( 'ABSPATH' ) ) {
+            return;
+        }
+
+        $file = ABSPATH . 'llms.txt';
+        if ( file_exists( $file ) ) {
+            @unlink( $file );
+        }
     }
 
     /**
@@ -351,11 +395,11 @@ class NH_SEO_Performance {
      * @var array<string, string>
      */
     private static $category_meta_descriptions = [
-        'vestidos'  => 'Descubre vestidos de autor en lino caribeño premium con siluetas fluidas y confección artesanal. Diseños sostenibles hechos en Colombia.',
+        'vestidos'  => 'Descubre vestidos de autor en lino caribeño con siluetas fluidas y confección artesanal. Diseños sostenibles y atemporales hechos en Colombia.',
         'conjuntos' => 'Sets y conjuntos de lino para mujer con elegancia atemporal. Piezas versátiles de moda sostenible inspiradas en el Caribe para toda ocasión.',
         'pantalon'  => 'Pantalones de lino para mujer de tiro alto y bota recta. Comodidad, frescura y caída impecable confeccionados éticamente en Colombia.',
         'falda'     => 'Faldas de lino con movimiento y diseño artesanal caribeño. Siluetas envolventes y sofisticadas para un estilo fresco y sostenible.',
-        'top'       => 'Tops y blusas de lino con amarres y lazos adaptables. Confección consciente en lino puro para complementar cualquier ocasión cálida.',
+        'top'       => 'Tops y blusas de lino con amarres y lazos adaptables. Diseño consciente para acompañar cualquier ocasión cálida, en lino y sus mezclas.',
         'bermudas'  => 'Bermudas de lino con calce cómodo y diseño estructurado. La prenda esencial de clima cálido para estilismos frescos, elegantes y atemporales.',
     ];
 
@@ -407,7 +451,153 @@ class NH_SEO_Performance {
         }
         unset( $graph );
 
+        // Editorial schema for single posts: the Article must credit a real human
+        // author (Person) and reference the brand Organization as publisher.
+        self::enrich_post_article_schema( $graphs );
+
         return $graphs;
+    }
+
+    /**
+     * Enriches a singular post Article/BlogPosting graph node with editorial authorship.
+     *
+     * Per the content-cluster spec, `Article.author` must be a Person representing the
+     * human author (the designer "Norma Hana" — a real person whose name the brand
+     * carries), `publisher` must reference the Organization `@id`, and the
+     * temporal/media/page bindings (datePublished, dateModified, image,
+     * mainEntityOfPage) must be populated from the post.
+     *
+     * A single Person entity is guaranteed: if AIOSEO already emitted the author
+     * Person node, its `@id` is reused and the node enriched, otherwise one Person
+     * node is appended. The Person carries a short bio (`description`) and `sameAs`
+     * links (Instagram), both filterable via `nh_author_description` /
+     * `nh_author_same_as`.
+     *
+     * @param array $graphs Array of Schema.org graph items (passed by reference).
+     * @return void
+     */
+    private static function enrich_post_article_schema( array &$graphs ) {
+        if ( ! function_exists( 'is_singular' ) || ! is_singular( 'post' ) ) {
+            return;
+        }
+
+        $post_id = function_exists( 'get_the_ID' ) ? (int) get_the_ID() : 0;
+        if ( $post_id <= 0 ) {
+            return;
+        }
+
+        $author_id = function_exists( 'get_post_field' ) ? (int) get_post_field( 'post_author', $post_id ) : 0;
+        if ( $author_id <= 0 ) {
+            return;
+        }
+
+        $author_url  = get_author_posts_url( $author_id );
+        $author_name = get_the_author_meta( 'display_name', $author_id );
+        if ( '' === trim( (string) $author_name ) ) {
+            return;
+        }
+
+        $default_bio = 'Diseñadora y fundadora del atelier Norma Hana, moda de autor en lino caribeño desde Santa Marta, Colombia.';
+        $author_bio  = function_exists( 'apply_filters' )
+            ? (string) apply_filters( 'nh_author_description', $default_bio, $author_id )
+            : $default_bio;
+
+        $default_same_as = [ 'https://www.instagram.com/normahana/' ];
+        $author_same_as  = function_exists( 'apply_filters' )
+            ? (array) apply_filters( 'nh_author_same_as', $default_same_as, $author_id )
+            : $default_same_as;
+
+        // Normalize to a single Person entity: AIOSEO may already emit the author
+        // Person node (usually "<author_url>#author"). Reuse that node and its @id
+        // instead of appending a second, inconsistent Person.
+        $person_index = null;
+        foreach ( $graphs as $index => $graph ) {
+            if ( ! is_array( $graph ) || ! isset( $graph['@type'] ) ) {
+                continue;
+            }
+            if ( ! in_array( 'Person', (array) $graph['@type'], true ) ) {
+                continue;
+            }
+
+            $graph_id  = isset( $graph['@id'] ) ? (string) $graph['@id'] : '';
+            $graph_url = isset( $graph['url'] ) ? (string) $graph['url'] : '';
+            if ( ( '' !== $graph_id && str_starts_with( $graph_id, $author_url ) )
+                || ( '' !== $graph_url && rtrim( $graph_url, '/' ) === rtrim( $author_url, '/' ) ) ) {
+                $person_index = $index;
+                break;
+            }
+        }
+
+        $canonical_id = ( null !== $person_index && ! empty( $graphs[ $person_index ]['@id'] ) )
+            ? (string) $graphs[ $person_index ]['@id']
+            : $author_url . '#person';
+
+        $author_person = [
+            '@type'       => 'Person',
+            '@id'         => $canonical_id,
+            'name'        => $author_name,
+            'url'         => $author_url,
+            'description' => $author_bio,
+            'sameAs'      => array_values( array_filter( (array) $author_same_as ) ),
+        ];
+
+        $publisher_id = '';
+        foreach ( $graphs as $graph ) {
+            if ( ! is_array( $graph ) || ! isset( $graph['@type'] ) ) {
+                continue;
+            }
+            if ( in_array( 'Organization', (array) $graph['@type'], true ) && ! empty( $graph['@id'] ) ) {
+                $publisher_id = (string) $graph['@id'];
+                break;
+            }
+        }
+        if ( '' === $publisher_id && function_exists( 'home_url' ) ) {
+            $publisher_id = home_url( '/#organization' );
+        }
+
+        foreach ( $graphs as &$graph ) {
+            if ( ! is_array( $graph ) || ! isset( $graph['@type'] ) ) {
+                continue;
+            }
+
+            $types = (array) $graph['@type'];
+            if ( ! in_array( 'Article', $types, true )
+                && ! in_array( 'BlogPosting', $types, true )
+                && ! in_array( 'NewsArticle', $types, true ) ) {
+                continue;
+            }
+
+            $graph['author'] = $author_person;
+            if ( '' !== $publisher_id ) {
+                $graph['publisher'] = [ '@id' => $publisher_id ];
+            }
+            if ( function_exists( 'get_the_date' ) ) {
+                $graph['datePublished'] = get_the_date( 'c', $post_id );
+            }
+            if ( function_exists( 'get_the_modified_date' ) ) {
+                $graph['dateModified'] = get_the_modified_date( 'c', $post_id );
+            }
+
+            $image_url = function_exists( 'get_the_post_thumbnail_url' ) ? get_the_post_thumbnail_url( $post_id, 'full' ) : '';
+            if ( $image_url ) {
+                $graph['image'] = [
+                    '@type' => 'ImageObject',
+                    'url'   => $image_url,
+                ];
+            }
+
+            if ( function_exists( 'get_permalink' ) ) {
+                $graph['mainEntityOfPage'] = [ '@id' => get_permalink( $post_id ) ];
+            }
+        }
+        unset( $graph );
+
+        // Single Person node: merge into the existing author node if present, else append.
+        if ( null !== $person_index ) {
+            $graphs[ $person_index ] = array_merge( $graphs[ $person_index ], $author_person );
+        } else {
+            $graphs[] = $author_person;
+        }
     }
 
     /**
@@ -496,6 +686,105 @@ class NH_SEO_Performance {
     }
 
     /**
+     * Emits a single editorial link from the `vestidos` category archive to the
+     * linen properties pillar post (internal cluster linking, category -> pillar).
+     *
+     * Scope is strictly the `vestidos` product category (never sitewide). The
+     * pillar post is created in a later task and published by a human, so the
+     * link is emitted ONLY when the target exists and is published; otherwise
+     * this method emits nothing, guaranteeing no broken (404) internal link is
+     * ever shipped to production.
+     *
+     * Hooked to `wp_footer`, NOT `woocommerce_after_shop_loop`: the category grid
+     * is a JetEngine listing (`jet-listing-grid`) that renders products without the
+     * WooCommerce product loop, so the WooCommerce loop hooks never fire on these
+     * archives. `wp_footer` always fires; the `is_product_category( 'vestidos' )`
+     * guard keeps the link strictly scoped to the vestidos archive.
+     *
+     * @return bool True if the link was emitted, false otherwise.
+     */
+    public static function inject_cluster_link() {
+        if ( ! function_exists( 'is_product_category' ) || ! is_product_category( 'vestidos' ) ) {
+            return false;
+        }
+
+        if ( ! function_exists( 'get_page_by_path' ) ) {
+            return false;
+        }
+
+        $pillar = get_page_by_path( 'propiedades-del-lino', OBJECT, 'post' );
+        if ( ! $pillar || ! isset( $pillar->ID ) ) {
+            return false;
+        }
+
+        if ( ! function_exists( 'get_post_status' ) || 'publish' !== get_post_status( $pillar->ID ) ) {
+            return false;
+        }
+
+        $url = function_exists( 'home_url' ) ? home_url( '/propiedades-del-lino/' ) : '/propiedades-del-lino/';
+        $url = function_exists( 'esc_url' ) ? esc_url( $url ) : filter_var( (string) $url, FILTER_SANITIZE_URL );
+
+        $label = function_exists( 'esc_html__' )
+            ? esc_html__( 'Conoce cómo cuidamos cada tejido de lino', 'nh-core' )
+            : 'Conoce cómo cuidamos cada tejido de lino';
+
+        echo '<p class="nh-cluster-link"><a href="' . $url . '">' . $label . '</a></p>';
+
+        return true;
+    }
+
+    /**
+     * Renders the spec-mandated composition disclaimer on product-category archives.
+     *
+     * Spec §2.8 requires the visible notice "La composición de cada pieza figura en
+     * su ficha y en la etiqueta de cuidado." on category copy. It is deliberately kept
+     * OUT of the 130-155-char category meta description and rendered as a small,
+     * visible line instead.
+     *
+     * Hooked to `wp_footer`, not a WooCommerce loop hook: the category grid is a
+     * JetEngine listing (`jet-listing-grid`), which renders products without the
+     * WooCommerce product loop, so neither `woocommerce_after_shop_loop` nor
+     * `woocommerce_product_loop_end` ever fires on these archives. `wp_footer` fires
+     * on every frontend request; the `is_product_category_context()` guard keeps the
+     * output strictly scoped to product categories.
+     *
+     * @return bool True if the disclaimer was emitted, false otherwise.
+     */
+    public static function render_composition_disclaimer() {
+        if ( ! self::is_product_category_context() ) {
+            return false;
+        }
+
+        $default_text = 'Trabajamos con lino-algodón y algodón; no todas las prendas son la misma mezcla. '
+            . 'La composición de cada pieza figura en su ficha y en la etiqueta de cuidado.';
+
+        $text = function_exists( 'apply_filters' )
+            ? (string) apply_filters( 'nh_composition_disclaimer_text', $default_text )
+            : $default_text;
+
+        $escaped = function_exists( 'esc_html' )
+            ? esc_html( $text )
+            : htmlspecialchars( $text, ENT_QUOTES, 'UTF-8' );
+
+        echo '<p class="nh-composition-disclaimer">' . $escaped . '</p>';
+
+        return true;
+    }
+
+    /**
+     * Reports whether the current request is a product-category archive.
+     *
+     * @return bool True on a product_cat archive, false otherwise.
+     */
+    public static function is_product_category_context() {
+        if ( function_exists( 'is_product_category' ) && is_product_category() ) {
+            return true;
+        }
+
+        return function_exists( 'is_tax' ) && is_tax( 'product_cat' );
+    }
+
+    /**
      * Injects responsive image preload tags for Hero banner to optimize LCP without duplicate downloads.
      * Hooked to wp_head at priority 1 on the front page.
      *
@@ -568,7 +857,7 @@ class NH_SEO_Performance {
     private static $default_llms_manifest = <<<TEXT
 # Norma Hana
 
-> Marca colombiana de moda de autor, diseño consciente y sastrería femenina en lino caribeño premium. Confección artesanal desde Santa Marta, Colombia.
+> Marca colombiana de moda de autor, diseño consciente y sastrería femenina en lino caribeño. Confección artesanal desde Santa Marta, Colombia.
 
 ## Catálogo y Colecciones
 - Vestidos de Lino: https://www.normahana.com/c/vestidos/
@@ -577,7 +866,7 @@ class NH_SEO_Performance {
 - Blusas y Tops Adaptables: https://www.normahana.com/c/top/
 
 ## Filosofía de Marca y Materiales
-- Confección 100% lino natural transpirable de alta densidad.
+- Confección en lino caribeño transpirable de alta densidad.
 - Siluetas acogedoras con sistemas de amarre ajustables que acompañan los cambios del cuerpo femenino.
 - Sostenibilidad, producción justa y comercio ético en el Caribe colombiano.
 
@@ -627,27 +916,16 @@ TEXT;
     }
 
     /**
-     * Resolves and returns the content for llms.txt.
-     * Checks filesystem locations first, falling back to embedded standard manifest.
+     * Returns the llms.txt manifest.
+     *
+     * The embedded manifest is the SINGLE source of truth. No external file is ever
+     * read: a root-level llms.txt would be mapped to ABSPATH and served directly by
+     * nginx, silently bypassing this module (and any WP-level guard). Keeping the
+     * content in code makes this handler the only possible source.
      *
      * @return string Manifest content.
      */
     public static function get_llms_txt_content() {
-        $paths_to_check = [];
-        if ( defined( 'ABSPATH' ) ) {
-            $paths_to_check[] = ABSPATH . 'llms.txt';
-        }
-        $paths_to_check[] = dirname( __DIR__, 3 ) . '/llms.txt';
-
-        foreach ( $paths_to_check as $path ) {
-            if ( file_exists( $path ) && is_readable( $path ) ) {
-                $content = file_get_contents( $path );
-                if ( false !== $content && '' !== trim( $content ) ) {
-                    return $content;
-                }
-            }
-        }
-
         return self::$default_llms_manifest;
     }
 
