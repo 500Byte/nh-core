@@ -40,8 +40,8 @@ class NH_SEO_Performance {
         add_filter( 'term_description', [ __CLASS__, 'filter_term_description' ], 10, 3 );
         add_action( 'wp_head', [ __CLASS__, 'inject_responsive_lcp_preload' ], 1 );
         add_action( 'init', [ __CLASS__, 'enforce_single_llms_txt_source' ], 20 );
-        add_filter( 'woocommerce_after_shop_loop', [ __CLASS__, 'inject_cluster_link' ], 20 );
         add_action( 'wp_footer', [ __CLASS__, 'render_composition_disclaimer' ], 99 );
+        add_action( 'wp_footer', [ __CLASS__, 'inject_cluster_link' ], 100 );
     }
 
     /**
@@ -694,6 +694,12 @@ class NH_SEO_Performance {
      * link is emitted ONLY when the target exists and is published; otherwise
      * this method emits nothing, guaranteeing no broken (404) internal link is
      * ever shipped to production.
+     *
+     * Hooked to `wp_footer`, NOT `woocommerce_after_shop_loop`: the category grid
+     * is a JetEngine listing (`jet-listing-grid`) that renders products without the
+     * WooCommerce product loop, so the WooCommerce loop hooks never fire on these
+     * archives. `wp_footer` always fires; the `is_product_category( 'vestidos' )`
+     * guard keeps the link strictly scoped to the vestidos archive.
      *
      * @return bool True if the link was emitted, false otherwise.
      */
