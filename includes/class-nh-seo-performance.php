@@ -40,6 +40,48 @@ class NH_SEO_Performance {
         add_filter( 'aioseo_description', [ __CLASS__, 'filter_aioseo_description' ] );
         add_filter( 'term_description', [ __CLASS__, 'filter_term_description' ], 10, 3 );
         add_action( 'wp_head', [ __CLASS__, 'inject_responsive_lcp_preload' ], 1 );
+        add_action( 'init', [ __CLASS__, 'enforce_single_llms_txt_source' ], 20 );
+    }
+
+    /**
+     * Guarantees this module is the single source of truth for /llms.txt.
+     *
+     * AIOSEO Pro (>= 4.9) generates a physical llms.txt in ABSPATH from a scheduled
+     * action. That file is served by nginx before WordPress runs, silently overriding
+     * the rewrite registered here. Disabling AIOSEO's "sitemap.llms.enable" option is
+     * NOT enough: its generateLlmsTxt() guard uses isset() against a magic property,
+     * which returns false for the boolean false value, so already-scheduled actions
+     * keep regenerating the file. Detach the generator callbacks and drop any stale
+     * AIOSEO manifest so the nh-core handler always wins.
+     *
+     * @return void
+     */
+    public static function enforce_single_llms_txt_source() {
+        if ( function_exists( 'aioseo' ) ) {
+            if ( ! empty( aioseo()->options->sitemap->llms->enable ) ) {
+                aioseo()->options->sitemap->llms->enable = false;
+                aioseo()->options->save();
+            }
+
+            if ( isset( aioseo()->llms ) ) {
+                remove_action( 'aioseo_generate_llms_txt', [ aioseo()->llms, 'generateLlmsTxt' ] );
+                remove_action( 'aioseo_generate_llms_txt_single', [ aioseo()->llms, 'generateLlmsTxt' ] );
+            }
+        }
+
+        if ( ! defined( 'ABSPATH' ) ) {
+            return;
+        }
+
+        $file = ABSPATH . 'llms.txt';
+        if ( ! file_exists( $file ) || ! is_readable( $file ) ) {
+            return;
+        }
+
+        $head = (string) @file_get_contents( $file, false, null, 0, 120 );
+        if ( '' !== $head && false !== stripos( $head, 'All in One SEO' ) ) {
+            @unlink( $file );
+        }
     }
 
     /**
