@@ -51,8 +51,11 @@ class NH_SEO_Performance {
      * the rewrite registered here. Disabling AIOSEO's "sitemap.llms.enable" option is
      * NOT enough: its generateLlmsTxt() guard uses isset() against a magic property,
      * which returns false for the boolean false value, so already-scheduled actions
-     * keep regenerating the file. Detach the generator callbacks and drop any stale
-     * AIOSEO manifest so the nh-core handler always wins.
+     * keep regenerating the file. Detach the generator callbacks so nh-core wins.
+     *
+     * Because the embedded manifest is now the single source, ANY root-level llms.txt
+     * is stale by definition (it would be served statically and bypass this handler),
+     * so a plain unlink is applied rather than only removing AIOSEO-marked files.
      *
      * @return void
      */
@@ -74,12 +77,7 @@ class NH_SEO_Performance {
         }
 
         $file = ABSPATH . 'llms.txt';
-        if ( ! file_exists( $file ) || ! is_readable( $file ) ) {
-            return;
-        }
-
-        $head = (string) @file_get_contents( $file, false, null, 0, 120 );
-        if ( '' !== $head && false !== stripos( $head, 'All in One SEO' ) ) {
+        if ( file_exists( $file ) ) {
             @unlink( $file );
         }
     }
@@ -613,7 +611,7 @@ class NH_SEO_Performance {
     private static $default_llms_manifest = <<<TEXT
 # Norma Hana
 
-> Marca colombiana de moda de autor, diseño consciente y sastrería femenina en lino caribeño premium. Confección artesanal desde Santa Marta, Colombia.
+> Marca colombiana de moda de autor, diseño consciente y sastrería femenina en lino caribeño. Confección artesanal desde Santa Marta, Colombia.
 
 ## Catálogo y Colecciones
 - Vestidos de Lino: https://www.normahana.com/c/vestidos/
@@ -672,27 +670,16 @@ TEXT;
     }
 
     /**
-     * Resolves and returns the content for llms.txt.
-     * Checks filesystem locations first, falling back to embedded standard manifest.
+     * Returns the llms.txt manifest.
+     *
+     * The embedded manifest is the SINGLE source of truth. No external file is ever
+     * read: a root-level llms.txt would be mapped to ABSPATH and served directly by
+     * nginx, silently bypassing this module (and any WP-level guard). Keeping the
+     * content in code makes this handler the only possible source.
      *
      * @return string Manifest content.
      */
     public static function get_llms_txt_content() {
-        $paths_to_check = [];
-        if ( defined( 'ABSPATH' ) ) {
-            $paths_to_check[] = ABSPATH . 'llms.txt';
-        }
-        $paths_to_check[] = dirname( __DIR__, 3 ) . '/llms.txt';
-
-        foreach ( $paths_to_check as $path ) {
-            if ( file_exists( $path ) && is_readable( $path ) ) {
-                $content = file_get_contents( $path );
-                if ( false !== $content && '' !== trim( $content ) ) {
-                    return $content;
-                }
-            }
-        }
-
         return self::$default_llms_manifest;
     }
 
