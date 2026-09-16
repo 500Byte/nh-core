@@ -25,7 +25,10 @@ class NH_SEO_Performance {
         add_action( 'init', [ __CLASS__, 'guard_php_sessions' ], 1 );
         add_action( 'init', [ __CLASS__, 'register_llms_txt_rewrite' ] );
         add_filter( 'query_vars', [ __CLASS__, 'register_llms_txt_query_var' ] );
-        add_action( 'template_redirect', [ __CLASS__, 'serve_llms_txt' ], 0 );
+        // accepted_args = 0: WordPress passes '' to 1-arg action callbacks fired with
+        // no arguments, which would make serve_llms_txt()'s $echo flag falsy and serve
+        // an empty body. Register with 0 args so its own defaults (true, true) apply.
+        add_action( 'template_redirect', [ __CLASS__, 'serve_llms_txt' ], 0, 0 );
         add_action( 'send_headers', [ __CLASS__, 'cleanup_session_headers' ], 999 );
         add_action( 'template_redirect', [ __CLASS__, 'cleanup_session_headers' ], 1 );
         add_action( 'template_redirect', [ __CLASS__, 'start_drawer_heading_buffer' ], 5 );
@@ -577,7 +580,7 @@ class NH_SEO_Performance {
 - Blusas y Tops Adaptables: https://www.normahana.com/c/top/
 
 ## Filosofía de Marca y Materiales
-- Confección 100% lino natural transpirable de alta densidad.
+- Confección en lino caribeño transpirable de alta densidad.
 - Siluetas acogedoras con sistemas de amarre ajustables que acompañan los cambios del cuerpo femenino.
 - Sostenibilidad, producción justa y comercio ético en el Caribe colombiano.
 
