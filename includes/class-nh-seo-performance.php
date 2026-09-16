@@ -461,9 +461,16 @@ class NH_SEO_Performance {
      * Enriches a singular post Article/BlogPosting graph node with editorial authorship.
      *
      * Per the content-cluster spec, `Article.author` must be a Person representing the
-     * human author (never the brand), `publisher` must reference the Organization `@id`,
-     * and the temporal/media/page bindings (datePublished, dateModified, image,
+     * human author (the designer "Norma Hana" — a real person whose name the brand
+     * carries), `publisher` must reference the Organization `@id`, and the
+     * temporal/media/page bindings (datePublished, dateModified, image,
      * mainEntityOfPage) must be populated from the post.
+     *
+     * A single Person entity is guaranteed: if AIOSEO already emitted the author
+     * Person node, its `@id` is reused and the node enriched, otherwise one Person
+     * node is appended. The Person carries a short bio (`description`) and `sameAs`
+     * links (Instagram), both filterable via `nh_author_description` /
+     * `nh_author_same_as`.
      *
      * @param array $graphs Array of Schema.org graph items (passed by reference).
      * @return void
@@ -489,11 +496,48 @@ class NH_SEO_Performance {
             return;
         }
 
+        $default_bio = 'Diseñadora y fundadora del atelier Norma Hana, moda de autor en lino caribeño desde Santa Marta, Colombia.';
+        $author_bio  = function_exists( 'apply_filters' )
+            ? (string) apply_filters( 'nh_author_description', $default_bio, $author_id )
+            : $default_bio;
+
+        $default_same_as = [ 'https://www.instagram.com/normahana/' ];
+        $author_same_as  = function_exists( 'apply_filters' )
+            ? (array) apply_filters( 'nh_author_same_as', $default_same_as, $author_id )
+            : $default_same_as;
+
+        // Normalize to a single Person entity: AIOSEO may already emit the author
+        // Person node (usually "<author_url>#author"). Reuse that node and its @id
+        // instead of appending a second, inconsistent Person.
+        $person_index = null;
+        foreach ( $graphs as $index => $graph ) {
+            if ( ! is_array( $graph ) || ! isset( $graph['@type'] ) ) {
+                continue;
+            }
+            if ( ! in_array( 'Person', (array) $graph['@type'], true ) ) {
+                continue;
+            }
+
+            $graph_id  = isset( $graph['@id'] ) ? (string) $graph['@id'] : '';
+            $graph_url = isset( $graph['url'] ) ? (string) $graph['url'] : '';
+            if ( ( '' !== $graph_id && str_starts_with( $graph_id, $author_url ) )
+                || ( '' !== $graph_url && rtrim( $graph_url, '/' ) === rtrim( $author_url, '/' ) ) ) {
+                $person_index = $index;
+                break;
+            }
+        }
+
+        $canonical_id = ( null !== $person_index && ! empty( $graphs[ $person_index ]['@id'] ) )
+            ? (string) $graphs[ $person_index ]['@id']
+            : $author_url . '#person';
+
         $author_person = [
-            '@type' => 'Person',
-            '@id'   => $author_url . '#person',
-            'name'  => $author_name,
-            'url'   => $author_url,
+            '@type'       => 'Person',
+            '@id'         => $canonical_id,
+            'name'        => $author_name,
+            'url'         => $author_url,
+            'description' => $author_bio,
+            'sameAs'      => array_values( array_filter( (array) $author_same_as ) ),
         ];
 
         $publisher_id = '';
@@ -547,19 +591,12 @@ class NH_SEO_Performance {
         }
         unset( $graph );
 
-        // Expose the human author as a first-class graph node (referenced by @id),
-        // unless AIOSEO already emitted an equivalent Person node.
-        foreach ( $graphs as $graph ) {
-            if ( is_array( $graph )
-                && isset( $graph['@type'] )
-                && in_array( 'Person', (array) $graph['@type'], true )
-                && isset( $graph['@id'] )
-                && $graph['@id'] === $author_person['@id'] ) {
-                return;
-            }
+        // Single Person node: merge into the existing author node if present, else append.
+        if ( null !== $person_index ) {
+            $graphs[ $person_index ] = array_merge( $graphs[ $person_index ], $author_person );
+        } else {
+            $graphs[] = $author_person;
         }
-
-        $graphs[] = $author_person;
     }
 
     /**
