@@ -451,6 +451,7 @@ class NH_Core_Elementor {
             'cart/cart.php'             => NH_CORE_PATH . 'templates/cart/cart.php',
             'cart/cart-totals.php'      => NH_CORE_PATH . 'templates/cart/cart-totals.php',
             'cart/cart-empty.php'       => NH_CORE_PATH . 'templates/cart/cart-empty.php',
+            'checkout/thankyou.php'     => NH_CORE_PATH . 'templates/checkout/thankyou.php',
         ];
 
         if ( isset( $overrides[ $template_name ] ) && file_exists( $overrides[ $template_name ] ) ) {
