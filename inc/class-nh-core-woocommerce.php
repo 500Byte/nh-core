@@ -547,17 +547,27 @@ class NH_Core_Woocommerce {
             return $valid;
         }
 
+        // 1. Permitir a administradores de la tienda logueados (para pruebas manuales en navegador)
+        if ( current_user_can( 'manage_woocommerce' ) || current_user_can( 'administrator' ) ) {
+            return $valid;
+        }
+
+        // 2. Permitir si la ventana temporal de testing fue armada vía CLI (wp nh-core enable-test-mode)
+        $window_ok = function_exists( 'nh_core_test_mode_is_active' ) && nh_core_test_mode_is_active();
+        if ( $window_ok ) {
+            return true;
+        }
+
         if ( ! defined( 'NH_TESTING_BYPASS_TOKEN' ) || NH_TESTING_BYPASS_TOKEN === '' ) {
             return false;
         }
 
         $header    = isset( $_SERVER['HTTP_X_NH_TESTING'] ) ? (string) $_SERVER['HTTP_X_NH_TESTING'] : '';
         $token_ok  = $header !== '' && hash_equals( NH_TESTING_BYPASS_TOKEN, $header );
-        $window_ok = function_exists( 'nh_core_test_mode_is_active' ) && nh_core_test_mode_is_active();
 
-        if ( $token_ok && $window_ok ) {
+        if ( $token_ok ) {
             error_log( sprintf(
-                '[NH_CORE_TEST_MODE] Cupón "%s" aplicado fuera de local (ventana armada) — IP=%s',
+                '[NH_CORE_TEST_MODE] Cupón "%s" aplicado fuera de local (token de cabecera) — IP=%s',
                 $code,
                 isset( $_SERVER['REMOTE_ADDR'] ) ? $_SERVER['REMOTE_ADDR'] : 'unknown'
             ) );
