@@ -63,6 +63,9 @@ class NH_Core_Woocommerce {
         // AJAX endpoint para refrescar nonces (páginas cacheadas por WP Rocket)
         add_action( 'wp_ajax_nh_get_cart_nonce', [ $this, 'ajax_get_cart_nonce' ] );
         add_action( 'wp_ajax_nopriv_nh_get_cart_nonce', [ $this, 'ajax_get_cart_nonce' ] );
+
+        // REST API: Order status endpoint para Thank-You page polling
+        add_action( 'rest_api_init', [ $this, 'register_rest_routes' ] );
     }
 
     /**
@@ -737,4 +740,59 @@ class NH_Core_Woocommerce {
             'cart_hash'  => WC()->cart->get_cart_hash(),
         ] );
     }
+
+    /**
+     * Registra rutas de la API REST para nh-core.
+     */
+    public function register_rest_routes() {
+        register_rest_route( 'nh/v1', '/order-status/(?P<id>\d+)', [
+            'methods'             => 'GET',
+            'callback'            => [ $this, 'get_order_status_api' ],
+            'permission_callback' => '__return_true',
+            'args'                => [
+                'id'  => [ 'validate_callback' => function( $param ) { return is_numeric( $param ); } ],
+                'key' => [ 'required' => true, 'sanitize_callback' => 'sanitize_text_field' ],
+            ],
+        ] );
+    }
+
+    /**
+     * Endpoint REST: Obtiene el estado del pedido verificando la clave de orden (order_key).
+     *
+     * @param WP_REST_Request $request
+     * @return WP_REST_Response|WP_Error
+     */
+    public function get_order_status_api( WP_REST_Request $request ) {
+        $order_id  = absint( $request->get_param( 'id' ) );
+        $order_key = sanitize_text_field( $request->get_param( 'key' ) );
+        $order     = wc_get_order( $order_id );
+
+        if ( ! $order || $order->get_order_key() !== $order_key ) {
+            return new WP_Error( 'rest_forbidden', 'Acceso no autorizado al pedido.', [ 'status' => 403 ] );
+        }
+
+        $status  = $order->get_status();
+        $is_paid = $order->is_paid() || in_array( $status, [ 'processing', 'completed' ], true );
+
+        return rest_ensure_response( [
+            'order_id'    => $order_id,
+            'status'      => $status,
+            'is_paid'     => $is_paid,
+            'badge_text'  => $is_paid ? 'Pedido Confirmado' : ( in_array( $status, [ 'pending', 'on-hold' ], true ) ? 'Validación Bancaria en Curso' : 'Pago no completado' ),
+            'badge_class' => $is_paid ? 'nh-order-badge--confirmed' : ( in_array( $status, [ 'pending', 'on-hold' ], true ) ? 'nh-order-badge--pending' : 'nh-order-badge--failed' ),
+        ] );
+    }
 }
+
+/**
+ * Función global de compatibilidad para el endpoint REST de estado de pedido.
+ *
+ * @param WP_REST_Request $request
+ * @return WP_REST_Response|WP_Error
+ */
+if ( ! function_exists( 'nh_get_order_status_api' ) ) {
+    function nh_get_order_status_api( WP_REST_Request $request ) {
+        return NH_Core_Woocommerce::get_instance()->get_order_status_api( $request );
+    }
+}
+
