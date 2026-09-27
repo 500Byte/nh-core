@@ -53,6 +53,12 @@
     border: 1px solid #fae2b8;
 }
 
+.nh-order-badge--failed {
+    background: #fdf2f2;
+    color: #9b1c1c;
+    border: 1px solid #f8b4b4;
+}
+
 .nh-thankyou-hero h1 {
     font-family: "Cormorant", "Playfair Display", Georgia, serif;
     font-size: clamp(28px, 4vw, 42px);
@@ -187,5 +193,16 @@
     .nh-whatsapp-btn {
         width: 100%;
         justify-content: center;
+    }
+}
+
+/* Accessibility: Reduced Motion */
+@media (prefers-reduced-motion: reduce) {
+    .nh-thankyou-hero,
+    .nh-order-overview-grid,
+    .nh-whatsapp-card {
+        animation: none !important;
+        opacity: 1 !important;
+        transform: none !important;
     }
 }
