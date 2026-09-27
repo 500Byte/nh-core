@@ -118,6 +118,12 @@ class NH_Shopify_Checkout_Widget extends \Elementor\Widget_Base {
         $settings = $this->get_settings_for_display();
         $cart = WC()->cart;
 
+        // Si estamos en la página de orden recibida (thank-you page), delegar al flujo estándar de WooCommerce
+        if ( ( function_exists( 'is_order_received_page' ) && is_order_received_page() ) || ( function_exists( 'is_wc_endpoint_url' ) && is_wc_endpoint_url( 'order-received' ) ) ) {
+            WC_Shortcode_Checkout::output( [] );
+            return;
+        }
+
         // Si el carrito está vacío en frontend público
         if ( ! is_admin() && $cart->is_empty() ) {
             ?>

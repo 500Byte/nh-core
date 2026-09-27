@@ -441,6 +441,12 @@ class NH_Checkout_Widget extends \Elementor\Widget_Base {
             return 0;
         } );
 
+        // Si estamos en la página de orden recibida (thank-you page), delegar al flujo estándar de WooCommerce
+        if ( ( function_exists( 'is_order_received_page' ) && is_order_received_page() ) || ( function_exists( 'is_wc_endpoint_url' ) && is_wc_endpoint_url( 'order-received' ) ) ) {
+            WC_Shortcode_Checkout::output( [] );
+            return;
+        }
+
         // Si el carrito está vacío en la página pública
         if ( ! is_admin() && WC()->cart->is_empty() ) {
             ?>

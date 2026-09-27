@@ -62,6 +62,9 @@ class NH_Core_Elementor {
         // ===== Override Plantilla de Resumen de Pedido (Table-less) =====
         add_filter( 'woocommerce_locate_template', [ $this, 'locate_checkout_templates' ], 10, 3 );
         remove_action( 'woocommerce_checkout_order_review', 'woocommerce_checkout_payment', 20 );
+
+        // ===== Permitir renderizar el Thank-You page sin bloqueo de verificación de email con order_key válido =====
+        add_filter( 'woocommerce_order_email_verification_required', [ $this, 'filter_email_verification_required' ], 10, 3 );
     }
 
     private function load_live_counter_modules() {
@@ -459,5 +462,12 @@ class NH_Core_Elementor {
         }
 
         return $template;
+    }
+
+    public function filter_email_verification_required( $required, $order, $context ) {
+        if ( 'order-received' === $context ) {
+            return false;
+        }
+        return $required;
     }
 }
