@@ -1,20 +1,27 @@
 /* ==========================================================================
-   Norma Hana - Luxury Editorial Thank-You Page
+   Norma Hana - Luxury Editorial Thank-You Page (order-received)
+   High-end Dribbble Split 2-Column Layout
    ========================================================================== */
 
-/* Redundant Elementor / Page Heading */
+/* Redundant Elementor / Page Heading Removal */
 body.woocommerce-order-received .elementor-element-3bf09db,
 body.woocommerce-order-received h1.entry-title,
 body.woocommerce-order-received .entry-header {
     display: none !important;
 }
 
+/* Base Container */
 .nh-thankyou-container {
-    max-width: 860px;
-    margin: 40px auto 80px;
-    padding: 0 20px;
+    max-width: 1040px;
+    margin: 40px auto 96px;
+    padding: 0 24px;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
     color: #2c2a29;
+    box-sizing: border-box;
+}
+
+.nh-thankyou-container * {
+    box-sizing: border-box;
 }
 
 /* Animations */
@@ -29,6 +36,21 @@ body.woocommerce-order-received .entry-header {
     }
 }
 
+@keyframes nhPulseHalo {
+    0% {
+        box-shadow: 0 0 0 0 rgba(26, 25, 24, 0.4);
+    }
+    70% {
+        box-shadow: 0 0 0 9px rgba(26, 25, 24, 0);
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(26, 25, 24, 0);
+    }
+}
+
+/* ==========================================================================
+   Hero & Header Section
+   ========================================================================== */
 .nh-thankyou-hero {
     text-align: center;
     margin-bottom: 40px;
@@ -41,16 +63,21 @@ body.woocommerce-order-received .entry-header {
     gap: 8px;
     padding: 6px 16px;
     border-radius: 9999px;
-    font-size: 13px;
+    font-size: 12px;
     font-weight: 600;
-    letter-spacing: 0.05em;
+    letter-spacing: 0.06em;
     text-transform: uppercase;
     margin-bottom: 20px;
+    transition: all 0.3s ease;
+}
+
+.nh-order-badge .nh-badge-icon {
+    flex-shrink: 0;
 }
 
 .nh-order-badge--confirmed {
     background: #edf5f0;
-    color: #22543d;
+    color: #1f5136;
     border: 1px solid #c6e2d1;
 }
 
@@ -67,68 +94,345 @@ body.woocommerce-order-received .entry-header {
 }
 
 .nh-thankyou-hero h1 {
-    font-family: "Cormorant", "Playfair Display", Georgia, serif;
-    font-size: clamp(28px, 4vw, 42px);
+    font-family: "Cormorant Garamond", "Cormorant", "Playfair Display", Georgia, serif;
+    font-size: clamp(28px, 4.2vw, 42px);
     font-weight: 500;
     line-height: 1.2;
     margin: 0 0 16px;
     color: #1a1918;
+    letter-spacing: -0.01em;
 }
 
-.nh-thankyou-hero p {
-    font-size: 16px;
-    line-height: 1.6;
+.nh-hero-subtitle {
+    font-size: 15px;
+    line-height: 1.65;
     color: #635f5c;
     max-width: 620px;
-    margin: 0 auto;
+    margin: 0 auto 28px;
 }
 
-/* Overview Receipt Grid */
-.nh-order-overview-grid {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 16px;
-    padding: 24px;
+/* Interactive Meta Pill Bar */
+.nh-meta-pill-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+}
+
+.nh-meta-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
     background: #fbfaf8;
     border: 1px solid #edebe7;
-    border-radius: 12px;
-    margin-bottom: 32px;
-    list-style: none;
-    animation: nhFadeInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.1s forwards;
+    border-radius: 9999px;
+    padding: 8px 16px;
+    font-size: 13px;
+    color: #4a4744;
 }
 
-.nh-overview-card {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-}
-
-.nh-overview-card__label {
-    font-size: 11px;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    color: #8a8580;
-    font-weight: 600;
-}
-
-.nh-overview-card__value {
-    font-size: 16px;
+.nh-meta-pill strong {
     color: #1a1918;
     font-weight: 600;
 }
 
-/* WhatsApp Concierge Card */
+.nh-meta-pill .nh-meta-icon {
+    color: #8a8580;
+    flex-shrink: 0;
+}
+
+/* Copy-to-clipboard Micro-interaction */
+.nh-copy-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    background: #edebe7;
+    border: none;
+    border-radius: 6px;
+    padding: 3px 8px;
+    margin-left: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    color: #55514e;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    outline: none;
+}
+
+.nh-copy-btn:hover {
+    background: #e2ded8;
+    color: #1a1918;
+}
+
+.nh-copy-btn .nh-copy-icon--success {
+    display: none;
+    color: #1f5136;
+}
+
+.nh-copy-btn.is-copied {
+    background: #edf5f0;
+    color: #1f5136;
+    border: 1px solid #c6e2d1;
+}
+
+.nh-copy-btn.is-copied .nh-copy-icon--default {
+    display: none;
+}
+
+.nh-copy-btn.is-copied .nh-copy-icon--success {
+    display: inline-block;
+}
+
+/* Failed Order Hero & Actions */
+.nh-thankyou-hero--failed .nh-failed-actions {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    margin-top: 24px;
+}
+
+.nh-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 22px;
+    border-radius: 8px;
+    font-size: 13.5px;
+    font-weight: 600;
+    text-decoration: none !important;
+    transition: all 0.2s ease;
+}
+
+.nh-btn--primary {
+    background: #1a1918;
+    color: #ffffff !important;
+}
+
+.nh-btn--primary:hover {
+    background: #33302d;
+    transform: translateY(-1px);
+}
+
+.nh-btn--secondary {
+    background: #f5f3ef;
+    color: #1a1918 !important;
+    border: 1px solid #edebe7;
+}
+
+.nh-btn--secondary:hover {
+    background: #eae7e2;
+}
+
+/* ==========================================================================
+   Split 2-Column Grid Layout
+   ========================================================================== */
+.nh-thankyou-split-grid {
+    display: grid;
+    grid-template-columns: 1.15fr 0.85fr;
+    gap: 36px;
+    align-items: start;
+    animation: nhFadeInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.1s forwards;
+}
+
+/* Card Eyebrows */
+.nh-card-eyebrow {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #8a8580;
+    margin: 0 0 18px;
+}
+
+/* ==========================================================================
+   Left Column: Workshop Stepper Card
+   ========================================================================== */
+.nh-stepper-card {
+    background: #ffffff;
+    border: 1px solid #edebe7;
+    border-radius: 14px;
+    padding: 26px 28px;
+    margin-bottom: 24px;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.02);
+}
+
+.nh-stepper {
+    display: flex;
+    flex-direction: column;
+}
+
+.nh-step {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+}
+
+.nh-step__indicator {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: all 0.3s ease;
+}
+
+.nh-step.is-completed .nh-step__indicator {
+    background: #edf5f0;
+    border: 1.5px solid #a3d4b6;
+    color: #1f5136;
+}
+
+.nh-step.is-active .nh-step__indicator {
+    background: #1a1918;
+    color: #ffffff;
+    animation: nhPulseHalo 2s infinite;
+}
+
+.nh-step.is-upcoming .nh-step__indicator {
+    background: #fbfaf8;
+    border: 1.5px solid #e5e0d8;
+    color: #a5a09a;
+}
+
+.nh-step__pulse-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: #ffffff;
+}
+
+.nh-step__number {
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.nh-step-rail {
+    width: 2px;
+    height: 24px;
+    background: #edebe7;
+    margin: 3px 0 3px 15px;
+    transition: background 0.3s ease;
+}
+
+.nh-step-rail.is-active {
+    background: #a3d4b6;
+}
+
+.nh-step__content {
+    flex: 1;
+    padding-top: 4px;
+}
+
+.nh-step__title {
+    margin: 0 0 3px;
+    font-size: 15px;
+    font-weight: 600;
+    color: #1a1918;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.nh-step__tag {
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.02em;
+    background: #f5f3ef;
+    border: 1px solid #edebe7;
+    color: #635f5c;
+    padding: 2px 8px;
+    border-radius: 4px;
+}
+
+.nh-step__desc {
+    margin: 0;
+    font-size: 13px;
+    line-height: 1.5;
+    color: #6b6661;
+}
+
+/* ==========================================================================
+   Left Column: Payment Gateway Card
+   ========================================================================== */
+.nh-gateway-card {
+    background: #fbfaf8;
+    border: 1px solid #edebe7;
+    border-left: 3px solid #1a1918;
+    border-radius: 12px;
+    padding: 20px 24px;
+    margin-bottom: 24px;
+}
+
+.nh-gateway-card__header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+    color: #1a1918;
+}
+
+.nh-gateway-card__header h4 {
+    margin: 0;
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+}
+
+.nh-gateway-card__body {
+    font-size: 13.5px;
+    line-height: 1.6;
+    color: #4a4744;
+}
+
+.nh-gateway-card__body p {
+    margin: 0 0 8px;
+}
+
+.nh-gateway-card__body p:last-child {
+    margin-bottom: 0;
+}
+
+/* ==========================================================================
+   Left Column: WhatsApp VIP Concierge Card
+   ========================================================================== */
 .nh-whatsapp-card {
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 20px;
-    background: #f5f3ef;
-    border: 1px solid #e5e0d8;
-    border-radius: 12px;
-    padding: 20px 24px;
-    margin-bottom: 40px;
-    animation: nhFadeInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.2s forwards;
+    background: #fbfaf8;
+    border: 1px solid #edebe7;
+    border-radius: 14px;
+    padding: 22px 26px;
+    margin-bottom: 24px;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.02);
+}
+
+.nh-whatsapp-card__badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: #edf5f0;
+    color: #1f5136;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    padding: 3px 10px;
+    border-radius: 9999px;
+    margin-bottom: 8px;
+}
+
+.nh-whatsapp-card__dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #25d366;
 }
 
 .nh-whatsapp-card__info h4 {
@@ -141,6 +445,7 @@ body.woocommerce-order-received .entry-header {
 .nh-whatsapp-card__info p {
     margin: 0;
     font-size: 13px;
+    line-height: 1.5;
     color: #635f5c;
 }
 
@@ -156,14 +461,16 @@ body.woocommerce-order-received .entry-header {
     font-size: 13px;
     font-weight: 600;
     letter-spacing: 0.02em;
-    transition: all 0.2s ease;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
     white-space: nowrap;
+    flex-shrink: 0;
 }
 
 .nh-whatsapp-btn:hover {
     background: #33302d;
     color: #ffffff !important;
     transform: translateY(-1px);
+    box-shadow: 0 4px 14px rgba(26, 25, 24, 0.16);
 }
 
 .nh-whatsapp-btn,
@@ -177,140 +484,426 @@ body.woocommerce-order-received .entry-header {
     width: 18px;
     height: 18px;
     flex-shrink: 0;
-    display: inline-block;
 }
 
-/* Payment Gateway Instructions */
-.nh-thankyou-container > p:not(.woocommerce-notice):not(.nh-thankyou-hero p),
-.woocommerce-order-details__payment-instructions {
-    background: #fbfaf8;
-    border: 1px solid #edebe7;
-    border-left: 3px solid #2c2a29;
-    padding: 16px 20px;
-    font-size: 14px;
-    line-height: 1.6;
-    color: #4a4744;
-    border-radius: 8px;
-    margin: 0 0 32px;
-}
-
-/* Section Titles */
-.nh-thankyou-container h2.woocommerce-order-details__title,
-.nh-thankyou-container h2.woocommerce-column__title,
-.nh-thankyou-container .woocommerce-order-details h2,
-.nh-thankyou-container .woocommerce-customer-details h2 {
-    font-family: "Cormorant", "Playfair Display", Georgia, serif;
-    font-size: 22px;
-    font-weight: 500;
-    letter-spacing: 0.05em;
-    text-transform: uppercase;
-    color: #1a1918;
-    margin: 0 0 20px;
-}
-
-/* Semantic Purchased Items Table Styling */
-.nh-thankyou-container .woocommerce-table--order-details {
-    width: 100%;
-    border: 1px solid #edebe7;
-    border-radius: 12px;
-    border-collapse: separate;
-    border-spacing: 0;
-    overflow: hidden;
+/* ==========================================================================
+   Left Column: Customer Delivery & Contact Card
+   ========================================================================== */
+.nh-customer-card {
     background: #ffffff;
-    margin-bottom: 32px;
+    border: 1px solid #edebe7;
+    border-radius: 14px;
+    padding: 24px 28px;
+    margin-bottom: 24px;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.02);
 }
 
-.nh-thankyou-container .woocommerce-table--order-details thead th {
-    background: #fbfaf8;
+.nh-customer-card__grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+
+.nh-customer-info-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+}
+
+.nh-customer-info-item--full {
+    grid-column: span 2;
+}
+
+.nh-customer-info-item__icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    background: #f7f5f2;
+    border: 1px solid #edebe7;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #635f5c;
+    flex-shrink: 0;
+}
+
+.nh-customer-info-item__content {
+    flex: 1;
+    min-width: 0;
+}
+
+.nh-customer-info-item__label {
     font-size: 11px;
+    font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.06em;
+    color: #8a8580;
+    display: block;
+    margin-bottom: 3px;
+}
+
+.nh-customer-info-item__name {
+    font-size: 14px;
+    font-weight: 600;
+    color: #1a1918;
+    display: block;
+    margin-bottom: 2px;
+}
+
+.nh-customer-info-item__value {
+    font-size: 13.5px;
+    line-height: 1.5;
+    color: #4a4744;
+    display: block;
+}
+
+.nh-customer-info-item__sub {
+    font-size: 12.5px;
+    color: #8a8580;
+    display: block;
+    margin-top: 2px;
+}
+
+.nh-customer-info-item__link {
+    font-size: 13.5px;
+    font-weight: 500;
+    color: #1a1918;
+    text-decoration: none;
+    transition: color 0.2s ease;
+    word-break: break-all;
+}
+
+.nh-customer-info-item__link:hover {
+    color: #8c5b08;
+    text-decoration: underline;
+}
+
+/* ==========================================================================
+   Left Column: Craft Stamp
+   ========================================================================== */
+.nh-craft-stamp {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 16px 20px;
+    background: #faf8f5;
+    border: 1px dashed #e2ded8;
+    border-radius: 10px;
+    color: #7a7570;
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: 0.03em;
+    text-align: center;
+}
+
+.nh-craft-stamp__icon {
+    color: #9a948e;
+    flex-shrink: 0;
+}
+
+/* ==========================================================================
+   Right Column: Boutique Receipt Card
+   ========================================================================== */
+.nh-receipt-card {
+    position: sticky;
+    top: 32px;
+    background: #ffffff;
+    border: 1px solid #edebe7;
+    border-radius: 16px;
+    padding: 28px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+}
+
+.nh-receipt-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.nh-receipt-header .nh-card-eyebrow {
+    margin: 0;
+}
+
+.nh-receipt-item-count {
+    font-size: 12px;
     font-weight: 600;
     color: #8a8580;
-    padding: 16px 20px;
-    border-bottom: 1px solid #edebe7;
-    text-align: left;
+    background: #f5f3ef;
+    padding: 3px 10px;
+    border-radius: 9999px;
 }
 
-.nh-thankyou-container .woocommerce-table--order-details thead th.product-total {
-    text-align: right;
+/* Visual Items List */
+.nh-receipt-items {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
 }
 
-.nh-thankyou-container .woocommerce-table--order-details tbody td {
-    padding: 16px 20px;
-    border-bottom: 1px solid #f5f3ef;
-    font-size: 14px;
-    line-height: 1.5;
-    color: #2c2a29;
+.nh-receipt-item {
+    display: flex;
+    align-items: center;
+    gap: 14px;
 }
 
-.nh-thankyou-container .woocommerce-table--order-details tbody td.product-total {
-    text-align: right;
-    font-weight: 500;
+.nh-receipt-item__media {
+    position: relative;
+    width: 64px;
+    height: 64px;
+    flex-shrink: 0;
 }
 
-.nh-thankyou-container .woocommerce-table--order-details tbody tr:last-child td {
-    border-bottom: 1px solid #edebe7;
-}
-
-.nh-thankyou-container .woocommerce-table--order-details tfoot th,
-.nh-thankyou-container .woocommerce-table--order-details tfoot td {
-    padding: 14px 20px;
-    border-bottom: 1px solid #f5f3ef;
-    font-size: 14px;
-}
-
-.nh-thankyou-container .woocommerce-table--order-details tfoot th {
-    font-weight: 500;
-    color: #635f5c;
-    text-align: left;
-}
-
-.nh-thankyou-container .woocommerce-table--order-details tfoot td {
-    text-align: right;
-    color: #1a1918;
-    font-weight: 500;
-}
-
-.nh-thankyou-container .woocommerce-table--order-details tfoot tr:last-child th,
-.nh-thankyou-container .woocommerce-table--order-details tfoot tr:last-child td {
-    border-bottom: none;
-    font-weight: 600;
-    font-size: 15px;
-    color: #1a1918;
-    background: #fbfaf8;
-}
-
-/* Customer Details / Billing Address */
-.nh-thankyou-container .woocommerce-customer-details {
-    background: #fbfaf8;
+.nh-receipt-item__thumb {
+    width: 100%;
+    height: 100%;
+    border-radius: 10px;
+    overflow: hidden;
     border: 1px solid #edebe7;
-    border-radius: 12px;
-    padding: 24px;
-    margin-bottom: 32px;
+    background: #fcfbfa;
 }
 
-.nh-thankyou-container .woocommerce-customer-details address {
-    font-style: normal;
-    line-height: 1.8;
+.nh-receipt-item__thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.nh-receipt-item__qty {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: #1a1918;
+    color: #ffffff;
+    font-size: 10px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid #ffffff;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.nh-receipt-item__details {
+    flex: 1;
+    min-width: 0;
+}
+
+.nh-receipt-item__title {
+    margin: 0 0 4px;
     font-size: 14px;
-    color: #55514e;
-    margin: 0;
-    padding: 0;
+    font-weight: 600;
+    color: #1a1918;
+    line-height: 1.35;
+    word-break: break-word;
 }
 
-/* Mobile Responsive */
-@media (max-width: 768px) {
-    .nh-order-overview-grid {
-        grid-template-columns: repeat(2, 1fr);
-        gap: 20px;
+.nh-receipt-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.nh-receipt-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    font-size: 11px;
+    background: #f5f3ef;
+    border: 1px solid #edebe7;
+    padding: 2px 7px;
+    border-radius: 4px;
+}
+
+.nh-receipt-pill__label {
+    color: #8a8580;
+    font-weight: 500;
+}
+
+.nh-receipt-pill__val {
+    color: #1a1918;
+    font-weight: 600;
+}
+
+.nh-receipt-item__subtotal {
+    font-size: 14px;
+    font-weight: 600;
+    color: #1a1918;
+    text-align: right;
+    flex-shrink: 0;
+}
+
+/* Divider */
+.nh-receipt-divider {
+    border-top: 1px dashed #e2ded8;
+    margin: 22px 0 18px;
+}
+
+/* Financial Breakdown */
+.nh-receipt-breakdown {
+    display: flex;
+    flex-direction: column;
+    gap: 11px;
+}
+
+.nh-receipt-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 13.5px;
+    color: #635f5c;
+}
+
+.nh-receipt-label {
+    color: #635f5c;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.nh-receipt-value {
+    color: #1a1918;
+    font-weight: 500;
+    text-align: right;
+}
+
+.nh-receipt-discount-row {
+    color: #1f5136;
+}
+
+.nh-receipt-coupon-pill {
+    font-size: 10px;
+    font-weight: 700;
+    background: #edf5f0;
+    border: 1px solid #c6e2d1;
+    color: #1f5136;
+    padding: 2px 6px;
+    border-radius: 4px;
+    letter-spacing: 0.04em;
+}
+
+.nh-receipt-discount-value {
+    color: #1f5136;
+    font-weight: 600;
+}
+
+.nh-receipt-total-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    border-top: 1px solid #edebe7;
+    padding-top: 16px;
+    margin-top: 6px;
+}
+
+.nh-receipt-total-label {
+    font-size: 15px;
+    font-weight: 600;
+    color: #1a1918;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.nh-receipt-total-value {
+    font-family: "Cormorant Garamond", "Cormorant", Georgia, serif;
+    font-size: 26px;
+    font-weight: 600;
+    color: #1a1918;
+    line-height: 1;
+}
+
+/* Action CTA */
+.nh-receipt-cta-wrap {
+    margin-top: 24px;
+}
+
+.nh-shop-return-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    background: #1a1918;
+    color: #ffffff !important;
+    padding: 14px 20px;
+    border-radius: 10px;
+    font-size: 13.5px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    text-decoration: none !important;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.nh-shop-return-btn:hover {
+    background: #33302d;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 14px rgba(26, 25, 24, 0.16);
+}
+
+.nh-shop-return-btn__arrow {
+    transition: transform 0.2s ease;
+}
+
+.nh-shop-return-btn:hover .nh-shop-return-btn__arrow {
+    transform: translateX(4px);
+}
+
+/* ==========================================================================
+   Responsive Adaptations
+   ========================================================================== */
+@media (max-width: 900px) {
+    .nh-thankyou-split-grid {
+        grid-template-columns: 1fr;
+        gap: 32px;
     }
+
+    .nh-receipt-card {
+        position: static;
+    }
+
+    .nh-customer-card__grid {
+        grid-template-columns: 1fr;
+    }
+
+    .nh-customer-info-item--full {
+        grid-column: span 1;
+    }
+}
+
+@media (max-width: 600px) {
+    .nh-thankyou-container {
+        margin: 24px auto 60px;
+        padding: 0 16px;
+    }
+
+    .nh-stepper-card,
+    .nh-whatsapp-card,
+    .nh-customer-card,
+    .nh-receipt-card {
+        padding: 20px;
+    }
+
     .nh-whatsapp-card {
         flex-direction: column;
         align-items: flex-start;
     }
+
     .nh-whatsapp-btn {
         width: 100%;
+        justify-content: center;
+    }
+
+    .nh-meta-pill-bar {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .nh-meta-pill {
         justify-content: center;
     }
 }
@@ -318,8 +911,8 @@ body.woocommerce-order-received .entry-header {
 /* Accessibility: Reduced Motion */
 @media (prefers-reduced-motion: reduce) {
     .nh-thankyou-hero,
-    .nh-order-overview-grid,
-    .nh-whatsapp-card {
+    .nh-thankyou-split-grid,
+    .nh-step.is-active .nh-step__indicator {
         animation: none !important;
         opacity: 1 !important;
         transform: none !important;

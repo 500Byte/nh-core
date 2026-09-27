@@ -59,12 +59,17 @@ class NH_Core_Elementor {
         // ===== Filtro de Variaciones en Pills para Tabla de Checkout =====
         add_filter( 'woocommerce_cart_item_name', [ $this, 'checkout_variation_pills_filter' ], 10, 3 );
 
+        // ===== Unhook native plain order details table from thankyou page =====
+        add_action( 'woocommerce_before_thankyou', [ $this, 'remove_native_thankyou_table' ], 5 );
+
         // ===== Override Plantilla de Resumen de Pedido (Table-less) =====
         add_filter( 'woocommerce_locate_template', [ $this, 'locate_checkout_templates' ], 10, 3 );
         remove_action( 'woocommerce_checkout_order_review', 'woocommerce_checkout_payment', 20 );
 
-        // ===== Permitir renderizar el Thank-You page sin bloqueo de verificación de email con order_key válido =====
+        // ===== Permitir renderizar el Thank-You page sin bloqueo de verificación de email o login con order_key válido =====
         add_filter( 'woocommerce_order_email_verification_required', [ $this, 'filter_email_verification_required' ], 10, 3 );
+        add_filter( 'woocommerce_order_received_verify_known_shoppers', [ $this, 'filter_verify_known_shoppers' ], 10, 1 );
+        add_filter( 'user_has_cap', [ $this, 'filter_order_received_cap' ], 10, 3 );
     }
 
     private function load_live_counter_modules() {
@@ -341,11 +346,15 @@ class NH_Core_Elementor {
         }
 
         if ( is_checkout() && ! empty( is_wc_endpoint_url( 'order-received' ) ) ) {
+            // Remove legacy plain WooCommerce table from thankyou action hook
+            remove_action( 'woocommerce_thankyou', 'woocommerce_order_details_table', 10 );
+
+            $css_file = NH_CORE_PATH . 'assets/css/nh-thankyou.css';
             wp_enqueue_style(
                 'nh-thankyou-style',
                 NH_CORE_URL . 'assets/css/nh-thankyou.css',
                 [ 'dashicons' ],
-                NH_CORE_VERSION
+                file_exists( $css_file ) ? filemtime( $css_file ) : NH_CORE_VERSION
             );
 
             global $wp;
@@ -448,6 +457,10 @@ class NH_Core_Elementor {
     }
 
     public function locate_checkout_templates( $template, $template_name, $template_path ) {
+        if ( 'checkout/thankyou.php' === $template_name ) {
+            remove_action( 'woocommerce_thankyou', 'woocommerce_order_details_table', 10 );
+        }
+
         $overrides = [
             'checkout/review-order.php' => NH_CORE_PATH . 'templates/checkout/review-order.php',
             'checkout/payment.php'      => NH_CORE_PATH . 'templates/checkout/payment.php',
@@ -462,6 +475,40 @@ class NH_Core_Elementor {
         }
 
         return $template;
+    }
+
+    public function remove_native_thankyou_table() {
+        remove_action( 'woocommerce_thankyou', 'woocommerce_order_details_table', 10 );
+    }
+
+    public function filter_verify_known_shoppers( $verify ) {
+        if ( isset( $_GET['key'] ) ) {
+            global $wp;
+            $order_id = isset( $wp->query_vars['order-received'] ) ? absint( $wp->query_vars['order-received'] ) : 0;
+            if ( ! $order_id && ! empty( $_SERVER['REQUEST_URI'] ) && preg_match( '/order-received\/(\d+)/', $_SERVER['REQUEST_URI'], $m ) ) {
+                $order_id = absint( $m[1] );
+            }
+            if ( $order_id > 0 ) {
+                $order = wc_get_order( $order_id );
+                if ( $order && hash_equals( $order->get_order_key(), sanitize_text_field( wp_unslash( $_GET['key'] ) ) ) ) {
+                    return false;
+                }
+            }
+        }
+        return $verify;
+    }
+
+    public function filter_order_received_cap( $allcaps, $caps, $args ) {
+        if ( isset( $args[0], $args[2] ) && 'view_order' === $args[0] ) {
+            $order_id = absint( $args[2] );
+            if ( $order_id > 0 && isset( $_GET['key'] ) ) {
+                $order = wc_get_order( $order_id );
+                if ( $order && hash_equals( $order->get_order_key(), sanitize_text_field( wp_unslash( $_GET['key'] ) ) ) ) {
+                    $allcaps['view_order'] = true;
+                }
+            }
+        }
+        return $allcaps;
     }
 
     public function filter_email_verification_required( $required, $order, $context ) {
