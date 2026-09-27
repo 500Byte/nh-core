@@ -53,6 +53,9 @@ class NH_Core_Elementor {
         add_action( 'elementor/editor/after_enqueue_styles', [ $this, 'shopify_checkout_register_assets' ] );
         add_action( 'wp_enqueue_scripts', [ $this, 'shopify_checkout_register_assets' ] );
 
+        // ===== Registrar assets de NH Thank You Page (Anti-FOUC & Status Poller) =====
+        add_action( 'wp_enqueue_scripts', [ $this, 'enqueue_frontend_scripts' ] );
+
         // ===== Filtro de Variaciones en Pills para Tabla de Checkout =====
         add_filter( 'woocommerce_cart_item_name', [ $this, 'checkout_variation_pills_filter' ], 10, 3 );
 
@@ -324,6 +327,44 @@ class NH_Core_Elementor {
             time(),
             true
         );
+    }
+
+    /**
+     * Anti-FOUC conditional enqueuing for Thank You (order-received) page.
+     */
+    public function enqueue_frontend_scripts() {
+        if ( ! function_exists( 'is_checkout' ) || ! function_exists( 'is_wc_endpoint_url' ) ) {
+            return;
+        }
+
+        if ( is_checkout() && ! empty( is_wc_endpoint_url( 'order-received' ) ) ) {
+            wp_enqueue_style(
+                'nh-thankyou-style',
+                NH_CORE_URL . 'assets/css/nh-thankyou.css',
+                [ 'dashicons' ],
+                NH_CORE_VERSION
+            );
+
+            global $wp;
+            $order_id = isset( $wp->query_vars['order-received'] ) ? absint( $wp->query_vars['order-received'] ) : 0;
+            if ( $order_id > 0 ) {
+                $order = wc_get_order( $order_id );
+                if ( $order && $order->has_status( [ 'pending', 'on-hold' ] ) ) {
+                    wp_enqueue_script(
+                        'nh-thankyou-poll',
+                        NH_CORE_URL . 'assets/js/nh-thankyou-poll.js',
+                        [],
+                        NH_CORE_VERSION,
+                        true
+                    );
+                    wp_localize_script( 'nh-thankyou-poll', 'nhThankYouParams', [
+                        'order_id'   => $order_id,
+                        'order_key'  => $order->get_order_key(),
+                        'status_url' => rest_url( 'nh/v1/order-status/' . $order_id ),
+                    ] );
+                }
+            }
+        }
     }
 
     public function menu_cart_fragments() {
