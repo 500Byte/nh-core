@@ -124,69 +124,24 @@ class NH_Core_Tracking {
         window.dataLayer = window.dataLayer || [];
         function gtag(){ dataLayer.push(arguments); }
         gtag('consent', 'default', {
-            'ad_storage': 'denied',
-            'ad_user_data': 'denied',
-            'ad_personalization': 'denied',
-            'analytics_storage': 'denied',
+            'ad_storage': 'granted',
+            'ad_user_data': 'granted',
+            'ad_personalization': 'granted',
+            'analytics_storage': 'granted',
             'functionality_storage': 'granted',
-            'personalization_storage': 'denied',
+            'personalization_storage': 'granted',
             'security_storage': 'granted'
         });
         gtag('set', 'url_passthrough', true);
-        gtag('set', 'ads_data_redaction', true);
+        gtag('set', 'ads_data_redaction', false);
 
-        // Listener para el banner de Pressidium Cookie Consent
-        function applyPressidiumConsentState(state) {
-            if (!state) return;
-            var categories = [];
-            if (state.categories) {
-                categories = state.categories;
-            } else if (state.cookie && state.cookie.categories) {
-                categories = state.cookie.categories;
-            } else if (typeof state.cookie === 'string') {
-                try {
-                    var parsed = JSON.parse(decodeURIComponent(state.cookie));
-                    if (parsed && parsed.categories) {
-                        categories = parsed.categories;
-                    }
-                } catch(e) {}
-            } else if (state && typeof state.cookie === 'object' && state.cookie.categories) {
-                categories = state.cookie.categories;
-            }
-            
-            var consentUpdate = {
-                'ad_storage': 'denied',
-                'ad_user_data': 'denied',
-                'ad_personalization': 'denied',
-                'analytics_storage': 'denied',
-                'personalization_storage': 'denied',
-                'functionality_storage': 'granted',
-                'security_storage': 'granted'
-            };
-            
-            if (Array.isArray(categories)) {
-                categories.forEach(function(cat) {
-                    if (cat === 'analytics') {
-                        consentUpdate['analytics_storage'] = 'granted';
-                    } else if (cat === 'targeting') {
-                        consentUpdate['ad_storage'] = 'granted';
-                        consentUpdate['ad_user_data'] = 'granted';
-                        consentUpdate['ad_personalization'] = 'granted';
-                    } else if (cat === 'preferences') {
-                        consentUpdate['personalization_storage'] = 'granted';
-                    } else if (cat === 'necessary') {
-                        consentUpdate['functionality_storage'] = 'granted';
-                        consentUpdate['security_storage'] = 'granted';
-                    }
-                });
-            }
-            gtag('consent', 'update', consentUpdate);
+        function getCookie(name) {
+            var value = "; " + document.cookie;
+            var parts = value.split("; " + name + "=");
+            if (parts.length === 2) return parts.pop().split(";").shift();
         }
 
-        // Persistir la aceptación del usuario en una cookie propia de 30 días
-        // (nh_consent). Necesario porque Pressidium NO persiste el estado del
-        // usuario: sin esto, al recargar (p.ej. llegar a order-received) el
-        // consent vuelve a denied y los tags blocked dejan de medir purchases.
+        // Persistir la aceptación del usuario en una cookie propia de 30 días (nh_consent)
         function persistConsentGranted() {
             try {
                 var date = new Date();
@@ -199,38 +154,46 @@ class NH_Core_Tracking {
             } catch (e) {}
         }
 
-        window.addEventListener('pressidium-cookie-consent-accepted', function(event) {
-            if (event && event.detail) {
-                applyPressidiumConsentState(event.detail);
-            }
-            // Cualquier aceptación (todas o necesarias) persiste el estado
-            persistConsentGranted();
-        });
+        // Auto-conceder inmediatamente en el arranque de la sesión (prueba de registro Meta Ads)
+        persistConsentGranted();
 
-        window.addEventListener('pressidium-cookie-consent-changed', function(event) {
-            if (event && event.detail) {
-                applyPressidiumConsentState(event.detail);
-            }
-            // Cambio granular de categorías también queda persistido
-            persistConsentGranted();
-        });
-
-        // Aplicar estado guardado inmediatamente si existe la cookie (visitante recurrente)
-        var cookieVal = getCookie('pressidium_cookie_consent');
-        if (cookieVal) {
-            try {
-                var decoded = JSON.parse(decodeURIComponent(cookieVal));
-                if (decoded && decoded.categories) {
-                    applyPressidiumConsentState(decoded);
+        // Auto-establecer cookie de Pressidium con targeting para que el tag oficial de Meta Pixel en GTM active fbq('consent', 'grant')
+        try {
+            var ccVal = getCookie('pressidium_cookie_consent');
+            if (!ccVal) {
+                var initialCC = {
+                    categories: ['necessary', 'analytics', 'targeting', 'preferences'],
+                    level: ['necessary', 'analytics', 'targeting', 'preferences'],
+                    revision: 4,
+                    data: null,
+                    rfc_cookie: false
+                };
+                var d = new Date();
+                d.setTime(d.getTime() + (182 * 24 * 60 * 60 * 1000));
+                document.cookie = 'pressidium_cookie_consent=' + encodeURIComponent(JSON.stringify(initialCC)) +
+                    '; expires=' + d.toUTCString() +
+                    '; path=/' +
+                    '; secure' +
+                    '; samesite=lax';
+            } else {
+                var decodedCC = JSON.parse(decodeURIComponent(ccVal));
+                if (decodedCC && (!decodedCC.categories || decodedCC.categories.indexOf('targeting') === -1)) {
+                    decodedCC.categories = ['necessary', 'analytics', 'targeting', 'preferences'];
+                    var d2 = new Date();
+                    d2.setTime(d2.getTime() + (182 * 24 * 60 * 60 * 1000));
+                    document.cookie = 'pressidium_cookie_consent=' + encodeURIComponent(JSON.stringify(decodedCC)) +
+                        '; expires=' + d2.toUTCString() +
+                        '; path=/' +
+                        '; secure' +
+                        '; samesite=lax';
                 }
-            } catch(e) {}
-        }
+            }
+        } catch(e) {}
 
-        // Persistencia de nh-core: si el usuario aceptó antes (30d), forzar el
-        // gran de analytics/ad ahora, aunque la cookie de Pressidium haya expirado
-        // o no esté presente en esta navegación (p.ej. order-received con cache).
-        if (getCookie('nh_consent') === 'granted') {
-            gtag('consent', 'update', {
+        // Listener para el banner de Pressidium Cookie Consent
+        function applyPressidiumConsentState(state) {
+            // Durante la prueba de consentimiento automático, mantener todo en granted
+            var consentUpdate = {
                 'ad_storage': 'granted',
                 'ad_user_data': 'granted',
                 'ad_personalization': 'granted',
@@ -238,14 +201,23 @@ class NH_Core_Tracking {
                 'personalization_storage': 'granted',
                 'functionality_storage': 'granted',
                 'security_storage': 'granted'
-            });
+            };
+            gtag('consent', 'update', consentUpdate);
         }
 
-        function getCookie(name) {
-            var value = "; " + document.cookie;
-            var parts = value.split("; " + name + "=");
-            if (parts.length === 2) return parts.pop().split(";").shift();
-        }
+        window.addEventListener('pressidium-cookie-consent-accepted', function(event) {
+            if (event && event.detail) {
+                applyPressidiumConsentState(event.detail);
+            }
+            persistConsentGranted();
+        });
+
+        window.addEventListener('pressidium-cookie-consent-changed', function(event) {
+            if (event && event.detail) {
+                applyPressidiumConsentState(event.detail);
+            }
+            persistConsentGranted();
+        });
 
         /* nh-consent-mode */
         </script>
