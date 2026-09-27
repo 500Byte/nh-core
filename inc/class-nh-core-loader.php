@@ -24,9 +24,9 @@ class NH_Core_Loader {
     }
 
     private function load_dependencies() {
-        // Carga de submódulo de tracking de forma segura
-        require_once NH_CORE_PATH . 'inc/class-nh-core-tracking.php';
-        \NH_Core_Tracking::get_instance();
+        // Submódulo de tracking desacoplado — migrado a PixelYourSite Pro (Meta Pixel + CAPI + GA4)
+        // require_once NH_CORE_PATH . 'inc/class-nh-core-tracking.php';
+        // \NH_Core_Tracking::get_instance();
 
         // Diagnóstico de Estilo (shortcode [nh_diagnostico_estilo])
         require_once NH_CORE_PATH . 'inc/class-nh-core-diagnostico.php';
