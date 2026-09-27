@@ -15,7 +15,11 @@ function nh_inject_auto_consent_mode() {
     <!-- NH Auto-Consent Mode (Global Granted) -->
     <script>
     window.dataLayer = window.dataLayer || [];
-    function gtag(){ dataLayer.push(arguments); }
+    window.dataLayerPYS = window.dataLayerPYS || [];
+    function gtag(){ 
+        window.dataLayer.push(arguments); 
+        window.dataLayerPYS.push(arguments); 
+    }
     gtag('consent', 'default', {
         'ad_storage': 'granted',
         'ad_user_data': 'granted',
