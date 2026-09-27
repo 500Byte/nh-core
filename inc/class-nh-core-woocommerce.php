@@ -767,20 +767,23 @@ class NH_Core_Woocommerce {
         $order_key = sanitize_text_field( $request->get_param( 'key' ) );
         $order     = wc_get_order( $order_id );
 
-        if ( ! $order || $order->get_order_key() !== $order_key ) {
+        if ( ! $order || ! hash_equals( (string) $order->get_order_key(), (string) $order_key ) ) {
             return new WP_Error( 'rest_forbidden', 'Acceso no autorizado al pedido.', [ 'status' => 403 ] );
         }
 
         $status  = $order->get_status();
         $is_paid = $order->is_paid() || in_array( $status, [ 'processing', 'completed' ], true );
 
-        return rest_ensure_response( [
+        $response = rest_ensure_response( [
             'order_id'    => $order_id,
             'status'      => $status,
             'is_paid'     => $is_paid,
             'badge_text'  => $is_paid ? 'Pedido Confirmado' : ( in_array( $status, [ 'pending', 'on-hold' ], true ) ? 'Validación Bancaria en Curso' : 'Pago no completado' ),
             'badge_class' => $is_paid ? 'nh-order-badge--confirmed' : ( in_array( $status, [ 'pending', 'on-hold' ], true ) ? 'nh-order-badge--pending' : 'nh-order-badge--failed' ),
         ] );
+        $response->header( 'Cache-Control', 'no-cache, must-revalidate, max-age=0' );
+
+        return $response;
     }
 }
 
