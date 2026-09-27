@@ -596,6 +596,7 @@ class NH_Side_Cart_Widget extends \Elementor\Widget_Base {
                     <ul class="nh-side-cart__items<?php echo WC()->cart->is_empty() ? ' nh-side-cart__items--hidden' : ''; ?>">
                         <?php foreach ( WC()->cart->get_cart() as $key => $item ) :
                             $product   = $item['data'];
+                            $product_id = ! empty( $item['variation_id'] ) ? $item['variation_id'] : $item['product_id'];
                             $qty       = $item['quantity'];
                             $line_tot  = $item['line_total'];
                             $img       = wp_get_attachment_image_url( $product->get_image_id(), 'woocommerce_thumbnail' );
