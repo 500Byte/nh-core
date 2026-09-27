@@ -2,6 +2,13 @@
    Norma Hana - Luxury Editorial Thank-You Page
    ========================================================================== */
 
+/* Redundant Elementor / Page Heading */
+body.woocommerce-order-received .elementor-element-3bf09db,
+body.woocommerce-order-received h1.entry-title,
+body.woocommerce-order-received .entry-header {
+    display: none !important;
+}
+
 .nh-thankyou-container {
     max-width: 860px;
     margin: 40px auto 80px;
@@ -155,29 +162,141 @@
 
 .nh-whatsapp-btn:hover {
     background: #33302d;
+    color: #ffffff !important;
     transform: translateY(-1px);
+}
+
+.nh-whatsapp-btn,
+.nh-whatsapp-btn *,
+.nh-whatsapp-btn span {
+    color: #ffffff !important;
+    fill: #ffffff !important;
+}
+
+.nh-whatsapp-btn svg {
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
+    display: inline-block;
+}
+
+/* Payment Gateway Instructions */
+.nh-thankyou-container > p:not(.woocommerce-notice):not(.nh-thankyou-hero p),
+.woocommerce-order-details__payment-instructions {
+    background: #fbfaf8;
+    border: 1px solid #edebe7;
+    border-left: 3px solid #2c2a29;
+    padding: 16px 20px;
+    font-size: 14px;
+    line-height: 1.6;
+    color: #4a4744;
+    border-radius: 8px;
+    margin: 0 0 32px;
+}
+
+/* Section Titles */
+.nh-thankyou-container h2.woocommerce-order-details__title,
+.nh-thankyou-container h2.woocommerce-column__title,
+.nh-thankyou-container .woocommerce-order-details h2,
+.nh-thankyou-container .woocommerce-customer-details h2 {
+    font-family: "Cormorant", "Playfair Display", Georgia, serif;
+    font-size: 22px;
+    font-weight: 500;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: #1a1918;
+    margin: 0 0 20px;
 }
 
 /* Semantic Purchased Items Table Styling */
 .nh-thankyou-container .woocommerce-table--order-details {
+    width: 100%;
     border: 1px solid #edebe7;
     border-radius: 12px;
+    border-collapse: separate;
+    border-spacing: 0;
     overflow: hidden;
     background: #ffffff;
     margin-bottom: 32px;
 }
 
-.nh-thankyou-container .woocommerce-table--order-details th,
-.nh-thankyou-container .woocommerce-table--order-details td {
+.nh-thankyou-container .woocommerce-table--order-details thead th {
+    background: #fbfaf8;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-weight: 600;
+    color: #8a8580;
     padding: 16px 20px;
-    border-bottom: 1px solid #f0ede8;
+    border-bottom: 1px solid #edebe7;
+    text-align: left;
 }
 
+.nh-thankyou-container .woocommerce-table--order-details thead th.product-total {
+    text-align: right;
+}
+
+.nh-thankyou-container .woocommerce-table--order-details tbody td {
+    padding: 16px 20px;
+    border-bottom: 1px solid #f5f3ef;
+    font-size: 14px;
+    line-height: 1.5;
+    color: #2c2a29;
+}
+
+.nh-thankyou-container .woocommerce-table--order-details tbody td.product-total {
+    text-align: right;
+    font-weight: 500;
+}
+
+.nh-thankyou-container .woocommerce-table--order-details tbody tr:last-child td {
+    border-bottom: 1px solid #edebe7;
+}
+
+.nh-thankyou-container .woocommerce-table--order-details tfoot th,
+.nh-thankyou-container .woocommerce-table--order-details tfoot td {
+    padding: 14px 20px;
+    border-bottom: 1px solid #f5f3ef;
+    font-size: 14px;
+}
+
+.nh-thankyou-container .woocommerce-table--order-details tfoot th {
+    font-weight: 500;
+    color: #635f5c;
+    text-align: left;
+}
+
+.nh-thankyou-container .woocommerce-table--order-details tfoot td {
+    text-align: right;
+    color: #1a1918;
+    font-weight: 500;
+}
+
+.nh-thankyou-container .woocommerce-table--order-details tfoot tr:last-child th,
+.nh-thankyou-container .woocommerce-table--order-details tfoot tr:last-child td {
+    border-bottom: none;
+    font-weight: 600;
+    font-size: 15px;
+    color: #1a1918;
+    background: #fbfaf8;
+}
+
+/* Customer Details / Billing Address */
 .nh-thankyou-container .woocommerce-customer-details {
     background: #fbfaf8;
     border: 1px solid #edebe7;
     border-radius: 12px;
     padding: 24px;
+    margin-bottom: 32px;
+}
+
+.nh-thankyou-container .woocommerce-customer-details address {
+    font-style: normal;
+    line-height: 1.8;
+    font-size: 14px;
+    color: #55514e;
+    margin: 0;
+    padding: 0;
 }
 
 /* Mobile Responsive */
