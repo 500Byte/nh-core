@@ -1,9 +1,12 @@
 /**
- * NH Add to Cart — Buy Now + AJAX ATC handler
+ * NH Add to Cart — Buy Now + AJAX ATC handler with Self-Healing UX
  *
  * 1. Buy Now: intercepts .nh-add-to-cart__buy-now clicks
  * 2. AJAX ATC: intercepts form.cart submit on single product pages
  *    (Elementor breaks WC's native wc-add-to-cart.js event handlers)
+ * 3. Self-Healing UX: prevents silent failures when variations are unselected;
+ *    triggers gentle shake animation, smooth viewport scroll, and luxury toast feedback.
+ * 4. Error & Out-of-Stock resilience: full toast feedback on AJAX errors.
  *
  * Fires standard WooCommerce/jQuery events so external layers
  * (GTM, GA4, Pixel, side cart) can listen via added_to_cart.
@@ -48,6 +51,286 @@
         return _pendingNonce;
     }
 
+    /* ── Luxury Toast Notification System (Zero-Dependency) ─────────────── */
+    function showNhToast(message, type) {
+        type = type || 'warning';
+
+        var container = document.getElementById('nh-toast-container');
+        if (!container) {
+            container = document.createElement('div');
+            container.id = 'nh-toast-container';
+            container.className = 'nh-toast-container';
+            container.setAttribute('aria-live', 'polite');
+            document.body.appendChild(container);
+        }
+
+        // Evitar duplicados consecutivos con el mismo mensaje; reactivar atención con shake
+        var existingToasts = container.querySelectorAll('.nh-toast');
+        for (var i = 0; i < existingToasts.length; i++) {
+            var msgEl = existingToasts[i].querySelector('.nh-toast__message');
+            if (msgEl && msgEl.textContent === message) {
+                triggerShake(existingToasts[i]);
+                return existingToasts[i];
+            }
+        }
+
+        var toast = document.createElement('div');
+        toast.className = 'nh-toast nh-toast--' + type;
+        toast.setAttribute('role', 'alert');
+
+        var iconSvg = '';
+        if (type === 'warning') {
+            iconSvg = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>';
+        } else if (type === 'error') {
+            iconSvg = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>';
+        } else {
+            iconSvg = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>';
+        }
+
+        toast.innerHTML =
+            '<span class="nh-toast__icon" aria-hidden="true">' + iconSvg + '</span>' +
+            '<span class="nh-toast__message">' + message + '</span>' +
+            '<button type="button" class="nh-toast__close" aria-label="Cerrar">&times;</button>';
+
+        var dismissTimeout = null;
+        var isDismissed = false;
+
+        function dismiss() {
+            if (isDismissed) return;
+            isDismissed = true;
+            clearTimeout(dismissTimeout);
+            toast.classList.add('nh-toast--hiding');
+            setTimeout(function () {
+                if (toast.parentNode) {
+                    toast.parentNode.removeChild(toast);
+                }
+            }, 260);
+        }
+
+        var closeBtn = toast.querySelector('.nh-toast__close');
+        if (closeBtn) {
+            closeBtn.addEventListener('click', function (e) {
+                e.preventDefault();
+                e.stopPropagation();
+                dismiss();
+            });
+        }
+
+        // Auto-dismiss tras 4 segundos
+        dismissTimeout = setTimeout(dismiss, 4000);
+
+        // Pausar auto-dismiss al hacer hover
+        toast.addEventListener('mouseenter', function () {
+            clearTimeout(dismissTimeout);
+        });
+        toast.addEventListener('mouseleave', function () {
+            if (!isDismissed) {
+                dismissTimeout = setTimeout(dismiss, 2500);
+            }
+        });
+
+        container.appendChild(toast);
+        return toast;
+    }
+
+    // Exponer globalmente para interoperabilidad
+    window.showNhToast = showNhToast;
+
+    /* ── Animación y helpers de viewport ─────────────────────────────────── */
+    function triggerShake(el) {
+        if (!el) return;
+        el.classList.remove('nh-atc-shake');
+        void el.offsetWidth; // Forzar reflow para reiniciar keyframes
+        el.classList.add('nh-atc-shake');
+        setTimeout(function () {
+            el.classList.remove('nh-atc-shake');
+        }, 450);
+    }
+
+    function isElementInViewport(el) {
+        if (!el) return true;
+        var rect = el.getBoundingClientRect();
+        var windowHeight = window.innerHeight || document.documentElement.clientHeight;
+        return (rect.top >= 70 && rect.bottom <= windowHeight - 70);
+    }
+
+    /* ── Validación y Self-Healing de Variaciones ─────────────────────────── */
+    function validateVariableForm(form) {
+        if (!form || !form.classList.contains('variations_form')) {
+            return { valid: true, missing: [] };
+        }
+
+        var variationInput = form.querySelector('input[name="variation_id"]');
+        var variationId = variationInput ? parseInt(variationInput.value, 10) || 0 : 0;
+        var selects = form.querySelectorAll('.variations select');
+        var missing = [];
+
+        selects.forEach(function (select) {
+            if (!select.value) {
+                var row = select.closest('tr') || select.closest('.nh-variation-row') || select.parentElement;
+                var labelEl = row ? row.querySelector('th.label label, .label label, label') : null;
+                var labelText = labelEl ? labelEl.textContent.trim().replace(/:$/, '') : '';
+                if (!labelText) {
+                    var rawName = select.name.replace(/^attribute_pa_/, '').replace(/^attribute_/, '');
+                    labelText = rawName.charAt(0).toUpperCase() + rawName.slice(1);
+                }
+                var wrapper = select.closest('.woo-variation-items-wrapper') ||
+                              (row ? row.querySelector('.woo-variation-items-wrapper') : null) ||
+                              select.parentElement;
+
+                missing.push({
+                    select: select,
+                    row: row,
+                    wrapper: wrapper,
+                    label: labelText
+                });
+            }
+        });
+
+        var atcBtn = form.querySelector('.single_add_to_cart_button');
+        var isSelectionNeeded = atcBtn && (
+            atcBtn.classList.contains('wc-variation-selection-needed') ||
+            atcBtn.classList.contains('disabled')
+        );
+
+        if (missing.length > 0 || variationId === 0 || isSelectionNeeded) {
+            return { valid: false, missing: missing, variationId: variationId };
+        }
+
+        return { valid: true, missing: [], variationId: variationId };
+    }
+
+    function initHighlightCleanup(form) {
+        if (form._nhHighlightCleanupInit) return;
+        form._nhHighlightCleanupInit = true;
+
+        form.addEventListener('change', function (e) {
+            if (e.target && e.target.matches('.variations select')) {
+                var row = e.target.closest('tr') || e.target.parentElement;
+                var wrapper = e.target.closest('.woo-variation-items-wrapper') ||
+                              (row ? row.querySelector('.woo-variation-items-wrapper') : null);
+                if (wrapper) wrapper.classList.remove('nh-variation-highlight');
+                if (row) row.classList.remove('nh-variation-highlight');
+            }
+        });
+
+        form.addEventListener('click', function (e) {
+            var swatch = e.target.closest('.variable-item, .woo-variation-raw-variable-item');
+            if (swatch) {
+                var wrapper = swatch.closest('.woo-variation-items-wrapper') || swatch.closest('td') || swatch.closest('tr');
+                if (wrapper) wrapper.classList.remove('nh-variation-highlight');
+            }
+        });
+    }
+
+    function handleMissingAttributes(form, missing) {
+        missing = missing || [];
+        var toastMsg = '';
+
+        if (missing.length === 1) {
+            var label = missing[0].label.trim();
+            var lower = label.toLowerCase();
+            if (lower.indexOf('talla') !== -1) {
+                toastMsg = 'Por favor selecciona tu talla antes de continuar.';
+            } else if (lower.indexOf('color') !== -1) {
+                toastMsg = 'Por favor selecciona tu color antes de continuar.';
+            } else {
+                toastMsg = 'Por favor selecciona ' + lower + ' antes de continuar.';
+            }
+        } else if (missing.length > 1) {
+            var labels = missing.map(function (m) { return m.label.toLowerCase(); });
+            toastMsg = 'Por favor selecciona tu ' + labels.join(' y ') + ' antes de continuar.';
+        } else {
+            toastMsg = 'Por favor selecciona tu talla antes de continuar.';
+        }
+
+        var varContainer = form.querySelector('.nh-add-to-cart__variations') || form.querySelector('.variations');
+
+        var scrollTarget = null;
+        if (missing.length > 0) {
+            missing.forEach(function (item) {
+                var target = item.wrapper || item.row;
+                if (target) {
+                    target.classList.add('nh-variation-highlight');
+                    triggerShake(target);
+                    if (!scrollTarget) scrollTarget = target;
+                }
+            });
+        }
+
+        if (varContainer) {
+            triggerShake(varContainer);
+            if (!scrollTarget) scrollTarget = varContainer;
+        }
+
+        // Scroll suave si la sección de variaciones o swatch está fuera de viewport
+        if (scrollTarget && !isElementInViewport(scrollTarget)) {
+            scrollTarget.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+
+        // Toast de lujo editorial
+        showNhToast(toastMsg, 'warning');
+
+        // Cleanup listener para quitar el highlight al interactuar
+        initHighlightCleanup(form);
+    }
+
+    /* ── Click Interceptor en Fase de Captura ─────────────────────────────── */
+    // Garantiza que los clics en botones de ATC / Buy Now cuando faltan opciones
+    // nunca fallen silenciosamente, ni muestren el window.alert nativo de WC.
+    document.addEventListener('click', function (e) {
+        var btn = e.target.closest('.single_add_to_cart_button, .nh-add-to-cart__buy-now, .nh-add-to-cart__button, .nh-add-to-cart__buy-now-wrapper');
+        if (!btn) return;
+
+        var form = btn.closest('form.cart');
+        if (!form || !form.classList.contains('variations_form')) return;
+
+        // Si ya está en proceso de carga, no interferir
+        if (btn.classList.contains('loading') || btn.classList.contains('nh-add-to-cart__buy-now--loading')) return;
+
+        var validation = validateVariableForm(form);
+        if (!validation.valid) {
+            e.preventDefault();
+            e.stopPropagation();
+            e.stopImmediatePropagation();
+            handleMissingAttributes(form, validation.missing);
+            return false;
+        }
+    }, true);
+
+    /* ── Mantener interactividad de botones (evitar disabled nativo de navegador) ── */
+    function initButtonInteractivity() {
+        document.querySelectorAll('form.variations_form').forEach(function (form) {
+            var atcBtn = form.querySelector('.single_add_to_cart_button');
+            if (!atcBtn) return;
+
+            var _syncing = false;
+            var ensureClickable = function () {
+                if (_syncing) return;
+                _syncing = true;
+                try {
+                    var isLoading = atcBtn.classList.contains('loading');
+                    if (atcBtn.hasAttribute('disabled') && !isLoading) {
+                        atcBtn.removeAttribute('disabled');
+                        atcBtn.setAttribute('aria-disabled', 'true');
+                    }
+                } finally {
+                    _syncing = false;
+                }
+            };
+
+            ensureClickable();
+
+            var observer = new MutationObserver(ensureClickable);
+            observer.observe(atcBtn, {
+                attributes: true,
+                attributeFilter: ['class', 'disabled'],
+            });
+        });
+    }
+
+    document.addEventListener('DOMContentLoaded', initButtonInteractivity);
+
     /* ── AJAX Add to Cart (reemplaza wc-add-to-cart.js roto por Elementor) ── */
     function initAjaxATC() {
         if (typeof jQuery === 'undefined') return;
@@ -60,15 +343,27 @@
             if (this.dataset.nhAtcAjax === 'true') return;
 
             var $form = $(this);
+            var formEl = this;
             var $btn  = $form.find('.single_add_to_cart_button');
 
-            if (!$btn.length || $btn.hasClass('disabled')) return;
+            if (!$btn.length) return;
+
+            // Validación defensiva en submit para productos variables
+            if (formEl.classList.contains('variations_form')) {
+                var validation = validateVariableForm(formEl);
+                if (!validation.valid) {
+                    e.preventDefault();
+                    e.stopImmediatePropagation();
+                    handleMissingAttributes(formEl, validation.missing);
+                    return false;
+                }
+            }
 
             e.preventDefault();
 
             var productId   = parseInt($form.find('input[name="product_id"], button[name="add-to-cart"]').val()) || 0;
             var variationId = parseInt($form.find('input[name="variation_id"]').val()) || 0;
-            var quantity    = parseInt($form.find('input.qty').val()) || 1;
+            var quantity    = parseInt($form.find('input.qty, .nh-qty__input').val()) || 1;
 
             // Para productos variables, recoger variaciones
             var variations = {};
@@ -85,12 +380,12 @@
                     type: 'POST',
                     url:  (window.nh_cart_params || {}).ajax_url || '/wp-admin/admin-ajax.php',
                     data: {
-                        action:      'nh_add_to_cart',
-                        nonce:       nonce,
-                        product_id:  productId,
+                        action:       'nh_add_to_cart',
+                        nonce:        nonce,
+                        product_id:   productId,
                         variation_id: variationId,
-                        quantity:    quantity,
-                        variations:  variations,
+                        quantity:     quantity,
+                        variations:   variations,
                     },
                 });
             }).then(function (res) {
@@ -104,10 +399,21 @@
                     ]);
                     $(document.body).trigger('wc_fragment_refresh');
                 } else {
+                    var errorMsg = (res && res.data && res.data.message)
+                        ? res.data.message
+                        : 'Lo sentimos, esta combinación se encuentra agotada temporalmente.';
+                    showNhToast(errorMsg, 'error');
                     $(document.body).trigger('wc_fragment_refresh');
                 }
-            }).catch(function () {
+            }).catch(function (err) {
                 $btn.removeClass('loading').prop('disabled', false);
+                console.warn('[NH ATC Failure]', {
+                    error: err,
+                    productId: productId,
+                    variationId: variationId,
+                    context: 'initAjaxATC'
+                });
+                showNhToast('Hubo un inconveniente al conectar con el servidor. Por favor intenta de nuevo.', 'error');
             });
         });
     }
@@ -126,6 +432,9 @@
             var $form   = $(this);
             var price   = variation.display_price;
             var varId   = variation.variation_id;
+
+            // Limpiar highlights de advertencia
+            $form.find('.nh-variation-highlight').removeClass('nh-variation-highlight');
 
             // Actualizar ATC button
             $form.find('.single_add_to_cart_button')
@@ -157,20 +466,41 @@
 
     document.addEventListener('DOMContentLoaded', initVariationSync);
 
+    /* ── Buy Now Button Handler ──────────────────────────────────────────── */
     document.addEventListener('DOMContentLoaded', function () {
         var buttons = document.querySelectorAll('.nh-add-to-cart__buy-now');
         if (!buttons.length) return;
 
         buttons.forEach(function (btn) {
-            var form = btn.closest('form.cart');
+            var form = btn.closest('form.cart') || document.querySelector('form.variations_form.cart');
             if (!form) return;
 
-            // ── Sync disabled state with ATC button ──────────────────────
+            // ── Sync disabled/aria-disabled state with ATC button ────────
             var atcBtn = form.querySelector('.single_add_to_cart_button');
             if (atcBtn) {
+                var _isSyncing = false;
                 var syncDisabled = function () {
-                    var isDisabled = atcBtn.disabled || atcBtn.classList.contains('disabled');
-                    btn.disabled = isDisabled;
+                    if (_isSyncing) return;
+                    _isSyncing = true;
+                    try {
+                        var isNeeded = atcBtn.classList.contains('wc-variation-selection-needed') || atcBtn.classList.contains('disabled');
+                        var isLoading = atcBtn.classList.contains('loading');
+
+                        if (atcBtn.hasAttribute('disabled') && !isLoading) {
+                            atcBtn.removeAttribute('disabled');
+                            atcBtn.setAttribute('aria-disabled', 'true');
+                        }
+
+                        if (isLoading) {
+                            btn.disabled = true;
+                        } else {
+                            btn.disabled = false;
+                            btn.setAttribute('aria-disabled', isNeeded ? 'true' : 'false');
+                            btn.classList.toggle('disabled', isNeeded);
+                        }
+                    } finally {
+                        _isSyncing = false;
+                    }
                 };
 
                 // Initial sync
@@ -188,13 +518,24 @@
             btn.addEventListener('click', function (e) {
                 e.preventDefault();
 
-                if (btn.disabled) return;
+                if (btn.classList.contains('nh-add-to-cart__buy-now--loading')) return;
+
+                var isVariable = btn.dataset.isVariable === 'true' || form.classList.contains('variations_form');
+
+                if (isVariable) {
+                    var validation = validateVariableForm(form);
+                    if (!validation.valid) {
+                        e.stopPropagation();
+                        e.stopImmediatePropagation();
+                        handleMissingAttributes(form, validation.missing);
+                        return;
+                    }
+                }
 
                 var qtyInput = form.querySelector('.nh-qty__input, input.qty');
                 var quantity = qtyInput ? parseInt(qtyInput.value) || 1 : 1;
 
-                var productId   = parseInt(btn.dataset.nhProductId) || 0;
-                var isVariable  = btn.dataset.isVariable === 'true';
+                var productId   = parseInt(btn.dataset.nhProductId) || parseInt((form.querySelector('input[name="product_id"]') || {}).value) || 0;
                 var variationId = 0;
                 var variations  = {};
 
@@ -206,7 +547,10 @@
                         if (select.value) variations[select.name] = select.value;
                     });
 
-                    if (!variationId) return;
+                    if (!variationId) {
+                        showNhToast('Lo sentimos, esta combinación no se encuentra disponible.', 'warning');
+                        return;
+                    }
                 }
 
                 btn.classList.add('nh-add-to-cart__buy-now--loading');
@@ -225,7 +569,8 @@
                         });
                     }
 
-                    return fetch(window.nh_cart_params.ajax_url, {
+                    var ajaxUrl = (window.nh_cart_params && window.nh_cart_params.ajax_url) || '/wp-admin/admin-ajax.php';
+                    return fetch(ajaxUrl, {
                         method: 'POST',
                         body: formData,
                         credentials: 'same-origin',
@@ -233,7 +578,13 @@
                 })
                     .then(function (res) {
                         if (!res.success) {
-                            throw new Error(res.data && res.data.message ? res.data.message : 'Error');
+                            var errMsg = (res.data && res.data.message)
+                                ? res.data.message
+                                : 'Lo sentimos, esta combinación se encuentra agotada temporalmente.';
+                            showNhToast(errMsg, 'error');
+                            btn.classList.remove('nh-add-to-cart__buy-now--loading');
+                            btn.disabled = false;
+                            return;
                         }
 
                         if (typeof jQuery !== 'undefined') {
@@ -252,14 +603,15 @@
                         }, 150);
                     })
                     .catch(function (err) {
-                        console.error('[NH Buy Now]', err);
+                        console.warn('[NH ATC Failure]', {
+                            error: err,
+                            productId: productId,
+                            variationId: variationId,
+                            context: 'BuyNow'
+                        });
+                        showNhToast('Hubo un inconveniente al conectar con el servidor. Por favor intenta de nuevo.', 'error');
                         btn.classList.remove('nh-add-to-cart__buy-now--loading');
-                        // Re-sync with ATC state instead of hard-enabling
-                        if (atcBtn) {
-                            syncDisabled();
-                        } else {
-                            btn.disabled = false;
-                        }
+                        btn.disabled = false;
                     });
             });
         });
