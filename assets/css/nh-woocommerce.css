@@ -3271,3 +3271,33 @@ select option {
     }
 }
 
+/* ==========================================================================
+   SUPPRESIÓN DE WIDGETS FLOTANTES EXTERNOS (CRO & CONFLICT PREVENTION)
+   ========================================================================== */
+
+/* ── Suppress intrusive floating WhatsApp on checkout, cart, and thank-you ── */
+body.woocommerce-checkout .wa__btn_popup,
+body.woocommerce-checkout .wa__popup_chat_box,
+body.woocommerce-checkout #nta-whatsapp-chat,
+body.woocommerce-checkout .njt-whatsapp-popup,
+body.woocommerce-checkout .nta-whatsapp-default-avatar,
+body.woocommerce-checkout #wa,
+body.woocommerce-cart .wa__btn_popup,
+body.woocommerce-cart .wa__popup_chat_box,
+body.woocommerce-cart #nta-whatsapp-chat,
+body.woocommerce-cart .njt-whatsapp-popup,
+body.woocommerce-cart .nta-whatsapp-default-avatar,
+body.woocommerce-cart #wa,
+body.woocommerce-order-received .wa__btn_popup,
+body.woocommerce-order-received .wa__popup_chat_box,
+body.woocommerce-order-received #nta-whatsapp-chat,
+body.woocommerce-order-received .njt-whatsapp-popup,
+body.woocommerce-order-received .nta-whatsapp-default-avatar,
+body.woocommerce-order-received #wa {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+}
+
+

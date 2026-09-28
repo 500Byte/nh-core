@@ -918,3 +918,19 @@ body.woocommerce-order-received .entry-header {
         transform: none !important;
     }
 }
+
+/* ==========================================================================
+   Suppression of floating WhatsApp widget on Thank You page
+   ========================================================================== */
+body.woocommerce-order-received .wa__btn_popup,
+body.woocommerce-order-received .wa__popup_chat_box,
+body.woocommerce-order-received #nta-whatsapp-chat,
+body.woocommerce-order-received .njt-whatsapp-popup,
+body.woocommerce-order-received .nta-whatsapp-default-avatar,
+body.woocommerce-order-received #wa {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+}
+

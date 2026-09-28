@@ -24,6 +24,7 @@ class NH_Core_Woocommerce {
         add_action( 'pre_get_posts', [ $this, 'apply_price_filter_to_all_queries' ], 99 );
         add_action( 'wp_enqueue_scripts', [ $this, 'register_assets' ] );
         add_action( 'wp_enqueue_scripts', [ $this, 'dequeue_conflicting_styles' ], 999 );
+        add_filter( 'njt_whatsapp_hide_widget', [ $this, 'maybe_hide_whatsapp_widget' ], 10, 5 );
         add_filter( 'woocommerce_locate_template', [ $this, 'locate_quantity_input_template' ], 10, 3 );
 
         // Hooks de invalidación de transients al modificar productos
@@ -276,7 +277,28 @@ class NH_Core_Woocommerce {
         // Variation Swatches plugin — conflicts with our product image sizing
         wp_dequeue_style( 'wc-swatches-style' );
         wp_dequeue_style( 'wc-swatches-front' );
+
+        // NinjaTeam WhatsApp for WordPress — suprimir scripts y estilos en checkout/cart/order-received
+        wp_dequeue_style( 'nta-css-popup' );
+        wp_dequeue_script( 'nta-js-global' );
+        wp_dequeue_script( 'nta-js-popup' );
+        wp_dequeue_script( 'nta-wa-libs' );
     }
+
+    /**
+     * Oculta el widget flotante de WhatsApp en checkout, carrito y páginas de confirmación de pedido.
+     * Hook filter: njt_whatsapp_hide_widget
+     *
+     * @param bool $hide
+     * @return bool
+     */
+    public function maybe_hide_whatsapp_widget( $hide ) {
+        if ( is_cart() || is_checkout() || is_wc_endpoint_url() ) {
+            return true;
+        }
+        return $hide;
+    }
+
 
     public function locate_quantity_input_template( $template, $template_name, $template_path ) {
         if ( 'global/quantity-input.php' === $template_name ) {

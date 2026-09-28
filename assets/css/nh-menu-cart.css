@@ -532,3 +532,17 @@
 body.nh-side-cart-open {
     overflow: hidden;
 }
+
+/* ─── Suppress floating WhatsApp widget when Side Cart is open ─── */
+body.nh-side-cart-open .wa__btn_popup,
+body.nh-side-cart-open .wa__popup_chat_box,
+body.nh-side-cart-open #nta-whatsapp-chat,
+body.nh-side-cart-open .njt-whatsapp-popup,
+body.nh-side-cart-open .nta-whatsapp-default-avatar,
+body.nh-side-cart-open #wa {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+}
+
