@@ -15,6 +15,7 @@ class NH_Core_Woocommerce {
 
     private function __construct() {
         $this->init_hooks();
+        $this->maybe_schedule_daily_briefing();
     }
 
     private function init_hooks() {
@@ -76,6 +77,14 @@ class NH_Core_Woocommerce {
 
         // Telemetría de excepciones críticas de servidor en Checkout (P0)
         add_action( 'woocommerce_checkout_order_exception', [ $this, 'notify_checkout_exception' ], 10, 2 );
+
+        // Notificaciones operativas a Telegram (Venta confirmada, Inventario crítico y Reporte diario)
+        add_action( 'woocommerce_order_status_processing', [ $this, 'notify_new_confirmed_sale' ], 10, 1 );
+        add_action( 'woocommerce_order_status_completed', [ $this, 'notify_new_confirmed_sale' ], 10, 1 );
+        add_action( 'woocommerce_low_stock', [ $this, 'notify_low_stock' ], 10, 1 );
+        add_action( 'woocommerce_no_stock', [ $this, 'notify_no_stock' ], 10, 1 );
+        add_action( 'init', [ $this, 'maybe_schedule_daily_briefing' ] );
+        add_action( 'nh_daily_morning_briefing', [ $this, 'send_daily_morning_briefing' ] );
     }
 
     /**
@@ -1123,6 +1132,281 @@ class NH_Core_Woocommerce {
         ];
 
         $this->send_telegram_notification( $payload );
+    }
+
+    /**
+     * Notificación de nueva venta confirmada hacia Telegram.
+     * Hooks: woocommerce_order_status_processing, woocommerce_order_status_completed
+     *
+     * @param int|WC_Order $order_or_id Instancia o ID de la orden.
+     */
+    public function notify_new_confirmed_sale( $order_or_id ) {
+        $order = $order_or_id instanceof WC_Order ? $order_or_id : wc_get_order( $order_or_id );
+        if ( ! $order ) {
+            return;
+        }
+
+        $order_id = $order->get_id();
+
+        // Chequeo anti-duplicación: evitar alertas dobles entre processing y completed
+        if ( $order->get_meta( '_nh_telegram_sale_notified' ) ) {
+            return;
+        }
+
+        // Extracción de datos
+        $order_total   = html_entity_decode( wp_strip_all_tags( $order->get_formatted_order_total() ), ENT_QUOTES, 'UTF-8' );
+        $customer_name = trim( $order->get_formatted_billing_full_name() );
+        if ( empty( $customer_name ) ) {
+            $customer_name = 'Clienta';
+        }
+
+        $city     = $order->get_billing_city();
+        $state    = $order->get_billing_state();
+        $location = $city . ( $state ? ', ' . $state : '' );
+
+        $payment_method  = $order->get_payment_method_title() ?: 'Pasarela';
+        $shipping_method = $order->get_shipping_method() ?: 'Estándar';
+
+        // Detalle de items con variaciones
+        $items_summary = [];
+        foreach ( $order->get_items() as $item ) {
+            $item_name = $item->get_name();
+            $item_qty  = $item->get_quantity();
+            $attrs     = [];
+            if ( is_callable( [ $item, 'get_meta_data' ] ) ) {
+                foreach ( $item->get_meta_data() as $meta ) {
+                    $key = (string) $meta->key;
+                    if ( str_starts_with( $key, 'pa_' ) || in_array( strtolower( $key ), [ 'talla', 'color', 'size' ], true ) ) {
+                        $label   = wc_attribute_label( $key );
+                        $attrs[] = $label . ': ' . $meta->value;
+                    }
+                }
+            }
+            $line = '• ' . $item_qty . 'x ' . esc_html( $item_name );
+            if ( ! empty( $attrs ) ) {
+                $line .= ' (' . esc_html( implode( ', ', $attrs ) ) . ')';
+            }
+            $items_summary[] = $line;
+        }
+        $items_text = ! empty( $items_summary ) ? implode( "\n", $items_summary ) : '• Sin detalles de productos';
+
+        $admin_url = admin_url( 'post.php?post=' . $order_id . '&action=edit' );
+
+        $lines   = [];
+        $lines[] = '<b>Pedido:</b> #' . $order_id . ' (' . esc_html( $order_total ) . ')';
+        $lines[] = '<b>Cliente:</b> ' . esc_html( $customer_name );
+        if ( ! empty( $location ) ) {
+            $lines[] = '<b>Destino:</b> ' . esc_html( $location );
+        }
+        $lines[] = '<b>Medio de Pago:</b> ' . esc_html( $payment_method );
+        $lines[] = '<b>Envío:</b> ' . esc_html( $shipping_method );
+        $lines[] = '';
+        $lines[] = '<b>Prendas adquiridas:</b>';
+        $lines[] = $items_text;
+        $lines[] = '';
+        $lines[] = '🔗 <a href="' . esc_url( $admin_url ) . '">Gestionar Pedido en WP Admin</a>';
+
+        $payload = [
+            'channel' => 'marketing',
+            'level'   => 'success',
+            'title'   => '🎉 ¡Nueva Venta Confirmada en Norma Hana!',
+            'message' => implode( "\n", $lines ),
+            'chat_id' => '-5244885992',
+        ];
+
+        $sent = $this->send_telegram_notification( $payload );
+
+        // Persistir metadato para bloquear notificaciones duplicadas
+        $order->update_meta_data( '_nh_telegram_sale_notified', time() );
+        $order->save();
+
+        if ( $sent ) {
+            $order->add_order_note( __( '[NH Telegram] Notificación de nueva venta confirmada enviada a Telegram.', 'nh-core' ) );
+        }
+    }
+
+    /**
+     * Notificación de stock bajo en inventario.
+     * Hook: woocommerce_low_stock
+     *
+     * @param WC_Product $product Producto o variación con stock bajo.
+     */
+    public function notify_low_stock( $product ) {
+        $this->send_stock_alert( $product, 'low' );
+    }
+
+    /**
+     * Notificación de producto agotado en tienda.
+     * Hook: woocommerce_no_stock
+     *
+     * @param WC_Product $product Producto o variación sin stock.
+     */
+    public function notify_no_stock( $product ) {
+        $this->send_stock_alert( $product, 'no' );
+    }
+
+    /**
+     * Enrutador central de alertas de inventario crítico hacia Telegram.
+     *
+     * @param WC_Product $product Instancia del producto o variación.
+     * @param string     $type    Tipo de alerta ('low'|'no').
+     */
+    private function send_stock_alert( $product, string $type = 'low' ) {
+        if ( ! $product instanceof WC_Product ) {
+            return;
+        }
+
+        $is_variation  = $product->is_type( 'variation' );
+        $admin_post_id = $is_variation ? $product->get_parent_id() : $product->get_id();
+
+        if ( $is_variation ) {
+            $parent       = wc_get_product( $product->get_parent_id() );
+            $parent_title = $parent ? $parent->get_name() : $product->get_name();
+
+            $attrs = [];
+            foreach ( $product->get_variation_attributes() as $attr_name => $attr_value ) {
+                if ( ! empty( $attr_value ) ) {
+                    $taxonomy = str_replace( 'attribute_', '', $attr_name );
+                    $label    = wc_attribute_label( $taxonomy );
+                    $term     = taxonomy_exists( $taxonomy ) ? get_term_by( 'slug', $attr_value, $taxonomy ) : false;
+                    $val_name = $term ? $term->name : ucfirst( $attr_value );
+                    $attrs[]  = $label . ': ' . $val_name;
+                }
+            }
+            $product_title = ! empty( $attrs ) ? $parent_title . ' — ' . implode( ', ', $attrs ) : $product->get_formatted_name();
+        } else {
+            $product_title = $product->get_name();
+        }
+
+        $sku       = $product->get_sku() ?: 'Sin SKU';
+        $stock_qty = $product->get_stock_quantity();
+        $admin_url = admin_url( 'post.php?post=' . $admin_post_id . '&action=edit' );
+
+        $lines   = [];
+        $lines[] = '<b>Prenda:</b> ' . esc_html( $product_title );
+        $lines[] = '<b>SKU:</b> <code>' . esc_html( $sku ) . '</code>';
+
+        if ( 'no' === $type ) {
+            $level   = 'error';
+            $title   = '🚨 Prenda Agotada en Tienda';
+            $lines[] = '<b>Estado:</b> 0 unidades (Agotado)';
+            $lines[] = '';
+            $lines[] = '🔗 <a href="' . esc_url( $admin_url ) . '">Reabastecer en WP Admin</a>';
+        } else {
+            $level   = 'warning';
+            $title   = '⚠️ Stock Bajo en Inventario';
+            $lines[] = '<b>Unidades restantes:</b> ' . ( null !== $stock_qty ? (int) $stock_qty : 0 );
+            $lines[] = '';
+            $lines[] = '🔗 <a href="' . esc_url( $admin_url ) . '">Editar Inventario en WP Admin</a>';
+        }
+
+        $payload = [
+            'channel' => 'marketing',
+            'level'   => $level,
+            'title'   => $title,
+            'message' => implode( "\n", $lines ),
+            'chat_id' => '-5244885992',
+        ];
+
+        $this->send_telegram_notification( $payload );
+    }
+
+    /**
+     * Asegura la programación del briefing diario a las 8:00 AM (COT) en Action Scheduler.
+     * Hook: init / constructor
+     */
+    public function maybe_schedule_daily_briefing() {
+        if ( ! function_exists( 'as_has_scheduled_action' ) || ! function_exists( 'as_schedule_recurring_action' ) ) {
+            return;
+        }
+
+        if ( ! as_has_scheduled_action( 'nh_daily_morning_briefing' ) ) {
+            $tz     = new DateTimeZone( 'America/Bogota' );
+            $now    = new DateTime( 'now', $tz );
+            $target = new DateTime( 'today 08:00:00', $tz );
+            if ( $now >= $target ) {
+                $target->modify( '+1 day' );
+            }
+            $next_8am_timestamp = $target->getTimestamp();
+            as_schedule_recurring_action( $next_8am_timestamp, DAY_IN_SECONDS, 'nh_daily_morning_briefing', [], 'nh-reports' );
+        }
+    }
+
+    /**
+     * Genera y envía el reporte matutino de ventas a las 8:00 AM.
+     * Hook: nh_daily_morning_briefing
+     *
+     * @return bool True si la notificación se envió con éxito.
+     */
+    public function send_daily_morning_briefing() {
+        $tz = new DateTimeZone( 'America/Bogota' );
+        $yesterday_start = new DateTime( 'yesterday 00:00:00', $tz );
+        $yesterday_end   = new DateTime( 'yesterday 23:59:59', $tz );
+
+        // 1. Pedidos confirmados en la ventana de ayer (processing y completed)
+        $yesterday_orders = wc_get_orders( [
+            'status'        => [ 'processing', 'completed' ],
+            'date_created'  => $yesterday_start->getTimestamp() . '...' . $yesterday_end->getTimestamp(),
+            'limit'         => -1,
+        ] );
+
+        $order_count   = count( $yesterday_orders );
+        $total_sum     = 0.0;
+        $product_sales = [];
+
+        foreach ( $yesterday_orders as $order ) {
+            $total_sum += (float) $order->get_total();
+            foreach ( $order->get_items() as $item ) {
+                $name = $item->get_name();
+                $qty  = $item->get_quantity();
+                if ( ! isset( $product_sales[ $name ] ) ) {
+                    $product_sales[ $name ] = 0;
+                }
+                $product_sales[ $name ] += $qty;
+            }
+        }
+
+        arsort( $product_sales );
+        $top_product_text = 'Sin ventas registradas ayer';
+        if ( ! empty( $product_sales ) ) {
+            $top_name         = array_key_first( $product_sales );
+            $top_qty          = $product_sales[ $top_name ];
+            $top_product_text = esc_html( $top_name ) . ' (' . $top_qty . ' ud' . ( $top_qty > 1 ? 's' : '' ) . ')';
+        }
+
+        // 2. Pedidos pendientes por despachar en taller (actualmente en 'processing')
+        $processing_orders = wc_get_orders( [
+            'status' => 'processing',
+            'limit'  => -1,
+            'return' => 'ids',
+        ] );
+        $pending_dispatch_count = count( $processing_orders );
+
+        // 3. Formateo de total de ventas
+        $formatted_total = html_entity_decode( wp_strip_all_tags( wc_price( $total_sum ) ), ENT_QUOTES, 'UTF-8' );
+        if ( ! str_contains( $formatted_total, 'COP' ) ) {
+            $formatted_total .= ' COP';
+        }
+
+        $admin_orders_url = admin_url( 'edit.php?post_type=shop_order' );
+
+        // 4. Construcción del mensaje editorial
+        $lines   = [];
+        $lines[] = '• <b>Ventas de ayer:</b> ' . $order_count . ' pedido' . ( 1 === $order_count ? '' : 's' ) . ' (' . esc_html( $formatted_total ) . ')';
+        $lines[] = '• <b>Pendientes por despachar en taller:</b> ' . $pending_dispatch_count . ' pedido' . ( 1 === $pending_dispatch_count ? '' : 's' );
+        $lines[] = '• <b>Prenda más solicitada:</b> ' . $top_product_text;
+        $lines[] = '';
+        $lines[] = '📦 <a href="' . esc_url( $admin_orders_url ) . '">Gestionar Pedidos en WP Admin</a>';
+
+        $payload = [
+            'channel' => 'marketing',
+            'level'   => 'info',
+            'title'   => '☕ Buenos días, Atelier Norma Hana — Resumen de Ayer',
+            'message' => implode( "\n", $lines ),
+            'chat_id' => '-5244885992',
+        ];
+
+        return $this->send_telegram_notification( $payload );
     }
 
     /**
