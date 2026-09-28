@@ -69,6 +69,13 @@ class NH_Core_Woocommerce {
 
         // REST API: Order status endpoint para Thank-You page polling
         add_action( 'rest_api_init', [ $this, 'register_rest_routes' ] );
+
+        // Recuperación agnóstica de pedidos fallidos (P1 - Venta en Riesgo)
+        add_action( 'woocommerce_order_status_failed', [ $this, 'schedule_failed_order_recovery' ], 10, 1 );
+        add_action( 'nh_check_and_notify_failed_order', [ $this, 'process_failed_order_alert' ], 10, 1 );
+
+        // Telemetría de excepciones críticas de servidor en Checkout (P0)
+        add_action( 'woocommerce_checkout_order_exception', [ $this, 'notify_checkout_exception' ], 10, 2 );
     }
 
     /**
@@ -859,6 +866,316 @@ class NH_Core_Woocommerce {
         }
 
         return $data;
+    }
+
+    /**
+     * Programa la verificación de recuperación de pago fallido tras 12 minutos.
+     * Hook: woocommerce_order_status_failed
+     *
+     * @param int $order_id ID del pedido en estado failed.
+     */
+    public function schedule_failed_order_recovery( $order_id ) {
+        $order_id = absint( $order_id );
+        if ( ! $order_id ) {
+            return;
+        }
+
+        if ( ! function_exists( 'as_schedule_single_action' ) ) {
+            error_log( sprintf( '[NH Recuperación] Action Scheduler no disponible para programar orden #%d', $order_id ) );
+            return;
+        }
+
+        $args  = [ 'order_id' => $order_id ];
+        $group = 'nh-recovery';
+
+        if ( function_exists( 'as_has_scheduled_action' ) && as_has_scheduled_action( 'nh_check_and_notify_failed_order', $args, $group ) ) {
+            return;
+        }
+
+        $scheduled_time = time() + ( 12 * MINUTE_IN_SECONDS );
+        as_schedule_single_action( $scheduled_time, 'nh_check_and_notify_failed_order', $args, $group );
+
+        $order = wc_get_order( $order_id );
+        if ( $order ) {
+            $order->add_order_note( __( '[NH Recuperación] Tarea programada en 12 min para verificar recuperación de la clienta.', 'nh-core' ) );
+        }
+    }
+
+    /**
+     * Procesa la alerta de pedido fallido tras el periodo de espera (12 min).
+     * Aplica chequeo anti-autorrecuperación y emite alerta a Telegram para conserjería comercial.
+     * Hook: nh_check_and_notify_failed_order
+     *
+     * @param int|array $order_id ID de la orden o array de argumentos de Action Scheduler.
+     */
+    public function process_failed_order_alert( $order_id ) {
+        if ( is_array( $order_id ) && isset( $order_id['order_id'] ) ) {
+            $order_id = $order_id['order_id'];
+        }
+        $order_id = absint( $order_id );
+        if ( ! $order_id ) {
+            return;
+        }
+
+        $order = wc_get_order( $order_id );
+        if ( ! $order || 'failed' !== $order->get_status() ) {
+            return;
+        }
+
+        // Chequeo anti-autorrecuperación: verificar si la clienta ya completó una orden posterior
+        $email        = $order->get_billing_email();
+        $customer_id  = $order->get_customer_id();
+        $date_created = $order->get_date_created();
+        $timestamp    = $date_created ? $date_created->getTimestamp() : time();
+
+        if ( ! empty( $email ) ) {
+            $recent_paid = wc_get_orders( [
+                'billing_email' => $email,
+                'status'        => [ 'processing', 'completed' ],
+                'date_created'  => '>=' . ( $timestamp - 60 ),
+                'exclude'       => [ $order->get_id() ],
+                'limit'         => 1,
+            ] );
+            if ( ! empty( $recent_paid ) ) {
+                $order->add_order_note( sprintf(
+                    /* translators: %d: Order ID */
+                    __( '[NH Recuperación] Alerta omitida: la clienta ya completó con éxito una orden posterior #%d', 'nh-core' ),
+                    $recent_paid[0]->get_id()
+                ) );
+                return;
+            }
+        }
+
+        if ( $customer_id > 0 ) {
+            $recent_paid_customer = wc_get_orders( [
+                'customer_id'  => $customer_id,
+                'status'       => [ 'processing', 'completed' ],
+                'date_created' => '>=' . ( $timestamp - 60 ),
+                'exclude'      => [ $order->get_id() ],
+                'limit'        => 1,
+            ] );
+            if ( ! empty( $recent_paid_customer ) ) {
+                $order->add_order_note( sprintf(
+                    /* translators: %d: Order ID */
+                    __( '[NH Recuperación] Alerta omitida: la clienta ya completó con éxito una orden posterior #%d', 'nh-core' ),
+                    $recent_paid_customer[0]->get_id()
+                ) );
+                return;
+            }
+        }
+
+        // Extracción de datos dinámicos de pasarela y orden
+        $gateway_name = $order->get_payment_method_title();
+        if ( empty( $gateway_name ) ) {
+            $gateway_name = 'Pasarela de Pago';
+        }
+
+        $order_total = html_entity_decode( wp_strip_all_tags( $order->get_formatted_order_total() ), ENT_QUOTES, 'UTF-8' );
+        $full_name   = trim( $order->get_formatted_billing_full_name() );
+        $first_name  = trim( (string) $order->get_billing_first_name() );
+        if ( empty( $full_name ) ) {
+            $full_name = 'Clienta';
+        }
+        if ( empty( $first_name ) ) {
+            $first_name = $full_name;
+        }
+
+        $customer_email = $order->get_billing_email();
+        $customer_phone = $order->get_billing_phone();
+        $customer_city  = $order->get_billing_city();
+        $customer_state = $order->get_billing_state();
+
+        // Resumen de prendas y variaciones
+        $items_summary = [];
+        $item_names    = [];
+        foreach ( $order->get_items() as $item ) {
+            $item_name = $item->get_name();
+            $item_qty  = $item->get_quantity();
+            $attrs     = [];
+            if ( is_callable( [ $item, 'get_meta_data' ] ) ) {
+                foreach ( $item->get_meta_data() as $meta ) {
+                    $key = (string) $meta->key;
+                    if ( str_starts_with( $key, 'pa_' ) || in_array( strtolower( $key ), [ 'talla', 'color', 'size' ], true ) ) {
+                        $label   = wc_attribute_label( $key );
+                        $attrs[] = $label . ': ' . $meta->value;
+                    }
+                }
+            }
+            $line = '• ' . $item_qty . 'x ' . esc_html( $item_name );
+            if ( ! empty( $attrs ) ) {
+                $line .= ' (' . esc_html( implode( ', ', $attrs ) ) . ')';
+            }
+            $items_summary[] = $line;
+            $item_names[]    = $item_name;
+        }
+        $items_text  = ! empty( $items_summary ) ? implode( "\n", $items_summary ) : '• Sin detalles de productos';
+        $prendas_str = ! empty( $item_names ) ? implode( ', ', $item_names ) : 'tus prendas';
+
+        // Normalización de teléfono para WhatsApp (formato colombiano +57)
+        $clean_phone = preg_replace( '/\D+/', '', (string) $customer_phone );
+        if ( ! empty( $clean_phone ) ) {
+            if ( str_starts_with( $clean_phone, '57' ) ) {
+                // Ya cuenta con código de país
+            } elseif ( strlen( $clean_phone ) === 10 && str_starts_with( $clean_phone, '3' ) ) {
+                $clean_phone = '57' . $clean_phone;
+            }
+        }
+
+        $wa_msg = sprintf(
+            'Hola %s ✨ Te escribimos del taller de Norma Hana en Santa Marta. Notamos una interrupción en el pago de tu orden #%d (%s). ¿Te gustaría que te asistamos para completarlo por transferencia Bancolombia, Nequi o con un nuevo enlace de pago? Estamos a tu disposición.',
+            $first_name,
+            $order->get_id(),
+            $prendas_str
+        );
+
+        $wa_url    = ! empty( $clean_phone ) ? 'https://wa.me/' . $clean_phone . '?text=' . rawurlencode( $wa_msg ) : '';
+        $retry_url = $order->get_checkout_payment_url();
+        $admin_url = admin_url( 'post.php?post=' . $order->get_id() . '&action=edit' );
+
+        $msg_lines = [];
+        $msg_lines[] = '<b>Orden:</b> #' . $order->get_id() . ' (' . esc_html( $order_total ) . ')';
+        $msg_lines[] = '<b>Pasarela:</b> ' . esc_html( $gateway_name );
+        $msg_lines[] = '<b>Cliente:</b> ' . esc_html( $full_name );
+        if ( ! empty( $customer_email ) ) {
+            $msg_lines[] = '<b>Email:</b> ' . esc_html( $customer_email );
+        }
+        if ( ! empty( $customer_phone ) ) {
+            $msg_lines[] = '<b>Teléfono:</b> ' . esc_html( $customer_phone );
+        }
+        if ( ! empty( $customer_city ) ) {
+            $location = esc_html( $customer_city );
+            if ( ! empty( $customer_state ) ) {
+                $location .= ', ' . esc_html( $customer_state );
+            }
+            $msg_lines[] = '<b>Ciudad:</b> ' . $location;
+        }
+        $msg_lines[] = '';
+        $msg_lines[] = '<b>Prendas en el pedido:</b>';
+        $msg_lines[] = $items_text;
+        $msg_lines[] = '';
+        $msg_lines[] = '<b>Acciones de Conserjería:</b>';
+        if ( ! empty( $wa_url ) ) {
+            $msg_lines[] = '💬 <a href="' . esc_url( $wa_url ) . '">Contactar clienta por WhatsApp (1-Click)</a>';
+        }
+        if ( ! empty( $retry_url ) ) {
+            $msg_lines[] = '💳 <a href="' . esc_url( $retry_url ) . '">Enlace de reintento de pago</a>';
+        }
+        $msg_lines[] = '⚙️ <a href="' . esc_url( $admin_url ) . '">Ver orden en WooCommerce</a>';
+
+        $payload = [
+            'channel' => 'marketing',
+            'level'   => 'error',
+            'title'   => '🚨 Recuperación de Venta: Pago Fallido (' . $gateway_name . ')',
+            'message' => implode( "\n", $msg_lines ),
+            'chat_id' => '-5244885992',
+        ];
+
+        $sent = $this->send_telegram_notification( $payload );
+        if ( $sent ) {
+            $order->add_order_note( __( '[NH Recuperación] Alerta enviada a Telegram para conserjería comercial.', 'nh-core' ) );
+        }
+    }
+
+    /**
+     * Telemetría de excepciones de servidor durante el Checkout (P0).
+     * Hook: woocommerce_checkout_order_exception
+     *
+     * @param WC_Order|int|null   $order     Instancia del pedido si se llegó a crear o int.
+     * @param Throwable|Exception $exception Excepción capturada en checkout.
+     */
+    public function notify_checkout_exception( $order, $exception ) {
+        $order_id = 0;
+        $email    = '';
+
+        if ( $order instanceof WC_Order ) {
+            $order_id = $order->get_id();
+            $email    = $order->get_billing_email();
+        } elseif ( is_numeric( $order ) ) {
+            $order_id = absint( $order );
+            $loaded   = wc_get_order( $order_id );
+            if ( $loaded ) {
+                $email = $loaded->get_billing_email();
+            }
+        }
+
+        if ( empty( $email ) && isset( $_POST['billing_email'] ) ) {
+            $email = sanitize_email( wp_unslash( $_POST['billing_email'] ) );
+        }
+
+        $exc_message = $exception instanceof Throwable ? $exception->getMessage() : (string) $exception;
+        $exc_file    = $exception instanceof Throwable ? $exception->getFile() : 'N/A';
+        $exc_line    = $exception instanceof Throwable ? $exception->getLine() : 'N/A';
+
+        $lines = [];
+        $lines[] = '<b>Severidad:</b> P0 - Checkout Caído / Excepción en Servidor';
+        $lines[] = '<b>Orden ID:</b> ' . ( $order_id ? '#' . $order_id : 'No generada / Fallo previo' );
+        $lines[] = '<b>Cliente Email:</b> ' . esc_html( ! empty( $email ) ? $email : 'N/A' );
+        $lines[] = '<b>Excepción:</b> <code>' . esc_html( $exc_message ) . '</code>';
+        $lines[] = '<b>Archivo:</b> ' . esc_html( $exc_file ) . ':' . $exc_line;
+        $lines[] = '<b>Hora:</b> ' . current_time( 'mysql' );
+
+        $payload = [
+            'channel' => 'system',
+            'level'   => 'error',
+            'title'   => '🚨 [P0] Error Crítico de Servidor en Checkout',
+            'message' => implode( "\n", $lines ),
+            'chat_id' => '-5244885992',
+        ];
+
+        $this->send_telegram_notification( $payload );
+    }
+
+    /**
+     * Envía una notificación al bot interno de Telegram.
+     * Diseñado para ser no bloqueante y a prueba de fallos silenciosos para no afectar la UX de checkout.
+     *
+     * @param array $payload Datos de notificación (channel, level, title, message, chat_id).
+     * @return bool True si se envió correctamente, false si falló.
+     */
+    public function send_telegram_notification( array $payload ) {
+        $endpoint = apply_filters( 'nh_telegram_notify_endpoint', 'http://normahana-telegram-bot:3000/api/v1/notify' );
+        $api_key  = defined( 'NH_TELEGRAM_BOT_API_KEY' ) ? NH_TELEGRAM_BOT_API_KEY : 'nh_telegram_bot_sec_2026_x871a';
+
+        $body = wp_parse_args( $payload, [
+            'channel' => 'system',
+            'level'   => 'info',
+            'title'   => 'Notificación Norma Hana',
+            'message' => '',
+            'chat_id' => '-5244885992',
+        ] );
+
+        // Truncar para respetar límites del validador de Telegram bot
+        $body['title']   = mb_substr( (string) $body['title'], 0, 256 );
+        $body['message'] = mb_substr( (string) $body['message'], 0, 4000 );
+
+        $args = [
+            'headers'     => [
+                'Content-Type' => 'application/json; charset=utf-8',
+                'x-api-key'    => $api_key,
+            ],
+            'body'        => wp_json_encode( $body ),
+            'timeout'     => 5,
+            'redirection' => 2,
+            'httpversion' => '1.1',
+            'blocking'    => true,
+            'data_format' => 'body',
+        ];
+
+        $response = wp_remote_post( $endpoint, $args );
+
+        if ( is_wp_error( $response ) ) {
+            error_log( sprintf( '[NH Core Telegram] Fallo al enviar notificación: %s', $response->get_error_message() ) );
+            return false;
+        }
+
+        $code = wp_remote_retrieve_response_code( $response );
+        if ( $code < 200 || $code >= 300 ) {
+            $resp_body = wp_remote_retrieve_body( $response );
+            error_log( sprintf( '[NH Core Telegram] Error HTTP %d al notificar Telegram: %s', $code, $resp_body ) );
+            return false;
+        }
+
+        return true;
     }
 }
 
