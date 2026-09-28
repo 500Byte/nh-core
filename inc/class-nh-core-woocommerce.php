@@ -36,6 +36,9 @@ class NH_Core_Woocommerce {
         add_filter( 'woocommerce_email_recipient_customer_completed_order', [ $this, 'disable_email_for_test_coupon' ], 10, 2 );
         add_filter( 'woocommerce_coupon_is_valid', [ $this, 'restrict_test_coupons' ], 10, 3 );
 
+        // Hook de sanitización de eventos de PixelYourSite (valor numérico y moneda ISO para GA4 / Meta)
+        add_filter( 'pys_event_data', [ $this, 'sanitize_pys_event_data' ], 20, 3 );
+
         // AJAX endpoints para el widget NH Cart
         add_action( 'wp_ajax_nh_update_cart_item', [ $this, 'ajax_update_cart_item' ] );
         add_action( 'wp_ajax_nopriv_nh_update_cart_item', [ $this, 'ajax_update_cart_item' ] );
@@ -794,6 +797,68 @@ class NH_Core_Woocommerce {
         $response->header( 'Cache-Control', 'no-cache, must-revalidate, max-age=0' );
 
         return $response;
+    }
+
+    /**
+     * Sanitiza los parámetros de eventos emitidos por PixelYourSite para asegurar compatibilidad
+     * estricta con el esquema de Google Analytics 4 (GA4) y Meta CAPI.
+     *
+     * 1. 'value': Debe ser numérico (float/int), no string, para que GA4 no compute $0.00 en ingresos.
+     * 2. 'currency': Código ISO 4217 en mayúsculas (ej. 'COP').
+     * 3. 'tax' y 'shipping': Cast numérico float.
+     * 4. 'items': Cada item['price'] se convierte a float y item['quantity'] a int.
+     *
+     * @param array  $data    Array de datos del evento (contiene 'params').
+     * @param string $slug    Categoría/slug del evento (ej. 'woo_purchase').
+     * @param array  $context Contexto con 'pixel' (ej. 'google_analytics', 'facebook') y 'event_id'.
+     * @return array Datos sanitizados del evento.
+     */
+    public function sanitize_pys_event_data( $data, $slug = '', $context = [] ) {
+        if ( empty( $data['params'] ) || ! is_array( $data['params'] ) ) {
+            return $data;
+        }
+
+        // 1. Sanitizar 'value' principal
+        if ( isset( $data['params']['value'] ) ) {
+            $val = $data['params']['value'];
+            if ( is_numeric( $val ) ) {
+                $data['params']['value'] = (float) $val;
+            } elseif ( is_string( $val ) ) {
+                $cleaned = preg_replace( '/[^\d.]/', '', str_replace( ',', '.', $val ) );
+                $data['params']['value'] = (float) $cleaned;
+            }
+        }
+
+        // 2. Sanitizar 'currency'
+        if ( empty( $data['params']['currency'] ) && function_exists( 'get_woocommerce_currency' ) ) {
+            $data['params']['currency'] = get_woocommerce_currency();
+        }
+        if ( ! empty( $data['params']['currency'] ) ) {
+            $data['params']['currency'] = strtoupper( trim( (string) $data['params']['currency'] ) );
+        }
+
+        // 3. Sanitizar 'tax' y 'shipping'
+        if ( isset( $data['params']['tax'] ) && is_numeric( $data['params']['tax'] ) ) {
+            $data['params']['tax'] = (float) $data['params']['tax'];
+        }
+        if ( isset( $data['params']['shipping'] ) && is_numeric( $data['params']['shipping'] ) ) {
+            $data['params']['shipping'] = (float) $data['params']['shipping'];
+        }
+
+        // 4. Sanitizar items de e-commerce (item.price debe ser float para GA4)
+        if ( ! empty( $data['params']['items'] ) && is_array( $data['params']['items'] ) ) {
+            foreach ( $data['params']['items'] as &$item ) {
+                if ( isset( $item['price'] ) && is_numeric( $item['price'] ) ) {
+                    $item['price'] = (float) $item['price'];
+                }
+                if ( isset( $item['quantity'] ) && is_numeric( $item['quantity'] ) ) {
+                    $item['quantity'] = (int) $item['quantity'];
+                }
+            }
+            unset( $item );
+        }
+
+        return $data;
     }
 }
 
