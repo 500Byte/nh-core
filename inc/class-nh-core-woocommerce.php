@@ -78,6 +78,17 @@ class NH_Core_Woocommerce {
         // Telemetría de excepciones críticas de servidor en Checkout (P0)
         add_action( 'woocommerce_checkout_order_exception', [ $this, 'notify_checkout_exception' ], 10, 2 );
 
+        // Recuperación de carritos abandonados (CartFlows Abandonment Recovery)
+        add_action( 'wcf_ca_process_abandoned_order', [ $this, 'notify_abandoned_cart' ], 10, 1 );
+
+        // Recordatorio de pago por transferencia bancaria (BACS) a las 4 horas
+        add_action( 'woocommerce_order_status_on-hold', [ $this, 'schedule_bacs_pending_reminder' ], 10, 1 );
+        add_action( 'nh_check_bacs_pending_order', [ $this, 'process_bacs_pending_reminder' ], 10, 1 );
+
+        // Monitoreo de pedidos en taller sin despachar (>48 horas)
+        add_action( 'woocommerce_order_status_processing', [ $this, 'schedule_delayed_processing_alert' ], 10, 1 );
+        add_action( 'nh_check_delayed_processing_order', [ $this, 'process_delayed_processing_alert' ], 10, 1 );
+
         // Notificaciones operativas a Telegram (Venta confirmada, Inventario crítico y Reporte nocturno)
         add_action( 'woocommerce_order_status_processing', [ $this, 'notify_new_confirmed_sale' ], 10, 1 );
         add_action( 'woocommerce_order_status_completed', [ $this, 'notify_new_confirmed_sale' ], 10, 1 );
@@ -1196,14 +1207,33 @@ class NH_Core_Woocommerce {
 
         $admin_url = admin_url( 'post.php?post=' . $order_id . '&action=edit' );
 
+        // Detección de entrega o recogida local en Santa Marta / Magdalena
+        $shipping_city  = (string) ( $order->get_shipping_city() ?: $city );
+        $shipping_state = (string) ( $order->get_shipping_state() ?: $state );
+        $geo_haystack   = mb_strtolower( $shipping_city . ' ' . $shipping_state . ' ' . $city . ' ' . $state . ' ' . $shipping_method );
+        $is_santa_marta = str_contains( $geo_haystack, 'santa marta' )
+            || str_contains( $geo_haystack, 'magdalena' )
+            || str_contains( $geo_haystack, 'recogida' )
+            || str_contains( $geo_haystack, 'local' );
+
         $lines   = [];
         $lines[] = '<b>Pedido:</b> #' . $order_id . ' (' . esc_html( $order_total ) . ')';
         $lines[] = '<b>Cliente:</b> ' . esc_html( $customer_name );
         if ( ! empty( $location ) ) {
             $lines[] = '<b>Destino:</b> ' . esc_html( $location );
         }
+        if ( $is_santa_marta ) {
+            $lines[] = '📍 <b>¡Entrega Local / Recogida en Santa Marta!</b>';
+        }
         $lines[] = '<b>Medio de Pago:</b> ' . esc_html( $payment_method );
         $lines[] = '<b>Envío:</b> ' . esc_html( $shipping_method );
+
+        $coupons = $order->get_coupon_codes();
+        if ( ! empty( $coupons ) ) {
+            $discount_display = html_entity_decode( wp_strip_all_tags( $order->get_discount_to_display() ), ENT_QUOTES, 'UTF-8' );
+            $lines[] = '🏷️ <b>Cupón Aplicado:</b> ' . esc_html( implode( ', ', $coupons ) ) . ' (Descuento: ' . esc_html( $discount_display ) . ')';
+        }
+
         $lines[] = '';
         $lines[] = '<b>Prendas adquiridas:</b>';
         $lines[] = $items_text;
@@ -1228,6 +1258,385 @@ class NH_Core_Woocommerce {
 
         if ( $sent ) {
             $order->add_order_note( __( '[NH Telegram] Notificación de nueva venta confirmada enviada a Telegram.', 'nh-core' ) );
+        }
+    }
+
+    /**
+     * Notificación de carrito abandonado procesado por CartFlows Recovery hacia Telegram.
+     * Hook: wcf_ca_process_abandoned_order
+     *
+     * @param object|array $checkout_details Datos del registro en wp_cartflows_ca_cart_abandonment.
+     */
+    public function notify_abandoned_cart( $checkout_details ) {
+        if ( ! is_object( $checkout_details ) ) {
+            if ( is_array( $checkout_details ) ) {
+                $checkout_details = (object) $checkout_details;
+            } else {
+                return;
+            }
+        }
+
+        // Anti-duplicación por sesión
+        $session_id = ! empty( $checkout_details->session_id ) ? (string) $checkout_details->session_id : '';
+        if ( ! empty( $session_id ) ) {
+            $lock_key = 'nh_ca_notified_' . md5( $session_id );
+            if ( get_transient( $lock_key ) ) {
+                return;
+            }
+            set_transient( $lock_key, 1, 7 * DAY_IN_SECONDS );
+        }
+
+        $email = ! empty( $checkout_details->email ) ? sanitize_email( $checkout_details->email ) : '';
+
+        // Formateo de total en COP
+        $raw_total       = isset( $checkout_details->cart_total ) ? (float) $checkout_details->cart_total : 0.0;
+        $formatted_total = html_entity_decode( wp_strip_all_tags( wc_price( $raw_total ) ), ENT_QUOTES, 'UTF-8' );
+        if ( ! str_contains( $formatted_total, 'COP' ) ) {
+            $formatted_total .= ' COP';
+        }
+
+        // Campos adicionales de cliente
+        $other = ! empty( $checkout_details->other_fields ) ? maybe_unserialize( $checkout_details->other_fields ) : [];
+        if ( ! is_array( $other ) ) {
+            $other = [];
+        }
+
+        $first_name = ! empty( $other['wcf_first_name'] ) ? trim( (string) $other['wcf_first_name'] ) : 'Clienta';
+        $last_name  = ! empty( $other['wcf_last_name'] ) ? trim( (string) $other['wcf_last_name'] ) : '';
+        $phone      = ! empty( $other['wcf_phone_number'] ) ? trim( (string) $other['wcf_phone_number'] ) : '';
+        $location   = ! empty( $other['wcf_location'] ) ? trim( (string) $other['wcf_location'] ) : '';
+
+        // Detalle de prendas del carrito
+        $cart_contents = ! empty( $checkout_details->cart_contents ) ? maybe_unserialize( $checkout_details->cart_contents ) : [];
+        $items_summary = [];
+        $item_names    = [];
+
+        if ( is_array( $cart_contents ) ) {
+            foreach ( $cart_contents as $cart_item ) {
+                $product_id   = ! empty( $cart_item['product_id'] ) ? absint( $cart_item['product_id'] ) : 0;
+                $variation_id = ! empty( $cart_item['variation_id'] ) ? absint( $cart_item['variation_id'] ) : 0;
+                $qty          = ! empty( $cart_item['quantity'] ) ? absint( $cart_item['quantity'] ) : 1;
+
+                $product = wc_get_product( $variation_id ?: $product_id );
+                $item_name = '';
+                if ( $product ) {
+                    $item_name = $product->get_name();
+                } elseif ( ! empty( $cart_item['data'] ) && is_object( $cart_item['data'] ) && method_exists( $cart_item['data'], 'get_name' ) ) {
+                    $item_name = $cart_item['data']->get_name();
+                } else {
+                    $item_name = __( 'Prenda', 'nh-core' );
+                }
+
+                $attrs = [];
+                if ( ! empty( $cart_item['variation'] ) && is_array( $cart_item['variation'] ) ) {
+                    foreach ( $cart_item['variation'] as $attr_key => $attr_val ) {
+                        if ( ! empty( $attr_val ) ) {
+                            $clean_attr = str_replace( 'attribute_', '', $attr_key );
+                            $label      = wc_attribute_label( $clean_attr );
+                            $attrs[]    = $label . ': ' . ucfirst( $attr_val );
+                        }
+                    }
+                }
+
+                $line = '• ' . $qty . 'x ' . esc_html( $item_name );
+                if ( ! empty( $attrs ) ) {
+                    $line .= ' (' . esc_html( implode( ', ', $attrs ) ) . ')';
+                }
+                $items_summary[] = $line;
+                $item_names[]    = $item_name;
+            }
+        }
+
+        $items_text = ! empty( $items_summary ) ? implode( "\n", $items_summary ) : '• Sin detalles de productos';
+        $items_str  = ! empty( $item_names ) ? implode( ', ', array_unique( $item_names ) ) : 'tus prendas seleccionadas';
+
+        // Normalización y enlace directo de WhatsApp
+        $clean_phone = preg_replace( '/\D+/', '', (string) $phone );
+        if ( ! empty( $clean_phone ) ) {
+            if ( str_starts_with( $clean_phone, '57' ) ) {
+                // Ya cuenta con código de país
+            } elseif ( strlen( $clean_phone ) === 10 && str_starts_with( $clean_phone, '3' ) ) {
+                $clean_phone = '57' . $clean_phone;
+            }
+        }
+
+        $wa_msg = sprintf(
+            'Hola %s ✨ Te escribimos del taller de Norma Hana en Santa Marta. Notamos que estuviste a punto de completar tu pedido de (%s) en nuestra tienda online. ¿Tuviste alguna duda con la talla, los tiempos de confección o las opciones de pago? Estamos a tu disposición para ayudarte con todo el gusto.',
+            $first_name,
+            $items_str
+        );
+
+        $wa_url    = ! empty( $clean_phone ) ? 'https://wa.me/' . $clean_phone . '?text=' . rawurlencode( $wa_msg ) : '';
+        $admin_url = admin_url( 'admin.php?page=cartflows_ca' );
+
+        $buttons = [];
+        if ( ! empty( $wa_url ) ) {
+            $buttons[] = [
+                [ 'text' => '💬 Escribir por WhatsApp a ' . $first_name, 'url' => $wa_url ],
+            ];
+            $buttons[] = [
+                [ 'text' => '📋 Ver Carrito en WP Admin', 'url' => $admin_url ],
+            ];
+        } else {
+            $buttons[] = [
+                [ 'text' => '📋 Ver Carrito en WP Admin', 'url' => $admin_url ],
+            ];
+        }
+
+        $customer_display = trim( $first_name . ' ' . $last_name );
+        if ( empty( $customer_display ) ) {
+            $customer_display = 'Clienta';
+        }
+
+        $lines   = [];
+        $lines[] = '<b>Cliente:</b> ' . esc_html( $customer_display );
+        $lines[] = '<b>Total Carrito:</b> ' . esc_html( $formatted_total );
+        if ( ! empty( $email ) ) {
+            $lines[] = '<b>Email:</b> ' . esc_html( $email );
+        }
+        if ( ! empty( $phone ) ) {
+            $lines[] = '<b>Teléfono:</b> ' . esc_html( $phone );
+        }
+        if ( ! empty( $location ) ) {
+            $lines[] = '<b>Ubicación:</b> ' . esc_html( $location );
+        }
+        $lines[] = '';
+        $lines[] = '<b>Prendas en el carrito:</b>';
+        $lines[] = $items_text;
+
+        $payload = [
+            'channel' => 'marketing',
+            'level'   => 'warning',
+            'title'   => '🛒 Carrito Abandonado de Alto Valor',
+            'message' => implode( "\n", $lines ),
+            'chat_id' => '-5244885992',
+            'buttons' => $buttons,
+        ];
+
+        $this->send_telegram_notification( $payload );
+    }
+
+    /**
+     * Programa recordatorio de pago para pedidos por transferencia bancaria (BACS) a las 4 horas.
+     * Hook: woocommerce_order_status_on-hold
+     *
+     * @param int|WC_Order $order_id Instancia o ID de la orden.
+     */
+    public function schedule_bacs_pending_reminder( $order_id ) {
+        $order = $order_id instanceof WC_Order ? $order_id : wc_get_order( $order_id );
+        if ( ! $order ) {
+            return;
+        }
+
+        if ( 'bacs' !== $order->get_payment_method() ) {
+            return;
+        }
+
+        if ( ! function_exists( 'as_schedule_single_action' ) ) {
+            return;
+        }
+
+        $order_id = $order->get_id();
+        $args     = [ 'order_id' => $order_id ];
+        $group    = 'nh-recovery';
+
+        if ( function_exists( 'as_has_scheduled_action' ) && as_has_scheduled_action( 'nh_check_bacs_pending_order', $args, $group ) ) {
+            return;
+        }
+
+        $scheduled_time = time() + ( 4 * HOUR_IN_SECONDS );
+        as_schedule_single_action( $scheduled_time, 'nh_check_bacs_pending_order', $args, $group );
+
+        $order->add_order_note( __( '[NH Transferencia] Tarea programada en 4 horas para verificar pago pendiente por transferencia.', 'nh-core' ) );
+    }
+
+    /**
+     * Procesa la alerta de pago pendiente por transferencia (BACS) tras 4 horas si la orden sigue on-hold.
+     * Hook: nh_check_bacs_pending_order
+     *
+     * @param int|array $order_id ID de la orden o array de argumentos.
+     */
+    public function process_bacs_pending_reminder( $order_id ) {
+        if ( is_array( $order_id ) && isset( $order_id['order_id'] ) ) {
+            $order_id = $order_id['order_id'];
+        }
+        $order_id = absint( $order_id );
+        if ( ! $order_id ) {
+            return;
+        }
+
+        $order = wc_get_order( $order_id );
+        if ( ! $order || 'on-hold' !== $order->get_status() ) {
+            return;
+        }
+
+        // Evitar notificaciones duplicadas
+        if ( $order->get_meta( '_nh_bacs_reminder_notified' ) ) {
+            return;
+        }
+
+        $first_name = trim( (string) $order->get_billing_first_name() );
+        if ( empty( $first_name ) ) {
+            $first_name = trim( (string) $order->get_formatted_billing_full_name() );
+        }
+        if ( empty( $first_name ) ) {
+            $first_name = 'Clienta';
+        }
+
+        $order_total = html_entity_decode( wp_strip_all_tags( $order->get_formatted_order_total() ), ENT_QUOTES, 'UTF-8' );
+        if ( ! str_contains( $order_total, 'COP' ) ) {
+            $order_total .= ' COP';
+        }
+
+        $customer_phone = $order->get_billing_phone();
+        $clean_phone    = preg_replace( '/\D+/', '', (string) $customer_phone );
+        if ( ! empty( $clean_phone ) ) {
+            if ( str_starts_with( $clean_phone, '57' ) ) {
+                // Ya cuenta con código de país
+            } elseif ( strlen( $clean_phone ) === 10 && str_starts_with( $clean_phone, '3' ) ) {
+                $clean_phone = '57' . $clean_phone;
+            }
+        }
+
+        $wa_msg = sprintf(
+            'Hola %s ✨ Te escribimos de Norma Hana para compartirte los datos de transferencia para tu orden #%d (%s): Bancolombia Cuenta de Ahorros o Nequi. ¿Deseas que te enviemos los números de cuenta para completar tu pedido?',
+            $first_name,
+            $order_id,
+            $order_total
+        );
+
+        $wa_url    = ! empty( $clean_phone ) ? 'https://wa.me/' . $clean_phone . '?text=' . rawurlencode( $wa_msg ) : '';
+        $admin_url = admin_url( 'post.php?post=' . $order_id . '&action=edit' );
+
+        $buttons = [];
+        if ( ! empty( $wa_url ) ) {
+            $buttons[] = [
+                [ 'text' => '💬 Enviar Datos Bancarios por WhatsApp', 'url' => $wa_url ],
+            ];
+            $buttons[] = [
+                [ 'text' => '📋 Ver Orden en WP Admin', 'url' => $admin_url ],
+            ];
+        } else {
+            $buttons[] = [
+                [ 'text' => '📋 Ver Orden en WP Admin', 'url' => $admin_url ],
+            ];
+        }
+
+        $lines   = [];
+        $lines[] = '<b>Orden:</b> #' . $order_id . ' (' . esc_html( $order_total ) . ')';
+        $lines[] = '<b>Estado:</b> En espera de transferencia bancaria (4 horas)';
+        $lines[] = '<b>Cliente:</b> ' . esc_html( trim( $order->get_formatted_billing_full_name() ) ?: $first_name );
+        if ( ! empty( $order->get_billing_email() ) ) {
+            $lines[] = '<b>Email:</b> ' . esc_html( $order->get_billing_email() );
+        }
+        if ( ! empty( $customer_phone ) ) {
+            $lines[] = '<b>Teléfono:</b> ' . esc_html( $customer_phone );
+        }
+
+        $payload = [
+            'channel' => 'marketing',
+            'level'   => 'warning',
+            'title'   => '🏦 Transferencia Pendiente: Recordatorio 4h (BACS)',
+            'message' => implode( "\n", $lines ),
+            'chat_id' => '-5244885992',
+            'buttons' => $buttons,
+        ];
+
+        $sent = $this->send_telegram_notification( $payload );
+        $order->update_meta_data( '_nh_bacs_reminder_notified', time() );
+        $order->save();
+
+        if ( $sent ) {
+            $order->add_order_note( __( '[NH Transferencia] Alerta de pago pendiente por transferencia (4h) enviada a Telegram.', 'nh-core' ) );
+        }
+    }
+
+    /**
+     * Programa alerta para pedidos en taller que lleven más de 48 horas en procesamiento sin despachar.
+     * Hook: woocommerce_order_status_processing
+     *
+     * @param int|WC_Order $order_id Instancia o ID de la orden.
+     */
+    public function schedule_delayed_processing_alert( $order_id ) {
+        $order = $order_id instanceof WC_Order ? $order_id : wc_get_order( $order_id );
+        if ( ! $order ) {
+            return;
+        }
+
+        if ( ! function_exists( 'as_schedule_single_action' ) ) {
+            return;
+        }
+
+        $order_id = $order->get_id();
+        $args     = [ 'order_id' => $order_id ];
+        $group    = 'nh-operations';
+
+        if ( function_exists( 'as_has_scheduled_action' ) && as_has_scheduled_action( 'nh_check_delayed_processing_order', $args, $group ) ) {
+            return;
+        }
+
+        $scheduled_time = time() + ( 48 * HOUR_IN_SECONDS );
+        as_schedule_single_action( $scheduled_time, 'nh_check_delayed_processing_order', $args, $group );
+
+        $order->add_order_note( __( '[NH Operaciones] Tarea programada en 48 horas para monitorear despacho en taller.', 'nh-core' ) );
+    }
+
+    /**
+     * Procesa la alerta de pedido demorado en taller (>48h) si sigue en estado processing.
+     * Hook: nh_check_delayed_processing_order
+     *
+     * @param int|array $order_id ID de la orden o array de argumentos.
+     */
+    public function process_delayed_processing_alert( $order_id ) {
+        if ( is_array( $order_id ) && isset( $order_id['order_id'] ) ) {
+            $order_id = $order_id['order_id'];
+        }
+        $order_id = absint( $order_id );
+        if ( ! $order_id ) {
+            return;
+        }
+
+        $order = wc_get_order( $order_id );
+        if ( ! $order || 'processing' !== $order->get_status() ) {
+            return;
+        }
+
+        if ( $order->get_meta( '_nh_delayed_processing_notified' ) ) {
+            return;
+        }
+
+        $admin_url = admin_url( 'post.php?post=' . $order_id . '&action=edit' );
+
+        $customer_name = trim( (string) $order->get_formatted_billing_full_name() );
+        $order_total   = html_entity_decode( wp_strip_all_tags( $order->get_formatted_order_total() ), ENT_QUOTES, 'UTF-8' );
+
+        $msg = 'El pedido #' . $order_id . ' lleva 48 horas en estado Procesando en el taller de Santa Marta sin marcarse como completado.';
+        if ( ! empty( $customer_name ) ) {
+            $msg .= "\n" . '<b>Cliente:</b> ' . esc_html( $customer_name );
+        }
+        if ( ! empty( $order_total ) ) {
+            $msg .= "\n" . '<b>Total:</b> ' . esc_html( $order_total );
+        }
+
+        $payload = [
+            'channel' => 'marketing',
+            'level'   => 'warning',
+            'title'   => '⏳ Pedido en Taller sin Despachar (>48h)',
+            'message' => $msg,
+            'chat_id' => '-5244885992',
+            'buttons' => [
+                [
+                    [ 'text' => '📦 Despachar / Ver Orden', 'url' => $admin_url ],
+                ],
+            ],
+        ];
+
+        $sent = $this->send_telegram_notification( $payload );
+        $order->update_meta_data( '_nh_delayed_processing_notified', time() );
+        $order->save();
+
+        if ( $sent ) {
+            $order->add_order_note( __( '[NH Operaciones] Alerta de pedido sin despachar (>48h) enviada a Telegram.', 'nh-core' ) );
         }
     }
 

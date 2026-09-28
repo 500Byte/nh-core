@@ -276,6 +276,7 @@ class NH_Shopify_Checkout_Widget extends \Elementor\Widget_Base {
 
                 </div>
 
+                <?php do_action( 'woocommerce_after_checkout_form', $checkout ); ?>
             </form>
 
         </div>
