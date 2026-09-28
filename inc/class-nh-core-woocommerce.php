@@ -96,6 +96,11 @@ class NH_Core_Woocommerce {
         add_action( 'init', [ $this, 'maybe_schedule_daily_briefing' ] );
         add_action( 'nh_daily_nightly_recap', [ $this, 'send_daily_nightly_recap' ] );
         add_action( 'nh_daily_morning_briefing', [ $this, 'send_daily_nightly_recap' ] );
+
+        // Optimización CRO y ergonomía móvil para Checkout (Fase 1)
+        add_filter( 'woocommerce_checkout_fields', [ $this, 'optimize_checkout_fields_cro' ], 9999 );
+        add_filter( 'woocommerce_default_address_fields', [ $this, 'optimize_default_address_fields' ], 9999 );
+        add_filter( 'woocommerce_checkout_posted_data', [ $this, 'sanitize_checkout_posted_data' ], 9999 );
     }
 
     /**
@@ -1899,6 +1904,143 @@ class NH_Core_Woocommerce {
         }
 
         return true;
+    }
+
+    /**
+     * Optimiza y reordena los campos del checkout según la estrategia CRO (Fase 1).
+     * Contact-First (Email y WhatsApp primero para capturar leads temprano),
+     * lógica geográfica colombiana (Departamento -> Ciudad -> Dirección),
+     * y remoción de campos redundantes como código postal y compañía.
+     *
+     * @param array $fields Campos del checkout de WooCommerce.
+     * @return array
+     */
+    public function optimize_checkout_fields_cro( $fields ) {
+        // Remover campos innecesarios en Colombia
+        unset( $fields['billing']['billing_postcode'] );
+        unset( $fields['shipping']['shipping_postcode'] );
+        unset( $fields['billing']['billing_company'] );
+        unset( $fields['shipping']['shipping_company'] );
+
+        // Contact First (Captura temprana de lead para CartFlows / Recuperación Telegram)
+        if ( isset( $fields['billing']['billing_email'] ) ) {
+            $fields['billing']['billing_email']['priority']     = 5;
+            $fields['billing']['billing_email']['label']        = 'Correo electrónico';
+            $fields['billing']['billing_email']['placeholder']  = 'tucorreo@ejemplo.com';
+            $fields['billing']['billing_email']['autocomplete'] = 'email';
+            $fields['billing']['billing_email']['class']        = [ 'form-row-wide' ];
+        }
+
+        if ( isset( $fields['billing']['billing_phone'] ) ) {
+            $fields['billing']['billing_phone']['priority']     = 10;
+            $fields['billing']['billing_phone']['required']     = true;
+            $fields['billing']['billing_phone']['label']        = 'Teléfono móvil / WhatsApp';
+            $fields['billing']['billing_phone']['placeholder']  = '300 123 4567';
+            $fields['billing']['billing_phone']['type']         = 'tel';
+            $fields['billing']['billing_phone']['autocomplete'] = 'tel';
+            $fields['billing']['billing_phone']['class']        = [ 'form-row-wide' ];
+        }
+
+        if ( isset( $fields['billing']['billing_first_name'] ) ) {
+            $fields['billing']['billing_first_name']['priority']     = 15;
+            $fields['billing']['billing_first_name']['label']        = 'Nombre';
+            $fields['billing']['billing_first_name']['autocomplete'] = 'given-name';
+            $fields['billing']['billing_first_name']['class']        = [ 'form-row-first' ];
+        }
+
+        if ( isset( $fields['billing']['billing_last_name'] ) ) {
+            $fields['billing']['billing_last_name']['priority']     = 20;
+            $fields['billing']['billing_last_name']['label']        = 'Apellidos';
+            $fields['billing']['billing_last_name']['autocomplete'] = 'family-name';
+            $fields['billing']['billing_last_name']['class']        = [ 'form-row-last' ];
+        }
+
+        // Cédula / Documento (Addi & Facturación)
+        if ( isset( $fields['billing']['billing_id'] ) ) {
+            $fields['billing']['billing_id']['priority']          = 25;
+            $fields['billing']['billing_id']['label']             = 'Cédula de Ciudadanía';
+            $fields['billing']['billing_id']['placeholder']       = 'Ej. 1082123456';
+            $fields['billing']['billing_id']['class']             = [ 'form-row-wide' ];
+            $fields['billing']['billing_id']['custom_attributes'] = [
+                'inputmode' => 'numeric',
+                'pattern'   => '[0-9]*',
+            ];
+        }
+
+        // Lógica geográfica colombiana (Departamento -> Ciudad -> Dirección)
+        if ( isset( $fields['billing']['billing_state'] ) ) {
+            $fields['billing']['billing_state']['priority'] = 30;
+            $fields['billing']['billing_state']['label']    = 'Departamento';
+            $fields['billing']['billing_state']['class']    = [ 'form-row-first' ];
+        }
+
+        if ( isset( $fields['billing']['billing_city'] ) ) {
+            $fields['billing']['billing_city']['priority']    = 35;
+            $fields['billing']['billing_city']['label']       = 'Ciudad o Municipio';
+            $fields['billing']['billing_city']['placeholder'] = 'Ej. Santa Marta, Barranquilla, Bogotá';
+            $fields['billing']['billing_city']['class']       = [ 'form-row-last' ];
+        }
+
+        if ( isset( $fields['billing']['billing_address_1'] ) ) {
+            $fields['billing']['billing_address_1']['priority']    = 40;
+            $fields['billing']['billing_address_1']['label']       = 'Dirección de entrega';
+            $fields['billing']['billing_address_1']['placeholder'] = 'Calle, Carrera, Avenida y Número';
+            $fields['billing']['billing_address_1']['class']       = [ 'form-row-wide' ];
+        }
+
+        if ( isset( $fields['billing']['billing_address_2'] ) ) {
+            $fields['billing']['billing_address_2']['priority']    = 45;
+            $fields['billing']['billing_address_2']['label']       = 'Detalle de entrega (opcional)';
+            $fields['billing']['billing_address_2']['placeholder'] = 'Apto, Casa, Conjunto, Interior, Barrio';
+            $fields['billing']['billing_address_2']['class']       = [ 'form-row-wide' ];
+        }
+
+        // Indicaciones especiales de entrega
+        if ( isset( $fields['order']['order_comments'] ) ) {
+            $fields['order']['order_comments']['placeholder'] = 'Indicaciones especiales para la entrega (opcional)';
+        }
+
+        return $fields;
+    }
+
+    /**
+     * Ajusta los campos predeterminados de dirección de WooCommerce para deshabilitar código postal y empresa.
+     *
+     * @param array $address_fields Campos de dirección predeterminados.
+     * @return array
+     */
+    public function optimize_default_address_fields( $address_fields ) {
+        if ( isset( $address_fields['postcode'] ) ) {
+            $address_fields['postcode']['required'] = false;
+            $address_fields['postcode']['hidden']   = true;
+        }
+
+        if ( isset( $address_fields['company'] ) ) {
+            $address_fields['company']['hidden']   = true;
+            $address_fields['company']['required'] = false;
+        }
+
+        return $address_fields;
+    }
+
+    /**
+     * Sanitiza y completa datos de checkout antes del procesamiento del pedido.
+     * Garantiza un código postal por defecto (110111) para evitar que pasarelas
+     * estrictas (p. ej. Wompi) rechacen la transacción si esperan un string de código postal.
+     *
+     * @param array $data Datos posteados del checkout.
+     * @return array
+     */
+    public function sanitize_checkout_posted_data( $data ) {
+        if ( empty( $data['billing_postcode'] ) ) {
+            $data['billing_postcode'] = '110111';
+        }
+
+        if ( empty( $data['shipping_postcode'] ) ) {
+            $data['shipping_postcode'] = '110111';
+        }
+
+        return $data;
     }
 }
 

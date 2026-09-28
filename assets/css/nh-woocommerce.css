@@ -2135,29 +2135,7 @@ body.single-product .woocommerce-notices-wrapper {
         display: block;
     }
 
-    /* Sticky Button en Celulares */
-    .nh-checkout-widget #place_order,
-    .nh-checkout-widget .nh-checkout-place-order-btn,
-    .nh-checkout-widget button[name="woocommerce_checkout_place_order"] {
-        position: fixed;
-        bottom: 12px;
-        left: 12px;
-        right: 12px;
-        width: calc(100% - 24px);
-        z-index: 99999;
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
-        height: 50px;
-        margin-top: 0;
-    }
-
-    body.woocommerce-checkout {
-        padding-bottom: 74px;
-    }
-
-    /* Elevar widgets flotantes de soporte en mobile para no obstruir el botón ni los campos */
-    .joinchat, .whatsapp-button, .wh-widget-send-button, [class*="whatsapp"] {
-        bottom: 80px;
-    }
+    /* Botón de pago en flujo natural móvil gestionado en MOBILE CHECKOUT & KEYBOARD CRO OPTIMIZATIONS */
 }
 
 /* ==========================================================================
@@ -3227,3 +3205,69 @@ select option {
 .nh-cart-summary-row.nh-cart-total {
     background-color: var(--nh-surface-secondary);
 }
+
+/* ==========================================================================
+   MOBILE CHECKOUT & KEYBOARD CRO OPTIMIZATIONS (< 768px)
+   ========================================================================== */
+@media (max-width: 768px) {
+    /* 1. Prevención estricta de auto-zoom en iOS Safari (mínimo 16px) */
+    .nh-checkout-widget input.input-text,
+    .nh-checkout-widget textarea,
+    .nh-checkout-widget select,
+    .nh-checkout-widget .select2-container--default .select2-selection--single,
+    .woocommerce-checkout input.input-text,
+    .woocommerce-checkout select,
+    .woocommerce-checkout textarea {
+        font-size: 16px !important;
+        height: 48px !important;
+        line-height: 48px;
+        padding: 0 14px !important;
+        border-radius: 8px !important;
+    }
+
+    .nh-checkout-widget textarea,
+    .woocommerce-checkout textarea {
+        height: 80px !important;
+        line-height: 1.4 !important;
+        padding: 10px 14px !important;
+    }
+
+    /* 2. Ampliación del área táctil para checkboxes y radios (Mínimo 20x20px touch) */
+    .nh-checkout-widget input[type="checkbox"],
+    .nh-checkout-widget input[type="radio"],
+    .woocommerce-checkout input[type="checkbox"],
+    .woocommerce-checkout input[type="radio"] {
+        width: 20px !important;
+        height: 20px !important;
+        cursor: pointer;
+    }
+
+    .nh-checkout-widget .form-row.place-order .woocommerce-form__label-for-checkbox,
+    .woocommerce-checkout .woocommerce-form__label-for-checkbox {
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+        padding: 8px 0;
+        font-size: 13.5px;
+        line-height: 1.4;
+    }
+
+    /* 3. Botón de pago en el flujo natural (remover position: fixed que solapa el teclado móvil) */
+    .nh-checkout-widget #place_order,
+    .nh-checkout-widget .nh-checkout-place-order-btn,
+    .nh-checkout-widget button[name="woocommerce_checkout_place_order"],
+    .woocommerce-checkout #place_order {
+        position: static !important;
+        width: 100% !important;
+        height: 52px !important;
+        font-size: 16px !important;
+        font-weight: 700 !important;
+        margin-top: 16px !important;
+        box-shadow: 0 4px 14px rgba(0, 0, 0, 0.15) !important;
+    }
+
+    body.woocommerce-checkout {
+        padding-bottom: 32px !important;
+    }
+}
+
