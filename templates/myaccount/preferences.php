@@ -55,7 +55,7 @@ if ( function_exists( 'wp_enqueue_script' ) ) {
                     <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>
                 </svg>
                 <span class="nh-pref-meta-label">Gestionando preferencias para:</span>
-                <strong class="nh-pref-meta-value"><?php echo esc_html( $email ); ?></strong>
+                <!--email_off--><strong class="nh-pref-meta-value"><?php echo esc_html( $email ); ?></strong><!--/email_off-->
             </div>
         <?php endif; ?>
     </div>
