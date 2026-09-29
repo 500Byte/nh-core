@@ -43,6 +43,7 @@ class NH_Core_Preferences {
      */
     private function __construct() {
         add_action( 'init', [ $this, 'maybe_create_table' ], 5 );
+        add_action( 'nh_preferences_saved', [ $this, 'dispatch_n8n_webhook' ], 10, 2 );
     }
 
     /**
@@ -232,6 +233,52 @@ class NH_Core_Preferences {
 
         do_action( 'nh_preferences_saved', $clean_email, $record );
         return false !== $updated;
+    }
+
+    /**
+     * Despacha un webhook saliente asíncrono a n8n cuando se actualizan las preferencias de un cliente.
+     *
+     * @param string $email  Correo electrónico del cliente.
+     * @param array  $record Registro de preferencias guardado.
+     * @return void
+     */
+    public function dispatch_n8n_webhook( string $email, array $record ): void {
+        $webhook_url = defined( 'NH_N8N_PREFERENCES_WEBHOOK_URL' )
+            ? NH_N8N_PREFERENCES_WEBHOOK_URL
+            : 'http://normahana-n8n:5678/webhook/nh-preferences-updated';
+
+        $payload = [
+            'event'       => 'customer.preferences_updated',
+            'timestamp'   => time(),
+            'email'       => $email,
+            'preferences' => [
+                'cart_reminders'     => (bool) ( $record['cart_reminders'] ?? false ),
+                'atelier_news'       => (bool) ( $record['atelier_news'] ?? false ),
+                'preferred_channel'  => $record['preferred_channel'] ?? 'both',
+                'habeas_data_optout' => (bool) ( $record['habeas_data_optout'] ?? false ),
+            ],
+            'source'      => $record['source'] ?? 'unknown',
+        ];
+
+        $secret = defined( 'NH_N8N_WEBHOOK_SECRET' )
+            ? NH_N8N_WEBHOOK_SECRET
+            : ( function_exists( 'wp_salt' ) ? wp_salt( 'nonce' ) : 'nh_n8n_secret' );
+
+        $body = function_exists( 'wp_json_encode' ) ? wp_json_encode( $payload ) : json_encode( $payload );
+        $sig  = hash_hmac( 'sha256', $body, $secret );
+
+        if ( function_exists( 'wp_remote_post' ) ) {
+            wp_remote_post( $webhook_url, [
+                'method'   => 'POST',
+                'timeout'  => 3,
+                'blocking' => false,
+                'headers'  => [
+                    'Content-Type'   => 'application/json',
+                    'X-NH-Signature' => $sig,
+                ],
+                'body'     => $body,
+            ] );
+        }
     }
 
     // =========================================================================

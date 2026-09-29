@@ -874,6 +874,37 @@ class NH_Core_Woocommerce {
                 'key' => [ 'required' => true, 'sanitize_callback' => 'sanitize_text_field' ],
             ],
         ] );
+
+        register_rest_route( 'nh/v1', '/preferences', [
+            [
+                'methods'             => 'GET',
+                'callback'            => [ $this, 'rest_get_preferences' ],
+                'permission_callback' => [ $this, 'rest_check_api_key' ],
+                'args'                => [
+                    'email' => [
+                        'required'          => true,
+                        'validate_callback' => function( $param ) {
+                            return function_exists( 'is_email' ) ? (bool) is_email( $param ) : (bool) filter_var( $param, FILTER_VALIDATE_EMAIL );
+                        },
+                        'sanitize_callback' => 'sanitize_email',
+                    ],
+                ],
+            ],
+            [
+                'methods'             => 'POST',
+                'callback'            => [ $this, 'rest_save_preferences' ],
+                'permission_callback' => [ $this, 'rest_check_api_key' ],
+                'args'                => [
+                    'email' => [
+                        'required'          => true,
+                        'validate_callback' => function( $param ) {
+                            return function_exists( 'is_email' ) ? (bool) is_email( $param ) : (bool) filter_var( $param, FILTER_VALIDATE_EMAIL );
+                        },
+                        'sanitize_callback' => 'sanitize_email',
+                    ],
+                ],
+            ],
+        ] );
     }
 
     /**
@@ -2527,6 +2558,129 @@ class NH_Core_Woocommerce {
         } else {
             wp_send_json_error( [ 'message' => 'No se realizaron cambios o hubo un error al guardar.' ] );
         }
+    }
+
+    /**
+     * Valida la autenticación para endpoints REST protegidos de nh-core.
+     * Verifica header X-NH-API-KEY, query param api_key, o permisos de manage_woocommerce.
+     *
+     * @param WP_REST_Request $request
+     * @return bool
+     */
+    public function rest_check_api_key( WP_REST_Request $request ): bool {
+        if ( function_exists( 'current_user_can' ) && current_user_can( 'manage_woocommerce' ) ) {
+            return true;
+        }
+
+        $expected_key = defined( 'NH_REST_API_KEY' ) ? NH_REST_API_KEY : 'nh_telegram_bot_sec_2026_x871a';
+
+        // Intentar obtener de encabezado HTTP (X-NH-API-KEY)
+        $provided_key = $request->get_header( 'x-nh-api-key' );
+        if ( empty( $provided_key ) ) {
+            $provided_key = $request->get_header( 'x_nh_api_key' );
+        }
+        if ( empty( $provided_key ) && isset( $_SERVER['HTTP_X_NH_API_KEY'] ) ) {
+            $provided_key = sanitize_text_field( wp_unslash( $_SERVER['HTTP_X_NH_API_KEY'] ) );
+        }
+
+        // Fallback a query param o body param 'api_key'
+        if ( empty( $provided_key ) ) {
+            $provided_key = $request->get_param( 'api_key' );
+        }
+
+        if ( ! empty( $provided_key ) && hash_equals( (string) $expected_key, (string) $provided_key ) ) {
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * Endpoint REST: Obtiene las preferencias de comunicación para un correo electrónico.
+     * GET /nh/v1/preferences?email=user@example.com
+     *
+     * @param WP_REST_Request $request
+     * @return WP_REST_Response|WP_Error
+     */
+    public function rest_get_preferences( WP_REST_Request $request ) {
+        $raw_email = $request->get_param( 'email' );
+        $email     = function_exists( 'sanitize_email' ) ? sanitize_email( (string) $raw_email ) : strtolower( trim( (string) $raw_email ) );
+
+        if ( empty( $email ) || ( function_exists( 'is_email' ) ? ! is_email( $email ) : ! filter_var( $email, FILTER_VALIDATE_EMAIL ) ) ) {
+            return new WP_Error( 'rest_invalid_param', 'Correo electrónico inválido o requerido.', [ 'status' => 400 ] );
+        }
+
+        if ( ! class_exists( 'NH_Core_Preferences' ) ) {
+            return new WP_Error( 'rest_service_unavailable', 'El módulo de preferencias no está disponible.', [ 'status' => 503 ] );
+        }
+
+        $prefs = NH_Core_Preferences::get_instance()->get_preferences( $email );
+
+        return new WP_REST_Response( [
+            'success' => true,
+            'data'    => $prefs,
+        ], 200 );
+    }
+
+    /**
+     * Endpoint REST: Actualiza o guarda preferencias de comunicación para un correo electrónico.
+     * POST /nh/v1/preferences
+     *
+     * @param WP_REST_Request $request
+     * @return WP_REST_Response|WP_Error
+     */
+    public function rest_save_preferences( WP_REST_Request $request ) {
+        $raw_email = $request->get_param( 'email' );
+        $email     = function_exists( 'sanitize_email' ) ? sanitize_email( (string) $raw_email ) : strtolower( trim( (string) $raw_email ) );
+
+        if ( empty( $email ) || ( function_exists( 'is_email' ) ? ! is_email( $email ) : ! filter_var( $email, FILTER_VALIDATE_EMAIL ) ) ) {
+            return new WP_Error( 'rest_invalid_param', 'Correo electrónico inválido o requerido.', [ 'status' => 400 ] );
+        }
+
+        if ( ! class_exists( 'NH_Core_Preferences' ) ) {
+            return new WP_Error( 'rest_service_unavailable', 'El módulo de preferencias no está disponible.', [ 'status' => 503 ] );
+        }
+
+        $source_param = $request->get_param( 'source' );
+        $source       = ! empty( $source_param ) ? ( function_exists( 'sanitize_key' ) ? sanitize_key( $source_param ) : trim( (string) $source_param ) ) : 'rest_api';
+
+        $params = [];
+        if ( null !== $request->get_param( 'cart_reminders' ) ) {
+            $params['cart_reminders'] = $request->get_param( 'cart_reminders' );
+        }
+        if ( null !== $request->get_param( 'atelier_news' ) ) {
+            $params['atelier_news'] = $request->get_param( 'atelier_news' );
+        }
+        if ( null !== $request->get_param( 'preferred_channel' ) ) {
+            $params['preferred_channel'] = $request->get_param( 'preferred_channel' );
+        }
+        if ( null !== $request->get_param( 'habeas_data_optout' ) ) {
+            $params['habeas_data_optout'] = $request->get_param( 'habeas_data_optout' );
+        }
+        if ( null !== $request->get_param( 'optout_reason' ) ) {
+            $params['optout_reason'] = $request->get_param( 'optout_reason' );
+        }
+
+        $current_prefs = NH_Core_Preferences::get_instance()->get_preferences( $email );
+        if ( ! empty( $current_prefs ) && empty( $current_prefs['is_new'] ) ) {
+            $params = array_merge( [
+                'cart_reminders'     => $current_prefs['cart_reminders'],
+                'atelier_news'       => $current_prefs['atelier_news'],
+                'preferred_channel'  => $current_prefs['preferred_channel'],
+                'habeas_data_optout' => $current_prefs['habeas_data_optout'],
+            ], $params );
+        }
+
+        $saved = NH_Core_Preferences::get_instance()->save_preferences( $email, $params, $source );
+
+        if ( ! $saved ) {
+            return new WP_Error( 'rest_save_failed', 'No se pudieron guardar las preferencias.', [ 'status' => 500 ] );
+        }
+
+        return new WP_REST_Response( [
+            'success' => true,
+            'message' => 'Preferences updated.',
+        ], 200 );
     }
 }
 
