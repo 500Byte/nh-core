@@ -16,6 +16,8 @@ class NH_Core_Loader {
     private function __construct() {
         $this->define_constants();
         $this->load_dependencies();
+        $this->includes();
+        $this->init();
     }
 
     private function define_constants() {
@@ -56,5 +58,19 @@ class NH_Core_Loader {
             require_once NH_CORE_PATH . 'inc/class-nh-core-icons.php';
             \NH_Core_Icons::get_instance();
         }
+    }
+
+    /**
+     * Include core modules.
+     */
+    public function includes() {
+        require_once NH_CORE_PATH . 'inc/class-nh-core-preferences.php';
+    }
+
+    /**
+     * Initialize core modules.
+     */
+    public function init() {
+        NH_Core_Preferences::get_instance();
     }
 }
