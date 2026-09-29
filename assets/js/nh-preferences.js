@@ -25,11 +25,23 @@ document.addEventListener('DOMContentLoaded', function() {
             if (habeasOptout.checked) {
                 cartToggle.checked = false;
                 newsToggle.checked = false;
-                if (cardCart) cardCart.classList.add('nh-pref-card--dimmed');
-                if (cardNews) cardNews.classList.add('nh-pref-card--dimmed');
+                if (cardCart) {
+                    cardCart.classList.add('nh-pref-row--dimmed');
+                    cardCart.classList.add('nh-pref-card--dimmed');
+                }
+                if (cardNews) {
+                    cardNews.classList.add('nh-pref-row--dimmed');
+                    cardNews.classList.add('nh-pref-card--dimmed');
+                }
             } else {
-                if (cardCart) cardCart.classList.remove('nh-pref-card--dimmed');
-                if (cardNews) cardNews.classList.remove('nh-pref-card--dimmed');
+                if (cardCart) {
+                    cardCart.classList.remove('nh-pref-row--dimmed');
+                    cardCart.classList.remove('nh-pref-card--dimmed');
+                }
+                if (cardNews) {
+                    cardNews.classList.remove('nh-pref-row--dimmed');
+                    cardNews.classList.remove('nh-pref-card--dimmed');
+                }
             }
         }
 
