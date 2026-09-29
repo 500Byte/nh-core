@@ -106,6 +106,14 @@ class NH_Core_Woocommerce {
         add_filter( 'woocommerce_checkout_fields', [ $this, 'optimize_checkout_fields_cro' ], 9999 );
         add_filter( 'woocommerce_default_address_fields', [ $this, 'optimize_default_address_fields' ], 9999 );
         add_filter( 'woocommerce_checkout_posted_data', [ $this, 'sanitize_checkout_posted_data' ], 9999 );
+
+        // Centro de Preferencias de Comunicación y Privacidad
+        add_action( 'init', [ $this, 'add_preferences_endpoint' ], 0 );
+        add_filter( 'query_vars', [ $this, 'add_preferences_query_vars' ], 0 );
+        add_filter( 'woocommerce_get_query_vars', [ $this, 'add_preferences_wc_query_vars' ], 10, 1 );
+        add_filter( 'woocommerce_account_menu_items', [ $this, 'add_preferences_account_menu_item' ], 40, 1 );
+        add_action( 'woocommerce_account_preferencias_endpoint', [ $this, 'render_preferences_endpoint' ] );
+        add_action( 'template_redirect', [ $this, 'maybe_bypass_login_for_preferences_token' ] );
     }
 
     /**
@@ -2183,6 +2191,153 @@ class NH_Core_Woocommerce {
         }
 
         return $data;
+    }
+
+    /* =========================================================================
+     * CENTRO DE PREFERENCIAS: ENDPOINTS, NAVEGACIÓN Y BYPASS DE AUTENTICACIÓN
+     * ========================================================================= */
+
+    /**
+     * Registra el rewrite endpoint 'preferencias' para Mi Cuenta en WooCommerce.
+     */
+    public function add_preferences_endpoint() {
+        add_rewrite_endpoint( 'preferencias', EP_ROOT | EP_PAGES );
+    }
+
+    /**
+     * Añade 'preferencias' a la lista de query vars reconocidas por WordPress.
+     *
+     * @param array $vars Lista de query vars.
+     * @return array
+     */
+    public function add_preferences_query_vars( $vars ) {
+        if ( ! is_array( $vars ) ) {
+            $vars = [];
+        }
+        $vars[] = 'preferencias';
+        return $vars;
+    }
+
+    /**
+     * Añade 'preferencias' a la lista de query vars de endpoints de WooCommerce.
+     *
+     * @param array $vars Lista de query vars de WooCommerce.
+     * @return array
+     */
+    public function add_preferences_wc_query_vars( $vars ) {
+        if ( ! is_array( $vars ) ) {
+            $vars = [];
+        }
+        $vars['preferencias'] = 'preferencias';
+        return $vars;
+    }
+
+    /**
+     * Inserta el ítem 'preferencias' en el menú de navegación de Mi Cuenta.
+     * Se ubica justo antes de 'customer-logout' o al final si no existe.
+     *
+     * @param array $items Ítems actuales del menú de Mi Cuenta.
+     * @return array
+     */
+    public function add_preferences_account_menu_item( $items ) {
+        if ( ! is_array( $items ) ) {
+            return $items;
+        }
+
+        $new_items = [];
+        $inserted  = false;
+
+        foreach ( $items as $key => $title ) {
+            if ( 'customer-logout' === $key ) {
+                $new_items['preferencias'] = 'Comunicaciones y Privacidad';
+                $inserted                  = true;
+            }
+            $new_items[ $key ] = $title;
+        }
+
+        if ( ! $inserted ) {
+            $new_items['preferencias'] = 'Comunicaciones y Privacidad';
+        }
+
+        return $new_items;
+    }
+
+    /**
+     * Renderiza el contenido del endpoint de preferencias para usuarios autenticados.
+     */
+    public function render_preferences_endpoint() {
+        $template = defined( 'NH_CORE_PATH' ) ? NH_CORE_PATH . 'templates/myaccount/preferences.php' : plugin_dir_path( dirname( __FILE__ ) ) . 'templates/myaccount/preferences.php';
+        if ( file_exists( $template ) ) {
+            include $template;
+        } else {
+            echo '<div class="nh-preferences-wrapper"><p>Cargando preferencias...</p></div>';
+        }
+    }
+
+    /**
+     * Evalúa tokens de acceso directo (HMAC-SHA256) en la página del endpoint de preferencias.
+     * Si el visitante no está autenticado pero provee un token válido no expirado,
+     * desactiva el requisito de login de WooCommerce e inyecta la vista de preferencias en the_content.
+     */
+    public function maybe_bypass_login_for_preferences_token() {
+        if ( ! function_exists( 'is_account_page' ) || ! is_account_page() ) {
+            return;
+        }
+
+        global $wp;
+        $endpoint_active = false;
+        if ( function_exists( 'is_wc_endpoint_url' ) && is_wc_endpoint_url( 'preferencias' ) ) {
+            $endpoint_active = true;
+        } elseif ( isset( $wp->query_vars ) && array_key_exists( 'preferencias', $wp->query_vars ) ) {
+            $endpoint_active = true;
+        } elseif ( function_exists( 'get_query_var' ) && null !== get_query_var( 'preferencias', null ) ) {
+            $endpoint_active = true;
+        }
+
+        if ( ! $endpoint_active ) {
+            return;
+        }
+
+        if ( function_exists( 'is_user_logged_in' ) && is_user_logged_in() ) {
+            return;
+        }
+
+        $email = '';
+        if ( isset( $_GET['nh_email'] ) ) {
+            $raw_email = function_exists( 'wp_unslash' ) ? wp_unslash( $_GET['nh_email'] ) : $_GET['nh_email'];
+            $decoded   = rawurldecode( $raw_email );
+            $email     = function_exists( 'sanitize_email' ) ? sanitize_email( $decoded ) : $decoded;
+        }
+
+        $exp = isset( $_GET['nh_exp'] ) ? (int) $_GET['nh_exp'] : 0;
+
+        $token = '';
+        if ( isset( $_GET['nh_token'] ) ) {
+            $raw_token = function_exists( 'wp_unslash' ) ? wp_unslash( $_GET['nh_token'] ) : $_GET['nh_token'];
+            $token     = function_exists( 'sanitize_text_field' ) ? sanitize_text_field( $raw_token ) : trim( (string) $raw_token );
+        }
+
+        if ( ! empty( $email ) && ! empty( $token ) && class_exists( 'NH_Core_Preferences' ) && NH_Core_Preferences::validate_token( $email, $exp, $token ) ) {
+            add_filter( 'woocommerce_is_account_page', '__return_false' );
+            add_filter( 'the_content', [ $this, 'render_guest_preferences_page' ], 999 );
+        }
+    }
+
+    /**
+     * Renderiza el template del centro de preferencias para usuarios invitados con token válido.
+     *
+     * @param string $content Contenido original del post/página.
+     * @return string
+     */
+    public function render_guest_preferences_page( $content ) {
+        ob_start();
+        $template = defined( 'NH_CORE_PATH' ) ? NH_CORE_PATH . 'templates/myaccount/preferences.php' : plugin_dir_path( dirname( __FILE__ ) ) . 'templates/myaccount/preferences.php';
+        if ( file_exists( $template ) ) {
+            include $template;
+        } else {
+            echo '<div class="nh-preferences-wrapper"><p>Cargando preferencias...</p></div>';
+        }
+        return ob_get_clean();
     }
 }
 
