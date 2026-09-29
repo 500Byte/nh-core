@@ -1368,6 +1368,15 @@ class NH_Core_Woocommerce {
 
         $email = ! empty( $checkout_details->email ) ? sanitize_email( $checkout_details->email ) : '';
 
+        // Verificación de revocación de consentimiento (Habeas Data Ley 1581 de 2012)
+        $prefs = null;
+        if ( ! empty( $email ) && class_exists( 'NH_Core_Preferences' ) ) {
+            $prefs = NH_Core_Preferences::get_instance()->get_preferences( $email );
+            if ( 1 === (int) ( $prefs['habeas_data_optout'] ?? 0 ) ) {
+                return;
+            }
+        }
+
         // Formateo de total en COP
         $raw_total       = isset( $checkout_details->cart_total ) ? (float) $checkout_details->cart_total : 0.0;
         $formatted_total = html_entity_decode( wp_strip_all_tags( wc_price( $raw_total ) ), ENT_QUOTES, 'UTF-8' );
@@ -1449,8 +1458,10 @@ class NH_Core_Woocommerce {
         $wa_url    = ! empty( $clean_phone ) ? 'https://wa.me/' . $clean_phone . '?text=' . rawurlencode( $wa_msg ) : '';
         $admin_url = admin_url( 'admin.php?page=cartflows_ca' );
 
+        $allow_whatsapp = empty( $prefs ) || ( 1 === (int) ( $prefs['cart_reminders'] ?? 1 ) && 'email' !== ( $prefs['preferred_channel'] ?? '' ) );
+
         $buttons = [];
-        if ( ! empty( $wa_url ) ) {
+        if ( ! empty( $wa_url ) && $allow_whatsapp ) {
             $buttons[] = [
                 [ 'text' => '💬 Escribir por WhatsApp a ' . $first_name, 'url' => $wa_url ],
             ];
@@ -1479,6 +1490,14 @@ class NH_Core_Woocommerce {
         }
         if ( ! empty( $location ) ) {
             $lines[] = '<b>Ubicación:</b> ' . esc_html( $location );
+        }
+        if ( ! empty( $prefs ) ) {
+            if ( 0 === (int) ( $prefs['cart_reminders'] ?? 1 ) ) {
+                $lines[] = '⚠️ <i>Aviso: Cliente optó por no recibir recordatorios de carrito.</i>';
+            }
+            if ( 'email' === ( $prefs['preferred_channel'] ?? '' ) ) {
+                $lines[] = 'ℹ️ <i>Canal preferido: Solo Correo Electrónico (WhatsApp deshabilitado).</i>';
+            }
         }
         $lines[] = '';
         $lines[] = '<b>Prendas en el carrito:</b>';
@@ -1542,6 +1561,61 @@ class NH_Core_Woocommerce {
         if ( empty( $body ) || ! is_string( $body ) ) {
             return $body;
         }
+
+        // 1. Intercepción y verificación de preferencias de comunicación (CartFlows Recovery)
+        $recipient_email = '';
+        if ( is_object( $email_data ) && ! empty( $email_data->email ) ) {
+            $recipient_email = sanitize_email( $email_data->email );
+        } elseif ( is_array( $email_data ) && ! empty( $email_data['email'] ) ) {
+            $recipient_email = sanitize_email( $email_data['email'] );
+        }
+
+        if ( ! $preview_email && ! empty( $recipient_email ) && class_exists( 'NH_Core_Preferences' ) ) {
+            $prefs = NH_Core_Preferences::get_instance()->get_preferences( $recipient_email );
+            if ( 0 === (int) ( $prefs['cart_reminders'] ?? 1 ) || 1 === (int) ( $prefs['habeas_data_optout'] ?? 0 ) ) {
+                // Marcar registro como desuscrito en CartFlows para detener futuros correos de esta secuencia
+                global $wpdb;
+                if ( isset( $wpdb ) && is_object( $wpdb ) && ! empty( $wpdb->prefix ) ) {
+                    $ca_table = $wpdb->prefix . 'cartflows_ca_cart_abandonment';
+                    $cart_id  = is_object( $email_data ) && ! empty( $email_data->id )
+                        ? absint( $email_data->id )
+                        : ( is_array( $email_data ) && ! empty( $email_data['id'] ) ? absint( $email_data['id'] ) : 0 );
+
+                    if ( $cart_id > 0 ) {
+                        $wpdb->update(
+                            $ca_table,
+                            [ 'unsubscribed' => 1 ],
+                            [ 'id' => $cart_id ]
+                        );
+                    } else {
+                        $wpdb->update(
+                            $ca_table,
+                            [ 'unsubscribed' => 1 ],
+                            [ 'email' => $recipient_email ]
+                        );
+                    }
+                }
+
+                // Suprimir el envío inmediatamente
+                return '';
+            }
+        }
+
+        // 2. Inyección y resolución de macro personalizada {{cart.preferences_url}}
+        if ( ! empty( $recipient_email ) && class_exists( 'NH_Core_Preferences' ) ) {
+            $pref_url = NH_Core_Preferences::get_preference_url( $recipient_email );
+        } elseif ( function_exists( 'wc_get_account_endpoint_url' ) ) {
+            $pref_url = wc_get_account_endpoint_url( 'preferencias' );
+        } elseif ( function_exists( 'home_url' ) ) {
+            $pref_url = home_url( '/mi-cuenta/preferencias/' );
+        } else {
+            $pref_url = 'https://normahana.com/mi-cuenta/preferencias/';
+        }
+
+        $escaped_pref_url = function_exists( 'esc_url' ) ? esc_url( $pref_url ) : $pref_url;
+        $body             = str_replace( '{{cart.preferences_url}}', $escaped_pref_url, $body );
+        $body             = str_replace( '{{cart.checkout_url}}&unsubscribe=true', $escaped_pref_url, $body );
+        $body             = str_replace( '{{cart.checkout_url}}&amp;unsubscribe=true', $escaped_pref_url, $body );
 
         // Solo procesamos si es un documento HTML completo
         if ( false === stripos( $body, '<!DOCTYPE' ) && false === stripos( $body, '<html' ) ) {
