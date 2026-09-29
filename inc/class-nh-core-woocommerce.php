@@ -81,6 +81,10 @@ class NH_Core_Woocommerce {
 
         // Recuperación de carritos abandonados (CartFlows Abandonment Recovery)
         add_action( 'wcf_ca_process_abandoned_order', [ $this, 'notify_abandoned_cart' ], 10, 1 );
+        add_filter( 'wcf_ca_email_body_before_send', [ $this, 'sanitize_ca_email_body' ], 10, 3 );
+        add_filter( 'woo_ca_email_template_table_style', [ $this, 'filter_ca_email_table_style' ], 10, 1 );
+        add_filter( 'woo_ca_recovery_enable_cart_total', '__return_true' );
+        add_filter( 'woo_ca_default_first_name', [ $this, 'filter_ca_default_first_name' ] );
 
         // Recordatorio de pago por transferencia bancaria (BACS) a las 4 horas
         add_action( 'woocommerce_order_status_on-hold', [ $this, 'schedule_bacs_pending_reminder' ], 10, 1 );
@@ -1441,6 +1445,122 @@ class NH_Core_Woocommerce {
         ];
 
         $this->send_telegram_notification( $payload );
+    }
+
+    /**
+     * Fallback limpio para el nombre de pila en CartFlows Recovery Emails.
+     * Evita el texto en inglés 'there' si no hay nombre registrado.
+     *
+     * @param string $default
+     * @return string
+     */
+    public function filter_ca_default_first_name( $default ) {
+        return '';
+    }
+
+    /**
+     * Estilizado editorial de lujo para la tabla de productos de CartFlows ({{cart.product.table}}).
+     *
+     * @param array $style
+     * @return array
+     */
+    public function filter_ca_email_table_style( $style ) {
+        $cell_style = 'color: #1a1918; border: 1px solid #edebe7; font-family: -apple-system, BlinkMacSystemFont, \'Segoe UI\', Roboto, Helvetica, Arial, sans-serif; font-size: 13px; line-height: 1.5; padding: 12px 14px; vertical-align: middle; text-align: left;';
+
+        return [
+            'product_image' => [
+                'style'     => 'width: 56px; height: 56px; object-fit: cover; border-radius: 4px; border: 1px solid #edebe7; display: block; margin: 0 auto;',
+                'attribute' => 'width="56" height="56"',
+            ],
+            'table'         => [
+                'style'     => $cell_style,
+                'attribute' => 'align="center" width="100%" cellpadding="12" cellspacing="0" style="width: 100%; border-collapse: collapse; border: 1px solid #edebe7; background-color: #ffffff; margin: 20px 0 24px 0;"',
+            ],
+        ];
+    }
+
+    /**
+     * Sanitiza el cuerpo HTML de los emails de recuperación de CartFlows.
+     * Elimina etiquetas <p> y <br> parásitas insertadas por wpautop() en plantillas HTML completas
+     * y aplica formato y acabados editoriales Norma Hana a {{cart.product.table}}.
+     *
+     * @param string $body
+     * @param object $email_data
+     * @param bool   $preview_email
+     * @return string
+     */
+    public function sanitize_ca_email_body( $body, $email_data = null, $preview_email = false ) {
+        if ( empty( $body ) || ! is_string( $body ) ) {
+            return $body;
+        }
+
+        // Solo procesamos si es un documento HTML completo
+        if ( false === stripos( $body, '<!DOCTYPE' ) && false === stripos( $body, '<html' ) ) {
+            return $body;
+        }
+
+        // 1. Limpieza de <p> al inicio antes de <!DOCTYPE o <html
+        $body = preg_replace( '/^\s*<p>\s*(<!DOCTYPE|<html)/i', '$1', $body );
+
+        // 2. Limpieza de <br /> inmediatamente después o antes de tags HTML estructurales
+        $body = preg_replace( '/(<\/?(?:html|head|meta|title|style|link|body|table|thead|tbody|tfoot|tr|th|td|div|p|span|a|img|h[1-6]|b|strong|i|em)[^>]*>)\s*<br\s*\/?>/i', '$1', $body );
+        $body = preg_replace( '/<br\s*\/?>\s*(<\/?(?:html|head|meta|title|style|link|body|table|thead|tbody|tfoot|tr|th|td|div|p|span|a|img|h[1-6]|b|strong|i|em)[^>]*>)/i', '$1', $body );
+
+        // 3. Limpieza de <br /> alrededor de comentarios condicionales MSO
+        $body = preg_replace( '/(<!--\[if[^\]]*\]>|<!\[endif\]-->)\s*<br\s*\/?>/i', '$1', $body );
+        $body = preg_replace( '/<br\s*\/?>\s*(<!--\[if[^\]]*\]>|<!\[endif\]-->)/i', '$1', $body );
+
+        // 4. Limpieza de <p> y </p> alrededor de comentarios HTML y MSO
+        $body = preg_replace( '/<p>\s*(<!--\[if[^\]]*\]>)/i', '$1', $body );
+        $body = preg_replace( '/(<!\[endif\]-->)\s*<\/p>/i', '$1', $body );
+        $body = preg_replace( '/<p>\s*(<!--.*?-->)\s*<\/p>/is', '$1', $body );
+
+        // 5. Limpieza de <p> y </p> alrededor de tags estructurales (html, head, meta, title, style, link, body, table, thead, tbody, tfoot, tr, th, td, div)
+        $body = preg_replace( '/<p>\s*(<\/?(?:html|head|meta|title|style|link|body|table|thead|tbody|tfoot|tr|th|td|div)[^>]*>)/i', '$1', $body );
+        $body = preg_replace( '/(<\/?(?:html|head|meta|title|style|link|body|table|thead|tbody|tfoot|tr|th|td|div)[^>]*>)\s*<\/p>/i', '$1', $body );
+
+        // 6. Limpieza de párrafos vacíos o solo con espacios / saltos
+        $body = preg_replace( '/<p>\s*(?:<br\s*\/?>|&nbsp;|\s)*<\/p>/i', '', $body );
+
+        // 7. Limpieza de </p> trailing antes de </body> o </html>
+        $body = preg_replace( '/<\/p>\s*<\/(?:body|html)>/i', '</$1>', $body );
+
+        // 6. Refinamiento editorial de la tabla de productos de CartFlows:
+        // CartFlows hardcodea style="float: none; border: 1px solid #e5e5e5;" en la etiqueta <table>
+        $body = preg_replace(
+            '/<table[^>]*style="float:\s*none;\s*border:\s*1px\s*solid\s*#e5e5e5;"[^>]*>/i',
+            '<table role="presentation" border="0" cellpadding="12" cellspacing="0" width="100%" style="width: 100%; border-collapse: collapse; border: 1px solid #edebe7; background-color: #ffffff; margin: 18px 0 24px 0;">',
+            $body
+        );
+
+        // Estilizado de los encabezados <th> de CartFlows (Artículo, Nombre, Cantidad, Precio, Subtotal)
+        $body = preg_replace_callback(
+            '/<th\s+style="([^"]*)"([^>]*)>(.*?)<\/th>/is',
+            function( $matches ) {
+                $custom_th_style = 'background-color: #faf7f2; color: #8c7335; font-family: -apple-system, BlinkMacSystemFont, \'Segoe UI\', Roboto, sans-serif; font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; font-weight: 600; padding: 10px 12px; border-bottom: 2px solid #edebe7; text-align: left;';
+                return '<th style="' . $custom_th_style . '"' . $matches[2] . '>' . $matches[3] . '</th>';
+            },
+            $body
+        );
+
+        // Ajuste estético del label del total del carrito
+        $body = str_replace(
+            'Total del carrito ( Total + envío + impuestos )',
+            '<span style="font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: #55514e; font-weight: 600;">Total de tu selección:</span>',
+            $body
+        );
+
+        // 7. Limpieza de fallbacks de saludo si el cliente no ingresó nombre de pila
+        $body = str_replace( 'Hola  ✨', 'Hola ✨', $body );
+        $body = str_replace( 'Querida :', 'Querida amiga:', $body );
+        $body = str_replace( 'Querida  :', 'Querida amiga:', $body );
+
+        // 8. Fallback de cupón para el email 3 si no se generó dinámicamente
+        if ( false !== strpos( $body, '{{cart.coupon_code}}' ) ) {
+            $body = str_replace( '{{cart.coupon_code}}', 'ATELIER-CORTESIA', $body );
+        }
+
+        return $body;
     }
 
     /**
