@@ -114,6 +114,8 @@ class NH_Core_Woocommerce {
         add_filter( 'woocommerce_account_menu_items', [ $this, 'add_preferences_account_menu_item' ], 40, 1 );
         add_action( 'woocommerce_account_preferencias_endpoint', [ $this, 'render_preferences_endpoint' ] );
         add_action( 'template_redirect', [ $this, 'maybe_bypass_login_for_preferences_token' ] );
+        add_action( 'wp_ajax_nh_save_preferences', [ $this, 'ajax_save_preferences' ] );
+        add_action( 'wp_ajax_nopriv_nh_save_preferences', [ $this, 'ajax_save_preferences' ] );
     }
 
     /**
@@ -268,6 +270,45 @@ class NH_Core_Woocommerce {
                     true
                 );
             }
+        }
+
+        // Estilos y scripts para el Centro de Preferencias
+        $prefs_css = NH_CORE_PATH . 'assets/css/nh-preferences.css';
+        $prefs_js  = NH_CORE_PATH . 'assets/js/nh-preferences.js';
+
+        wp_register_style(
+            'nh-preferences',
+            NH_CORE_URL . 'assets/css/nh-preferences.css',
+            [],
+            file_exists( $prefs_css ) ? filemtime( $prefs_css ) : '1.0.0'
+        );
+
+        wp_register_script(
+            'nh-preferences',
+            NH_CORE_URL . 'assets/js/nh-preferences.js',
+            [],
+            file_exists( $prefs_js ) ? filemtime( $prefs_js ) : '1.0.0',
+            true
+        );
+
+        wp_localize_script( 'nh-preferences', 'nh_ajax', [
+            'ajax_url' => admin_url( 'admin-ajax.php' ),
+        ] );
+
+        $is_prefs = false;
+        if ( function_exists( 'is_wc_endpoint_url' ) && is_wc_endpoint_url( 'preferencias' ) ) {
+            $is_prefs = true;
+        } elseif ( function_exists( 'is_account_page' ) && is_account_page() ) {
+            $is_prefs = true;
+        } elseif ( function_exists( 'get_query_var' ) && null !== get_query_var( 'preferencias', null ) ) {
+            $is_prefs = true;
+        } elseif ( isset( $_GET['nh_email'], $_GET['nh_token'] ) ) {
+            $is_prefs = true;
+        }
+
+        if ( $is_prefs ) {
+            wp_enqueue_style( 'nh-preferences' );
+            wp_enqueue_script( 'nh-preferences' );
         }
     }
 
@@ -2266,6 +2307,12 @@ class NH_Core_Woocommerce {
      * Renderiza el contenido del endpoint de preferencias para usuarios autenticados.
      */
     public function render_preferences_endpoint() {
+        if ( function_exists( 'wp_enqueue_style' ) ) {
+            wp_enqueue_style( 'nh-preferences' );
+        }
+        if ( function_exists( 'wp_enqueue_script' ) ) {
+            wp_enqueue_script( 'nh-preferences' );
+        }
         $template = defined( 'NH_CORE_PATH' ) ? NH_CORE_PATH . 'templates/myaccount/preferences.php' : plugin_dir_path( dirname( __FILE__ ) ) . 'templates/myaccount/preferences.php';
         if ( file_exists( $template ) ) {
             include $template;
@@ -2330,6 +2377,12 @@ class NH_Core_Woocommerce {
      * @return string
      */
     public function render_guest_preferences_page( $content ) {
+        if ( function_exists( 'wp_enqueue_style' ) ) {
+            wp_enqueue_style( 'nh-preferences' );
+        }
+        if ( function_exists( 'wp_enqueue_script' ) ) {
+            wp_enqueue_script( 'nh-preferences' );
+        }
         ob_start();
         $template = defined( 'NH_CORE_PATH' ) ? NH_CORE_PATH . 'templates/myaccount/preferences.php' : plugin_dir_path( dirname( __FILE__ ) ) . 'templates/myaccount/preferences.php';
         if ( file_exists( $template ) ) {
@@ -2338,6 +2391,68 @@ class NH_Core_Woocommerce {
             echo '<div class="nh-preferences-wrapper"><p>Cargando preferencias...</p></div>';
         }
         return ob_get_clean();
+    }
+
+    /**
+     * AJAX handler para guardar preferencias de comunicación y privacidad.
+     * Soporta clientes autenticados y enlaces tokenizados sin login.
+     */
+    public function ajax_save_preferences() {
+        check_ajax_referer( 'nh_preferences_nonce', 'nonce' );
+
+        $email = '';
+        if ( function_exists( 'is_user_logged_in' ) && is_user_logged_in() ) {
+            $current_user = wp_get_current_user();
+            if ( ! empty( $current_user->user_email ) ) {
+                $email = sanitize_email( $current_user->user_email );
+            }
+        }
+
+        if ( empty( $email ) ) {
+            $raw_email = isset( $_POST['email'] ) ? ( function_exists( 'wp_unslash' ) ? wp_unslash( $_POST['email'] ) : $_POST['email'] ) : '';
+            $email     = function_exists( 'sanitize_email' ) ? sanitize_email( $raw_email ) : trim( (string) $raw_email );
+
+            if ( ! function_exists( 'is_user_logged_in' ) || ! is_user_logged_in() ) {
+                $exp       = isset( $_POST['nh_exp'] ) ? (int) $_POST['nh_exp'] : 0;
+                $raw_token = isset( $_POST['nh_token'] ) ? ( function_exists( 'wp_unslash' ) ? wp_unslash( $_POST['nh_token'] ) : $_POST['nh_token'] ) : '';
+                $token     = function_exists( 'sanitize_text_field' ) ? sanitize_text_field( $raw_token ) : trim( (string) $raw_token );
+
+                if ( empty( $email ) || ! class_exists( 'NH_Core_Preferences' ) || ! NH_Core_Preferences::validate_token( $email, $exp, $token ) ) {
+                    wp_send_json_error( [ 'message' => 'Sesión o enlace expirado. Solicita un nuevo enlace.' ] );
+                }
+            }
+        }
+
+        if ( empty( $email ) ) {
+            wp_send_json_error( [ 'message' => 'Correo inválido.' ] );
+        }
+
+        $cart_reminders     = isset( $_POST['cart_reminders'] ) ? 1 : 0;
+        $atelier_news       = isset( $_POST['atelier_news'] ) ? 1 : 0;
+        $raw_channel        = isset( $_POST['preferred_channel'] ) ? ( function_exists( 'wp_unslash' ) ? wp_unslash( $_POST['preferred_channel'] ) : $_POST['preferred_channel'] ) : 'both';
+        $preferred_channel  = function_exists( 'sanitize_key' ) ? sanitize_key( $raw_channel ) : trim( (string) $raw_channel );
+        $habeas_data_optout = isset( $_POST['habeas_data_optout'] ) ? 1 : 0;
+
+        if ( ! in_array( $preferred_channel, [ 'whatsapp', 'email', 'both' ], true ) ) {
+            $preferred_channel = 'both';
+        }
+
+        if ( ! class_exists( 'NH_Core_Preferences' ) ) {
+            wp_send_json_error( [ 'message' => 'El módulo de preferencias no está disponible.' ] );
+        }
+
+        $saved = NH_Core_Preferences::get_instance()->save_preferences( $email, [
+            'cart_reminders'     => $cart_reminders,
+            'atelier_news'       => $atelier_news,
+            'preferred_channel'  => $preferred_channel,
+            'habeas_data_optout' => $habeas_data_optout,
+        ], 'web_account_page' );
+
+        if ( $saved ) {
+            wp_send_json_success( [ 'message' => 'Tus preferencias han sido actualizadas en el atelier.' ] );
+        } else {
+            wp_send_json_error( [ 'message' => 'No se realizaron cambios o hubo un error al guardar.' ] );
+        }
     }
 }
 
