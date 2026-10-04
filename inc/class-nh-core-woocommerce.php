@@ -3,6 +3,13 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
+if ( ! defined( 'NH_RECAPTCHA_SITE_KEY' ) ) {
+    define( 'NH_RECAPTCHA_SITE_KEY', '6Ldef9wtAAAAAFcMNmGCdmpxxGQsvZlga2eA7Cpc' );
+}
+if ( ! defined( 'NH_RECAPTCHA_SECRET_KEY' ) ) {
+    define( 'NH_RECAPTCHA_SECRET_KEY', '6Ldef9wtAAAAAJyuWHvqNC1YtbhKMrj854wa77Yg' );
+}
+
 class NH_Core_Woocommerce {
     private static $instance = null;
 
@@ -23,6 +30,7 @@ class NH_Core_Woocommerce {
         add_shortcode( 'addi_widget', [ $this, 'addi_widget_shortcode' ] );
         add_action( 'pre_get_posts', [ $this, 'apply_price_filter_to_all_queries' ], 99 );
         add_action( 'wp_enqueue_scripts', [ $this, 'register_assets' ] );
+        add_action( 'wp_enqueue_scripts', [ $this, 'enqueue_recaptcha_v3' ] );
         add_action( 'wp_enqueue_scripts', [ $this, 'dequeue_conflicting_styles' ], 999 );
         add_filter( 'njt_whatsapp_hide_widget', [ $this, 'maybe_hide_whatsapp_widget' ], 10, 5 );
         add_filter( 'woocommerce_locate_template', [ $this, 'locate_quantity_input_template' ], 10, 3 );
@@ -90,17 +98,15 @@ class NH_Core_Woocommerce {
         add_action( 'woocommerce_order_status_on-hold', [ $this, 'schedule_bacs_pending_reminder' ], 10, 1 );
         add_action( 'nh_check_bacs_pending_order', [ $this, 'process_bacs_pending_reminder' ], 10, 1 );
 
-        // Monitoreo de pedidos en taller sin despachar (>48 horas)
-        add_action( 'woocommerce_order_status_processing', [ $this, 'schedule_delayed_processing_alert' ], 10, 1 );
-        add_action( 'nh_check_delayed_processing_order', [ $this, 'process_delayed_processing_alert' ], 10, 1 );
+        // Monitoreo de pedidos en taller sin despachar (>48 horas) [DESACTIVADO]
+        // add_action( 'woocommerce_order_status_processing', [ $this, 'schedule_delayed_processing_alert' ], 10, 1 );
+        // add_action( 'nh_check_delayed_processing_order', [ $this, 'process_delayed_processing_alert' ], 10, 1 );
 
-        // Notificaciones operativas a Telegram (Venta confirmada, Inventario crítico y Reporte nocturno)
+        // Notificaciones operativas a Telegram (Venta confirmada e Inventario crítico)
         add_action( 'woocommerce_order_status_processing', [ $this, 'notify_new_confirmed_sale' ], 10, 1 );
         add_action( 'woocommerce_order_status_completed', [ $this, 'notify_new_confirmed_sale' ], 10, 1 );
         add_action( 'woocommerce_no_stock', [ $this, 'notify_no_stock' ], 10, 1 );
         add_action( 'init', [ $this, 'maybe_schedule_daily_briefing' ] );
-        add_action( 'nh_daily_nightly_recap', [ $this, 'send_daily_nightly_recap' ] );
-        add_action( 'nh_daily_morning_briefing', [ $this, 'send_daily_nightly_recap' ] );
 
         // Optimización CRO y ergonomía móvil para Checkout (Fase 1)
         add_filter( 'woocommerce_checkout_fields', [ $this, 'optimize_checkout_fields_cro' ], 9999 );
@@ -1373,6 +1379,144 @@ class NH_Core_Woocommerce {
     }
 
     /**
+     * Valida si los datos de un carrito/checkout pertenecen a un bot o prueba automatizada (0 fricción para usuarios reales).
+     *
+     * @param string $email
+     * @param string $first_name
+     * @param string $last_name
+     * @param string $phone
+     * @return bool True si es bot o datos ficticios/spam.
+     */
+    private function is_bot_or_spam_checkout( string $email, string $first_name = '', string $last_name = '', string $phone = '' ): bool {
+        if ( empty( $email ) || ! is_email( $email ) ) {
+            return true;
+        }
+
+        $email_lower = strtolower( trim( $email ) );
+        $domain      = substr( strrchr( $email_lower, '@' ), 1 );
+        $local_part  = strstr( $email_lower, '@', true );
+
+        // 1. Detección por palabras clave en dominio y subdominios de bots/desechables
+        $bot_domain_keywords = [
+            'bot', 'mailinator', 'temp', 'fake', 'trash', 'disposable', 'joonix',
+            'storebot', 'guerrilla', 'maildrop', 'sharklasers', '10minute', 'getnada',
+            'dispostable', 'yopmail', 'asdf', 'qwerty', 'test', 'example'
+        ];
+
+        foreach ( $bot_domain_keywords as $keyword ) {
+            if ( str_contains( $domain, $keyword ) ) {
+                return true;
+            }
+        }
+
+        // 2. Detección por patrones de correo sintético (ej. johnsmith005, test123, dummy)
+        $bot_email_patterns = [
+            '/johnsmith\d*/i',
+            '/johndoe\d*/i',
+            '/test\d*/i',
+            '/asdf\d*/i',
+            '/qwerty\d*/i',
+            '/bot\d*/i',
+            '/dummy\d*/i',
+            '/fake\d*/i'
+        ];
+
+        foreach ( $bot_email_patterns as $pattern ) {
+            if ( preg_match( $pattern, $local_part ) ) {
+                return true;
+            }
+        }
+
+        // 3. Validación de teléfono ficticio o no colombiano (ej. 15939400)
+        $clean_phone = preg_replace( '/\D+/', '', $phone );
+        if ( ! empty( $clean_phone ) ) {
+            if ( strlen( $clean_phone ) < 10 ) {
+                return true;
+            }
+            if ( strlen( $clean_phone ) === 10 && ! str_starts_with( $clean_phone, '3' ) ) {
+                return true;
+            }
+        }
+
+        // 4. Nombres sospechosos combinados con dominios genéricos .net
+        $clean_first = strtolower( trim( $first_name ) );
+        if ( in_array( $clean_first, [ 'test', 'asdf', 'qwerty', 'bot', 'admin', 'prueba', '1234' ], true ) ) {
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * Encola el script invisible de Google reCAPTCHA v3 en páginas de Checkout y Carrito.
+     */
+    public function enqueue_recaptcha_v3() {
+        if ( is_checkout() || is_cart() ) {
+            wp_enqueue_script(
+                'nh-recaptcha-v3',
+                'https://www.google.com/recaptcha/api.js?render=' . NH_RECAPTCHA_SITE_KEY,
+                [],
+                '3.0',
+                true
+            );
+            $inline_js = "
+                document.addEventListener('DOMContentLoaded', function() {
+                    if (typeof grecaptcha !== 'undefined') {
+                        grecaptcha.ready(function() {
+                            grecaptcha.execute('" . NH_RECAPTCHA_SITE_KEY . "', {action: 'checkout'}).then(function(token) {
+                                var forms = document.querySelectorAll('form.checkout, form.woocommerce-checkout');
+                                forms.forEach(function(form) {
+                                    var tokenInput = form.querySelector('input[name=\"nh_g_recaptcha_token\"]');
+                                    if (!tokenInput) {
+                                        tokenInput = document.createElement('input');
+                                        tokenInput.type = 'hidden';
+                                        tokenInput.name = 'nh_g_recaptcha_token';
+                                        form.appendChild(tokenInput);
+                                    }
+                                    tokenInput.value = token;
+                                });
+                            });
+                        });
+                    }
+                });
+            ";
+            wp_add_inline_script( 'nh-recaptcha-v3', $inline_js );
+        }
+    }
+
+    /**
+     * Verifica la puntuación de reCAPTCHA v3 con la API siteverify de Google.
+     *
+     * @param string $token Token de reCAPTCHA generado en el cliente.
+     * @return float Puntuación entre 0.0 (bot) y 1.0 (humano).
+     */
+    public function verify_recaptcha_v3_score( string $token ): float {
+        if ( empty( $token ) ) {
+            return 0.0;
+        }
+
+        $response = wp_remote_post( 'https://www.google.com/recaptcha/api/siteverify', [
+            'body' => [
+                'secret'   => NH_RECAPTCHA_SECRET_KEY,
+                'response' => $token,
+                'remoteip' => $_SERVER['REMOTE_ADDR'] ?? '',
+            ],
+            'timeout' => 5,
+        ] );
+
+        if ( is_wp_error( $response ) ) {
+            return 0.5; // Permitir en caso de timeout puntual de API Google para no afectar la UX
+        }
+
+        $data = json_decode( wp_remote_retrieve_body( $response ), true );
+        if ( ! empty( $data['success'] ) && isset( $data['score'] ) ) {
+            return (float) $data['score'];
+        }
+
+        return 0.0;
+    }
+
+    /**
      * Notificación de carrito abandonado procesado por CartFlows Recovery hacia Telegram.
      * Hook: wcf_ca_process_abandoned_order
      *
@@ -1399,6 +1543,31 @@ class NH_Core_Woocommerce {
 
         $email = ! empty( $checkout_details->email ) ? sanitize_email( $checkout_details->email ) : '';
 
+        // Campos adicionales de cliente
+        $other = ! empty( $checkout_details->other_fields ) ? maybe_unserialize( $checkout_details->other_fields ) : [];
+        if ( ! is_array( $other ) ) {
+            $other = [];
+        }
+
+        $first_name = ! empty( $other['wcf_first_name'] ) ? trim( (string) $other['wcf_first_name'] ) : 'Clienta';
+        $last_name  = ! empty( $other['wcf_last_name'] ) ? trim( (string) $other['wcf_last_name'] ) : '';
+        $phone      = ! empty( $other['wcf_phone_number'] ) ? trim( (string) $other['wcf_phone_number'] ) : '';
+        $location   = ! empty( $other['wcf_location'] ) ? trim( (string) $other['wcf_location'] ) : '';
+
+        // Filtro anti-bots y registros sintéticos/ficticios
+        if ( $this->is_bot_or_spam_checkout( $email, $first_name, $last_name, $phone ) ) {
+            return;
+        }
+
+        // Validación de reCAPTCHA v3 invisible (si el token está presente en POST o metadatos)
+        $recaptcha_token = $_POST['nh_g_recaptcha_token'] ?? ( $checkout_details->g_recaptcha_response ?? '' );
+        if ( ! empty( $recaptcha_token ) ) {
+            $score = $this->verify_recaptcha_v3_score( (string) $recaptcha_token );
+            if ( $score < 0.5 ) {
+                return; // Puntuación < 0.5 flagged as bot por Google
+            }
+        }
+
         // Verificación de revocación de consentimiento (Habeas Data Ley 1581 de 2012)
         $prefs = null;
         if ( ! empty( $email ) && class_exists( 'NH_Core_Preferences' ) ) {
@@ -1414,17 +1583,6 @@ class NH_Core_Woocommerce {
         if ( ! str_contains( $formatted_total, 'COP' ) ) {
             $formatted_total .= ' COP';
         }
-
-        // Campos adicionales de cliente
-        $other = ! empty( $checkout_details->other_fields ) ? maybe_unserialize( $checkout_details->other_fields ) : [];
-        if ( ! is_array( $other ) ) {
-            $other = [];
-        }
-
-        $first_name = ! empty( $other['wcf_first_name'] ) ? trim( (string) $other['wcf_first_name'] ) : 'Clienta';
-        $last_name  = ! empty( $other['wcf_last_name'] ) ? trim( (string) $other['wcf_last_name'] ) : '';
-        $phone      = ! empty( $other['wcf_phone_number'] ) ? trim( (string) $other['wcf_phone_number'] ) : '';
-        $location   = ! empty( $other['wcf_location'] ) ? trim( (string) $other['wcf_location'] ) : '';
 
         // Detalle de prendas del carrito
         $cart_contents = ! empty( $checkout_details->cart_contents ) ? maybe_unserialize( $checkout_details->cart_contents ) : [];
@@ -1543,7 +1701,44 @@ class NH_Core_Woocommerce {
             'buttons' => $buttons,
         ];
 
-        $this->send_telegram_notification( $payload );
+        // Notificación deshabilitada por solicitud del usuario: Almacenamiento en monitoreo pasivo silencioso
+        $this->log_abandoned_cart_monitoring( $payload, $checkout_details );
+    }
+
+    /**
+     * Guarda el carrito abandonado en el sistema de monitoreo pasivo (sin enviar notificación a Telegram).
+     * Mantiene un registro rotativo de los últimos 100 carritos en la opción nh_monitored_abandoned_carts y WC_Logger.
+     *
+     * @param array  $payload Datos del mensaje formateado.
+     * @param object $checkout_details Detalles originales del checkout.
+     */
+    private function log_abandoned_cart_monitoring( array $payload, $checkout_details ) {
+        $entry = [
+            'timestamp'  => current_time( 'mysql' ),
+            'email'      => ! empty( $checkout_details->email ) ? sanitize_email( $checkout_details->email ) : '',
+            'total'      => isset( $checkout_details->cart_total ) ? (float) $checkout_details->cart_total : 0.0,
+            'title'      => $payload['title'] ?? 'Carrito Abandonado',
+            'message'    => $payload['message'] ?? '',
+            'session_id' => ! empty( $checkout_details->session_id ) ? (string) $checkout_details->session_id : '',
+        ];
+
+        // 1. Guardar en WP Option (rotativo máximo 100 entradas)
+        $logs = get_option( 'nh_monitored_abandoned_carts', [] );
+        if ( ! is_array( $logs ) ) {
+            $logs = [];
+        }
+        array_unshift( $logs, $entry );
+        if ( count( $logs ) > 100 ) {
+            $logs = array_slice( $logs, 0, 100 );
+        }
+        update_option( 'nh_monitored_abandoned_carts', $logs, false );
+
+        // 2. Registro en WC_Logger (archivo nh-abandoned-carts.log)
+        if ( function_exists( 'wc_get_logger' ) ) {
+            $logger  = wc_get_logger();
+            $context = [ 'source' => 'nh-abandoned-carts' ];
+            $logger->info( sprintf( 'Monitoreado: %s | Total: %s | Email: %s', $entry['timestamp'], $entry['total'], $entry['email'] ), $context );
+        }
     }
 
     /**
@@ -1859,27 +2054,8 @@ class NH_Core_Woocommerce {
      * @param int|WC_Order $order_id Instancia o ID de la orden.
      */
     public function schedule_delayed_processing_alert( $order_id ) {
-        $order = $order_id instanceof WC_Order ? $order_id : wc_get_order( $order_id );
-        if ( ! $order ) {
-            return;
-        }
-
-        if ( ! function_exists( 'as_schedule_single_action' ) ) {
-            return;
-        }
-
-        $order_id = $order->get_id();
-        $args     = [ 'order_id' => $order_id ];
-        $group    = 'nh-operations';
-
-        if ( function_exists( 'as_has_scheduled_action' ) && as_has_scheduled_action( 'nh_check_delayed_processing_order', $args, $group ) ) {
-            return;
-        }
-
-        $scheduled_time = time() + ( 48 * HOUR_IN_SECONDS );
-        as_schedule_single_action( $scheduled_time, 'nh_check_delayed_processing_order', $args, $group );
-
-        $order->add_order_note( __( '[NH Operaciones] Tarea programada en 48 horas para monitorear despacho en taller.', 'nh-core' ) );
+        // Desactivado por solicitud
+        return;
     }
 
     /**
@@ -1889,56 +2065,8 @@ class NH_Core_Woocommerce {
      * @param int|array $order_id ID de la orden o array de argumentos.
      */
     public function process_delayed_processing_alert( $order_id ) {
-        if ( is_array( $order_id ) && isset( $order_id['order_id'] ) ) {
-            $order_id = $order_id['order_id'];
-        }
-        $order_id = absint( $order_id );
-        if ( ! $order_id ) {
-            return;
-        }
-
-        $order = wc_get_order( $order_id );
-        if ( ! $order || 'processing' !== $order->get_status() ) {
-            return;
-        }
-
-        if ( $order->get_meta( '_nh_delayed_processing_notified' ) ) {
-            return;
-        }
-
-        $admin_url = admin_url( 'post.php?post=' . $order_id . '&action=edit' );
-
-        $customer_name = trim( (string) $order->get_formatted_billing_full_name() );
-        $order_total   = html_entity_decode( wp_strip_all_tags( $order->get_formatted_order_total() ), ENT_QUOTES, 'UTF-8' );
-
-        $msg = 'El pedido #' . $order_id . ' lleva 48 horas en estado Procesando en el taller de Santa Marta sin marcarse como completado.';
-        if ( ! empty( $customer_name ) ) {
-            $msg .= "\n" . '<b>Cliente:</b> ' . esc_html( $customer_name );
-        }
-        if ( ! empty( $order_total ) ) {
-            $msg .= "\n" . '<b>Total:</b> ' . esc_html( $order_total );
-        }
-
-        $payload = [
-            'channel' => 'marketing',
-            'level'   => 'warning',
-            'title'   => '⏳ Pedido en Taller sin Despachar (>48h)',
-            'message' => $msg,
-            'chat_id' => '-5244885992',
-            'buttons' => [
-                [
-                    [ 'text' => '📦 Despachar / Ver Orden', 'url' => $admin_url ],
-                ],
-            ],
-        ];
-
-        $sent = $this->send_telegram_notification( $payload );
-        $order->update_meta_data( '_nh_delayed_processing_notified', time() );
-        $order->save();
-
-        if ( $sent ) {
-            $order->add_order_note( __( '[NH Operaciones] Alerta de pedido sin despachar (>48h) enviada a Telegram.', 'nh-core' ) );
-        }
+        // Desactivado por solicitud
+        return;
     }
 
     /**
@@ -2035,24 +2163,11 @@ class NH_Core_Woocommerce {
      * Hook: init / constructor
      */
     public function maybe_schedule_daily_briefing() {
-        if ( ! function_exists( 'as_has_scheduled_action' ) || ! function_exists( 'as_schedule_recurring_action' ) ) {
-            return;
-        }
-
-        // Desprogramar acción matutina legacy si existía
+        // Desprogramar acciones de reportes nocturnos y monitoreo de taller descontinuadas
         if ( function_exists( 'as_unschedule_all_actions' ) ) {
             as_unschedule_all_actions( 'nh_daily_morning_briefing' );
-        }
-
-        if ( ! as_has_scheduled_action( 'nh_daily_nightly_recap' ) ) {
-            $tz     = new DateTimeZone( 'America/Bogota' );
-            $now    = new DateTime( 'now', $tz );
-            $target = new DateTime( 'today 22:00:00', $tz );
-            if ( $now >= $target ) {
-                $target->modify( '+1 day' );
-            }
-            $next_10pm_timestamp = $target->getTimestamp();
-            as_schedule_recurring_action( $next_10pm_timestamp, DAY_IN_SECONDS, 'nh_daily_nightly_recap', [], 'nh-reports' );
+            as_unschedule_all_actions( 'nh_daily_nightly_recap' );
+            as_unschedule_all_actions( 'nh_check_delayed_processing_order' );
         }
     }
 
@@ -2063,79 +2178,8 @@ class NH_Core_Woocommerce {
      * @return bool True si la notificación se envió con éxito.
      */
     public function send_daily_nightly_recap() {
-        $tz          = new DateTimeZone( 'America/Bogota' );
-        $today_start = new DateTime( 'today 00:00:00', $tz );
-        $now         = new DateTime( 'now', $tz );
-
-        // 1. Pedidos confirmados en la ventana de hoy (processing y completed)
-        $today_orders = wc_get_orders( [
-            'status'        => [ 'processing', 'completed' ],
-            'date_created'  => $today_start->getTimestamp() . '...' . $now->getTimestamp(),
-            'limit'         => -1,
-        ] );
-
-        $order_count   = count( $today_orders );
-        $total_sum     = 0.0;
-        $product_sales = [];
-
-        foreach ( $today_orders as $order ) {
-            $total_sum += (float) $order->get_total();
-            foreach ( $order->get_items() as $item ) {
-                $name = $item->get_name();
-                $qty  = $item->get_quantity();
-                if ( ! isset( $product_sales[ $name ] ) ) {
-                    $product_sales[ $name ] = 0;
-                }
-                $product_sales[ $name ] += $qty;
-            }
-        }
-
-        // 2. Pedidos pendientes por despachar en taller (actualmente en 'processing')
-        $processing_orders = wc_get_orders( [
-            'status' => 'processing',
-            'limit'  => -1,
-            'return' => 'ids',
-        ] );
-        $pending_dispatch_count = count( $processing_orders );
-
-        // 3. Formateo de estadísticas de venta
-        $lines = [];
-
-        if ( $order_count > 0 ) {
-            $formatted_total = html_entity_decode( wp_strip_all_tags( wc_price( $total_sum ) ), ENT_QUOTES, 'UTF-8' );
-            if ( ! str_contains( $formatted_total, 'COP' ) ) {
-                $formatted_total .= ' COP';
-            }
-            $lines[] = '• <b>Ventas de hoy:</b> ' . $order_count . ' pedido' . ( 1 === $order_count ? '' : 's' ) . ' (' . esc_html( $formatted_total ) . ')';
-
-            if ( ! empty( $product_sales ) ) {
-                arsort( $product_sales );
-                $top_name = array_key_first( $product_sales );
-                $top_qty  = $product_sales[ $top_name ];
-                $lines[]  = '• <b>Prenda destacada hoy:</b> ' . esc_html( $top_name ) . ' (' . $top_qty . ' ud' . ( $top_qty > 1 ? 's' : '' ) . ')';
-            }
-        } else {
-            $lines[] = '• <b>Ventas de hoy:</b> Sin compras directas hoy • Día enfocado en descubrimiento.';
-        }
-
-        $lines[] = '• <b>En taller (confección/despacho):</b> ' . $pending_dispatch_count . ' pedido' . ( 1 === $pending_dispatch_count ? '' : 's' ) . ' en proceso';
-
-        $admin_orders_url = admin_url( 'edit.php?post_type=shop_order' );
-
-        $payload = [
-            'channel' => 'marketing',
-            'level'   => 'info',
-            'title'   => '🌙 Cierre del Día — Atelier Norma Hana (10:00 PM)',
-            'message' => implode( "\n", $lines ),
-            'chat_id' => '-5244885992',
-            'buttons' => [
-                [
-                    [ 'text' => '📋 Ver Pedidos en WP Admin', 'url' => $admin_orders_url ]
-                ]
-            ],
-        ];
-
-        return $this->send_telegram_notification( $payload );
+        // Desactivado por solicitud del usuario
+        return false;
     }
 
     /**
