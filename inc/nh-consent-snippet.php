@@ -3,11 +3,54 @@
  * Lightweight Auto-Consent Snippet for Norma Hana
  * Inyecta Consent Mode v2 en 'granted', auto-persiste nh_consent y auto-inicializa
  * pressidium_cookie_consent para evitar bloqueos en Meta Ads y navegación móvil.
+ * Desactiva explícitamente el Consent Mode de Pressidium para prevenir sobreescrituras en 'denied'.
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
+
+// Desactivar opción GCM de Pressidium programáticamente si está activa
+add_action( 'init', function() {
+    $opts = get_option( 'pressidium_cookie_consent_settings' );
+    if ( is_array( $opts ) && ! empty( $opts['pressidium_options']['gcm']['enabled'] ) ) {
+        $opts['pressidium_options']['gcm']['enabled'] = false;
+        update_option( 'pressidium_cookie_consent_settings', $opts );
+    }
+
+    // Desenganchar el listener early_enqueue_scripts de Pressidium que corre a prioridad -10
+    remove_all_actions( 'wp_enqueue_scripts', -10 );
+}, 5 );
+
+// Dequeue y deregister del script consent-mode.js de Pressidium en wp_enqueue_scripts (prioridad 9999)
+add_action( 'wp_enqueue_scripts', function() {
+    wp_dequeue_script( 'consent-mode-script' );
+    wp_deregister_script( 'consent-mode-script' );
+    wp_dequeue_script( 'consent-mode-script-js' );
+    wp_deregister_script( 'consent-mode-script-js' );
+}, 9999 );
+
+add_action( 'wp_print_scripts', function() {
+    wp_dequeue_script( 'consent-mode-script' );
+    wp_deregister_script( 'consent-mode-script' );
+    wp_dequeue_script( 'consent-mode-script-js' );
+    wp_deregister_script( 'consent-mode-script-js' );
+}, 9999 );
+
+// Excluir consent-mode de la minificación y diferimiento de WP Rocket
+add_filter( 'rocket_exclude_js', function( $excluded ) {
+    $excluded[] = 'consent-mode.js';
+    $excluded[] = 'consent-mode-script';
+    return $excluded;
+} );
+
+// Bloquear cualquier intento de renderizado de consent-mode.js a nivel de tag HTML
+add_filter( 'script_loader_src', function( $src, $handle ) {
+    if ( strpos( (string) $handle, 'consent-mode' ) !== false || strpos( (string) $src, 'consent-mode.js' ) !== false ) {
+        return false;
+    }
+    return $src;
+}, 9999, 2 );
 
 add_action( 'wp_head', 'nh_inject_auto_consent_mode', -10002 );
 function nh_inject_auto_consent_mode() {
