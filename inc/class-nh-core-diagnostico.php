@@ -1,25 +1,29 @@
 <?php
-if ( ! defined( 'ABSPATH' ) ) {
+if (! defined('ABSPATH')) {
     exit;
 }
 
-class NH_Core_Diagnostico {
+class NH_Core_Diagnostico
+{
     private static $instance = null;
 
-    public static function get_instance() {
-        if ( null === self::$instance ) {
+    public static function get_instance()
+    {
+        if (null === self::$instance) {
             self::$instance = new self();
         }
         return self::$instance;
     }
 
-    private function __construct() {
-        add_shortcode( 'nh_diagnostico_estilo', [ $this, 'render' ] );
-        add_action( 'wp_enqueue_scripts', [ $this, 'register_assets' ] );
-        add_filter( 'rocket_delay_javascript_exclusions', [ $this, 'exclude_from_delay_js' ] );
+    private function __construct()
+    {
+        add_shortcode('nh_diagnostico_estilo', [ $this, 'render' ]);
+        add_action('wp_enqueue_scripts', [ $this, 'register_assets' ]);
+        add_filter('rocket_delay_javascript_exclusions', [ $this, 'exclude_from_delay_js' ]);
     }
 
-    public function register_assets() {
+    public function register_assets()
+    {
         $css_path = NH_CORE_PATH . 'assets/css/nh-diagnostico.css';
         $js_path  = NH_CORE_PATH . 'assets/js/nh-diagnostico.js';
 
@@ -27,7 +31,7 @@ class NH_Core_Diagnostico {
             'nh-diagnostico',
             NH_CORE_URL . 'assets/css/nh-diagnostico.css',
             [],
-            file_exists( $css_path ) ? filemtime( $css_path ) : '1.0.0'
+            file_exists($css_path) ? filemtime($css_path) : '1.0.0'
         );
 
         // GSAP desde CDN — solo se carga cuando el shortcode se usa
@@ -38,30 +42,31 @@ class NH_Core_Diagnostico {
             '3.12.5',
             true
         );
-        wp_script_add_data( 'nh-gsap', 'rocket-no-delay', true );
+        wp_script_add_data('nh-gsap', 'rocket-no-delay', true);
 
         wp_register_script(
             'nh-diagnostico',
             NH_CORE_URL . 'assets/js/nh-diagnostico.js',
             [ 'nh-gsap' ],
-            file_exists( $js_path ) ? filemtime( $js_path ) : '1.0.0',
+            file_exists($js_path) ? filemtime($js_path) : '1.0.0',
             true
         );
-        wp_script_add_data( 'nh-diagnostico', 'rocket-no-delay', true );
+        wp_script_add_data('nh-diagnostico', 'rocket-no-delay', true);
     }
 
-    public function render() {
+    public function render()
+    {
         // Encolar assets solo cuando el shortcode se renderiza
-        wp_enqueue_style( 'nh-diagnostico' );
-        wp_enqueue_script( 'nh-gsap' );
-        wp_enqueue_script( 'nh-diagnostico' );
+        wp_enqueue_style('nh-diagnostico');
+        wp_enqueue_script('nh-gsap');
+        wp_enqueue_script('nh-diagnostico');
 
         // Pasar configuración al JS
-        wp_localize_script( 'nh-diagnostico', 'nhDiagnostico', [
-            'webhookUrl' => apply_filters( 'nh_diagnostico_webhook_url', $this->get_webhook_url() ),
+        wp_localize_script('nh-diagnostico', 'nhDiagnostico', [
+            'webhookUrl' => apply_filters('nh_diagnostico_webhook_url', $this->get_webhook_url()),
             'quizUrl'    => 'https://www.normahana.com/diagnostico-estilo/',
             'img'        => $this->get_image_urls(),
-        ] );
+        ]);
 
         return '<div id="nh-diagnostico">'
             . '<div class="stage">'
@@ -72,18 +77,21 @@ class NH_Core_Diagnostico {
             . '</div>';
     }
 
-    public function exclude_from_delay_js( $exclusions ) {
+    public function exclude_from_delay_js($exclusions)
+    {
         $exclusions[] = 'nh-gsap';
         $exclusions[] = 'nh-diagnostico';
         return $exclusions;
     }
 
-    private function get_webhook_url() {
-        $url = getenv( 'N8N_DIAGNOSTICO_WEBHOOK_URL' );
+    private function get_webhook_url()
+    {
+        $url = getenv('N8N_DIAGNOSTICO_WEBHOOK_URL');
         return $url ? $url : '';
     }
 
-    private function get_image_urls() {
+    private function get_image_urls()
+    {
         $base = NH_CORE_URL . 'assets/images/diagnostico/';
         return [
             'cover'          => $base . 'cover.webp',

@@ -159,19 +159,22 @@ CREATE TABLE wp_nh_communication_preferences (
 ## 5. Verification Commands Reference
 
 ```bash
-# 1. PHP Syntax Check Across All PSR-4 Classes
-php -l ecommerce/wp-content/plugins/nh-core/nh-core.php
-find ecommerce/wp-content/plugins/nh-core/src/ -name "*.php" -exec php -l {} \;
+# 1. Automated Health Gate (Syntax, PHPStan Level 6, PHPUnit Unit Tests)
+./scripts/validate-nh-core.sh
 
-# 2. Test PSR-4 Class Instantiation via PHP CLI
-php -r 'function plugin_dir_path($f){return dirname($f)."/";}; function add_action(){}; define("ABSPATH", "/tmp/"); require_once "ecommerce/wp-content/plugins/nh-core/nh-core.php"; $service = new \NormaHana\Core\Modules\Preferences\PreferencesTokenService(); echo $service->generate_token("test@example.com", time() + 86400) . "\n";'
+# 2. Automated Secure Deploy to Production VPS with OPcache Reset & Live Health Probe Gate
+./scripts/deploy-nh-core.sh
 
-# 3. Deploy to VPS
-rsync -avz --exclude '.git' ecommerce/wp-content/plugins/nh-core/ root@2.25.85.177:/docker/normahana/html/wp-content/plugins/nh-core/
-
-# 4. Flush OPcache on VPS
-ssh root@2.25.85.177 "docker exec normahana-php-1 wp eval 'opcache_reset();' --allow-root"
-
-# 5. Live REST API Test
-curl -s -H 'X-NH-API-Key: nh_telegram_bot_sec_2026_x871a' 'https://www.normahana.com/wp-json/nh/v1/preferences?email=diegolnr3@gmail.com'
+# 3. Fast Wasm Sandbox Server (Playground)
+./scripts/playground-sandbox.sh
 ```
+
+---
+
+## 6. Mandatory AI Agent Self-Healing Protocol
+
+Before requesting code review or declaring completion, **EVERY AI AGENT MUST**:
+1. Run `./scripts/validate-nh-core.sh` locally.
+2. Confirm 0 syntax errors, 0 PHPStan static analysis errors, and 100% PHPUnit unit tests passing.
+3. For deployments to VPS production, execute `./scripts/deploy-nh-core.sh` and verify the live HTTP probe passes cleanly (HTTP 200).
+

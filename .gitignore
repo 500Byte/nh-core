@@ -30,3 +30,5 @@ phpunit.xml
 # Generated docs & scripts
 docs/
 scripts/
+.phpunit.result.cache
+vendor/

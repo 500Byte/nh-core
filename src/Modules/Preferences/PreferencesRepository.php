@@ -1,27 +1,30 @@
 <?php
 namespace NormaHana\Core\Modules\Preferences;
 
-if ( ! defined( 'ABSPATH' ) ) {
+if (! defined('ABSPATH')) {
     exit;
 }
 
-class PreferencesRepository {
-
+class PreferencesRepository
+{
     const TABLE_NAME = 'nh_communication_preferences';
 
-    public static function get_table_name(): string {
+    public static function get_table_name(): string
+    {
         global $wpdb;
         return $wpdb->prefix . self::TABLE_NAME;
     }
 
-    public function maybe_create_table(): void {
-        if ( get_option( 'nh_preferences_db_version' ) === '1.0.0' ) {
+    public function maybe_create_table(): void
+    {
+        if (get_option('nh_preferences_db_version') === '1.0.0') {
             return;
         }
         $this->create_table();
     }
 
-    public function create_table(): void {
+    public function create_table(): void
+    {
         global $wpdb;
         $table_name      = self::get_table_name();
         $charset_collate = $wpdb->get_charset_collate();
@@ -47,47 +50,51 @@ class PreferencesRepository {
         ) $charset_collate;";
 
         require_once ABSPATH . 'wp-admin/includes/upgrade.php';
-        dbDelta( $sql );
-        update_option( 'nh_preferences_db_version', '1.0.0' );
+        dbDelta($sql);
+        update_option('nh_preferences_db_version', '1.0.0');
     }
 
-    public function get_preferences( string $email ): array {
+    /**
+     * @return array<string, mixed>
+     */
+    public function get_preferences(string $email): array
+    {
         global $wpdb;
-        $clean_email = sanitize_email( strtolower( trim( $email ) ) );
-        if ( empty( $clean_email ) ) {
+        $clean_email = sanitize_email(strtolower(trim($email)));
+        if (empty($clean_email)) {
             return $this->get_default_preferences();
         }
 
         $table = self::get_table_name();
-        $row   = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM $table WHERE email = %s", $clean_email ), ARRAY_A );
+        $row   = $wpdb->get_row($wpdb->prepare("SELECT * FROM $table WHERE email = %s", $clean_email), ARRAY_A);
 
-        if ( ! $row ) {
-            $user = get_user_by( 'email', $clean_email );
-            if ( $user ) {
-                $cart_meta    = get_user_meta( $user->ID, '_nh_pref_cart_reminders', true );
-                $news_meta    = get_user_meta( $user->ID, '_nh_pref_atelier_news', true );
-                $channel_meta = get_user_meta( $user->ID, '_nh_pref_preferred_channel', true );
-                $optout_meta  = get_user_meta( $user->ID, '_nh_pref_habeas_data_optout', true );
+        if (! $row) {
+            $user = get_user_by('email', $clean_email);
+            if ($user) {
+                $cart_meta    = get_user_meta($user->ID, '_nh_pref_cart_reminders', true);
+                $news_meta    = get_user_meta($user->ID, '_nh_pref_atelier_news', true);
+                $channel_meta = get_user_meta($user->ID, '_nh_pref_preferred_channel', true);
+                $optout_meta  = get_user_meta($user->ID, '_nh_pref_habeas_data_optout', true);
 
                 return [
                     'email'              => $clean_email,
                     'user_id'            => $user->ID,
                     'cart_reminders'     => ( '' !== $cart_meta && false !== $cart_meta ) ? (int) $cart_meta : 1,
                     'atelier_news'       => ( '' !== $news_meta && false !== $news_meta ) ? (int) $news_meta : 1,
-                    'preferred_channel'  => ! empty( $channel_meta ) ? $channel_meta : 'both',
+                    'preferred_channel'  => ! empty($channel_meta) ? $channel_meta : 'both',
                     'habeas_data_optout' => ( '' !== $optout_meta && false !== $optout_meta ) ? (int) $optout_meta : 0,
                     'is_new'             => true,
                 ];
             }
-            return array_merge( $this->get_default_preferences(), [
+            return array_merge($this->get_default_preferences(), [
                 'email'  => $clean_email,
                 'is_new' => true,
-            ] );
+            ]);
         }
 
         return [
             'email'              => $row['email'],
-            'user_id'            => ! empty( $row['user_id'] ) ? (int) $row['user_id'] : null,
+            'user_id'            => ! empty($row['user_id']) ? (int) $row['user_id'] : null,
             'cart_reminders'     => (int) $row['cart_reminders'],
             'atelier_news'       => (int) $row['atelier_news'],
             'preferred_channel'  => $row['preferred_channel'],
@@ -96,7 +103,11 @@ class PreferencesRepository {
         ];
     }
 
-    public function get_default_preferences(): array {
+    /**
+     * @return array<string, mixed>
+     */
+    public function get_default_preferences(): array
+    {
         return [
             'email'              => '',
             'user_id'            => null,
@@ -108,30 +119,34 @@ class PreferencesRepository {
         ];
     }
 
-    public function save_preferences( string $email, array $data, string $source = 'web_account_page' ): bool {
+    /**
+     * @param array<string, mixed> $data
+     */
+    public function save_preferences(string $email, array $data, string $source = 'web_account_page'): bool
+    {
         global $wpdb;
-        $clean_email = sanitize_email( strtolower( trim( $email ) ) );
-        if ( empty( $clean_email ) ) {
+        $clean_email = sanitize_email(strtolower(trim($email)));
+        if (empty($clean_email)) {
             return false;
         }
 
-        $user    = get_user_by( 'email', $clean_email );
-        $user_id = $user ? $user->ID : ( ! empty( $data['user_id'] ) ? (int) $data['user_id'] : null );
+        $user    = get_user_by('email', $clean_email);
+        $user_id = $user ? $user->ID : ( ! empty($data['user_id']) ? (int) $data['user_id'] : null );
 
-        $cart_reminders     = isset( $data['cart_reminders'] ) ? (int) (bool) $data['cart_reminders'] : 1;
-        $atelier_news       = isset( $data['atelier_news'] ) ? (int) (bool) $data['atelier_news'] : 1;
-        $preferred_channel  = in_array( $data['preferred_channel'] ?? '', [ 'whatsapp', 'email', 'both' ], true ) ? $data['preferred_channel'] : 'both';
-        $habeas_data_optout = isset( $data['habeas_data_optout'] ) ? (int) (bool) $data['habeas_data_optout'] : 0;
-        $optout_reason      = isset( $data['optout_reason'] ) ? sanitize_text_field( substr( $data['optout_reason'], 0, 255 ) ) : null;
+        $cart_reminders     = isset($data['cart_reminders']) ? (int) (bool) $data['cart_reminders'] : 1;
+        $atelier_news       = isset($data['atelier_news']) ? (int) (bool) $data['atelier_news'] : 1;
+        $preferred_channel  = in_array($data['preferred_channel'] ?? '', [ 'whatsapp', 'email', 'both' ], true) ? $data['preferred_channel'] : 'both';
+        $habeas_data_optout = isset($data['habeas_data_optout']) ? (int) (bool) $data['habeas_data_optout'] : 0;
+        $optout_reason      = isset($data['optout_reason']) ? sanitize_text_field(substr($data['optout_reason'], 0, 255)) : null;
 
-        if ( 1 === $habeas_data_optout ) {
+        if (1 === $habeas_data_optout) {
             $cart_reminders = 0;
             $atelier_news   = 0;
         }
 
         $table      = self::get_table_name();
-        $ip_address = sanitize_text_field( $_SERVER['REMOTE_ADDR'] ?? '' );
-        $user_agent = sanitize_text_field( substr( $_SERVER['HTTP_USER_AGENT'] ?? '', 0, 255 ) );
+        $ip_address = sanitize_text_field($_SERVER['REMOTE_ADDR'] ?? '');
+        $user_agent = sanitize_text_field(substr($_SERVER['HTTP_USER_AGENT'] ?? '', 0, 255));
 
         $record = [
             'email'              => $clean_email,
@@ -141,30 +156,30 @@ class PreferencesRepository {
             'preferred_channel'  => $preferred_channel,
             'habeas_data_optout' => $habeas_data_optout,
             'optout_reason'      => $optout_reason,
-            'source'             => sanitize_key( $source ),
+            'source'             => sanitize_key($source),
             'ip_address'         => $ip_address,
             'user_agent'         => $user_agent,
-            'updated_at'         => current_time( 'mysql' ),
+            'updated_at'         => current_time('mysql'),
         ];
 
-        $existing = $wpdb->get_var( $wpdb->prepare( "SELECT id FROM $table WHERE email = %s", $clean_email ) );
+        $existing = $wpdb->get_var($wpdb->prepare("SELECT id FROM $table WHERE email = %s", $clean_email));
 
-        if ( $existing ) {
-            $updated = $wpdb->update( $table, $record, [ 'id' => $existing ] );
+        if ($existing) {
+            $updated = $wpdb->update($table, $record, [ 'id' => $existing ]);
         } else {
-            $record['created_at'] = current_time( 'mysql' );
-            $updated              = $wpdb->insert( $table, $record );
+            $record['created_at'] = current_time('mysql');
+            $updated              = $wpdb->insert($table, $record);
         }
 
-        if ( $user_id ) {
-            update_user_meta( $user_id, '_nh_pref_cart_reminders', $cart_reminders );
-            update_user_meta( $user_id, '_nh_pref_atelier_news', $atelier_news );
-            update_user_meta( $user_id, '_nh_pref_preferred_channel', $preferred_channel );
-            update_user_meta( $user_id, '_nh_pref_habeas_data_optout', $habeas_data_optout );
-            update_user_meta( $user_id, '_nh_pref_updated_at', current_time( 'mysql' ) );
+        if ($user_id) {
+            update_user_meta($user_id, '_nh_pref_cart_reminders', $cart_reminders);
+            update_user_meta($user_id, '_nh_pref_atelier_news', $atelier_news);
+            update_user_meta($user_id, '_nh_pref_preferred_channel', $preferred_channel);
+            update_user_meta($user_id, '_nh_pref_habeas_data_optout', $habeas_data_optout);
+            update_user_meta($user_id, '_nh_pref_updated_at', current_time('mysql'));
         }
 
-        do_action( 'nh_preferences_saved', $clean_email, $record );
+        do_action('nh_preferences_saved', $clean_email, $record);
         return false !== $updated;
     }
 }

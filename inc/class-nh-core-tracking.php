@@ -8,70 +8,74 @@
  * @version 1.6.2
  */
 
-if ( ! defined( 'ABSPATH' ) ) {
+if (! defined('ABSPATH')) {
     exit;
 }
 
-class NH_Core_Tracking {
+class NH_Core_Tracking
+{
     private static $instance = null;
 
-    public static function get_instance() {
-        if ( null === self::$instance ) {
+    public static function get_instance()
+    {
+        if (null === self::$instance) {
             self::$instance = new self();
         }
         return self::$instance;
     }
 
-    private function __construct() {
+    private function __construct()
+    {
         $this->init_hooks();
     }
 
     /**
      * Register all WordPress hooks and filters.
      */
-    private function init_hooks() {
+    private function init_hooks()
+    {
         // Page context & Consent Mode — BEFORE GTM (-9999)
-        add_action( 'wp_head', [ $this, 'inject_consent_mode' ], -10002 );
-        add_action( 'wp_head', [ $this, 'inject_page_context' ], -10001 );
-        add_action( 'wp_head', [ $this, 'inject_tracking_js_inline' ], -10000 );
+        add_action('wp_head', [ $this, 'inject_consent_mode' ], -10002);
+        add_action('wp_head', [ $this, 'inject_page_context' ], -10001);
+        add_action('wp_head', [ $this, 'inject_tracking_js_inline' ], -10000);
 
         // Google Tag Manager
-        add_action( 'wp_head', [ $this, 'inject_gtm_head' ], -9999 );
-        add_action( 'wp_body_open', [ $this, 'inject_gtm_body' ], -9999 );
+        add_action('wp_head', [ $this, 'inject_gtm_head' ], -9999);
+        add_action('wp_body_open', [ $this, 'inject_gtm_body' ], -9999);
 
         // Product page tracking
-        add_action( 'wp_head', [ $this, 'datalayer_ver_producto' ] );
+        add_action('wp_head', [ $this, 'datalayer_ver_producto' ]);
 
         // Cart tracking script
-        add_action( 'wp_enqueue_scripts', [ $this, 'enqueue_datalayer_cart_script' ] );
+        add_action('wp_enqueue_scripts', [ $this, 'enqueue_datalayer_cart_script' ]);
 
         // Non-AJAX add-to-cart fallback (session-based)
-        add_action( 'woocommerce_add_to_cart', [ $this, 'capture_add_to_cart_in_session' ], 10, 6 );
+        add_action('woocommerce_add_to_cart', [ $this, 'capture_add_to_cart_in_session' ], 10, 6);
 
         // Checkout & Purchase tracking
-        add_action( 'wp_footer', [ $this, 'datalayer_iniciar_pago' ] );
-        add_action( 'wp_footer', [ $this, 'datalayer_compra_exitosa' ] );
+        add_action('wp_footer', [ $this, 'datalayer_iniciar_pago' ]);
+        add_action('wp_footer', [ $this, 'datalayer_compra_exitosa' ]);
 
         // View Cart tracking
-        add_action( 'wp_footer', [ $this, 'datalayer_ver_carrito' ] );
+        add_action('wp_footer', [ $this, 'datalayer_ver_carrito' ]);
 
         // Remove from cart tracking
-        add_action( 'woocommerce_cart_item_removed', [ $this, 'capture_remove_from_cart' ], 10, 2 );
+        add_action('woocommerce_cart_item_removed', [ $this, 'capture_remove_from_cart' ], 10, 2);
 
         // Welcome form tracking + consent enforcement (event delegation on
         // document — survives the Elementor popup re-render; the consent field
         // is the native acceptance added in the Elementor editor, rule #9)
-        add_action( 'wp_footer', [ $this, 'datalayer_form_bienvenida' ] );
+        add_action('wp_footer', [ $this, 'datalayer_form_bienvenida' ]);
 
         // Meta Pixel domain verification
-        add_action( 'wp_head', [ $this, 'fb_domain_verification' ], 1 );
+        add_action('wp_head', [ $this, 'fb_domain_verification' ], 1);
 
         // Exclude Google Tag Manager from WP Rocket JS delay execution (compliance & speed)
-        add_filter( 'rocket_delay_js_exclusions', [ $this, 'exclude_gtm_from_delay_js' ] );
+        add_filter('rocket_delay_js_exclusions', [ $this, 'exclude_gtm_from_delay_js' ]);
 
         // Inject data-nh-* attributes on add-to-cart buttons (ALWAYS — not gated by tracking disable)
-        add_filter( 'woocommerce_loop_add_to_cart_args', [ $this, 'inject_tracking_data_attributes' ], 10, 2 );
-        add_filter( 'woocommerce_product_add_to_cart_args', [ $this, 'inject_tracking_data_attributes' ], 10, 2 );
+        add_filter('woocommerce_loop_add_to_cart_args', [ $this, 'inject_tracking_data_attributes' ], 10, 2);
+        add_filter('woocommerce_product_add_to_cart_args', [ $this, 'inject_tracking_data_attributes' ], 10, 2);
     }
 
     // ============================================================
@@ -82,21 +86,23 @@ class NH_Core_Tracking {
      * Check if tracking debug mode is enabled via URL parameter.
      * Usage: ?nh_tracking_debug=1 forces tracking ON regardless of environment.
      */
-    public function is_tracking_debug_mode() {
-        return isset( $_GET['nh_tracking_debug'] ) && $_GET['nh_tracking_debug'] === '1';
+    public function is_tracking_debug_mode()
+    {
+        return isset($_GET['nh_tracking_debug']) && $_GET['nh_tracking_debug'] === '1';
     }
 
     /**
      * Determine if tracking scripts should be suppressed.
      * Returns true in local/development environments unless debug mode is active.
      */
-    public function is_tracking_disabled() {
-        if ( $this->is_tracking_debug_mode() ) {
+    public function is_tracking_disabled()
+    {
+        if ($this->is_tracking_debug_mode()) {
             return false;
         }
         return (
-            ( defined( 'WP_ENVIRONMENT_TYPE' ) && in_array( WP_ENVIRONMENT_TYPE, [ 'local', 'development' ], true ) )
-            || ( isset( $_SERVER['HTTP_HOST'] ) && strpos( $_SERVER['HTTP_HOST'], '.ddev.site' ) !== false )
+            ( defined('WP_ENVIRONMENT_TYPE') && in_array(WP_ENVIRONMENT_TYPE, [ 'local', 'development' ], true) )
+            || ( isset($_SERVER['HTTP_HOST']) && strpos($_SERVER['HTTP_HOST'], '.ddev.site') !== false )
         );
     }
 
@@ -104,20 +110,24 @@ class NH_Core_Tracking {
      * Legacy method — kept for backward compatibility.
      * @deprecated Use is_tracking_disabled() for tracking decisions.
      */
-    public function is_local_env() {
-        if ( isset( $_SERVER['HTTP_X_NH_TESTING'] ) && $_SERVER['HTTP_X_NH_TESTING'] === 'true' ) {
+    public function is_local_env()
+    {
+        if (isset($_SERVER['HTTP_X_NH_TESTING']) && $_SERVER['HTTP_X_NH_TESTING'] === 'true') {
             return false;
         }
-        return function_exists( 'wp_get_environment_type' )
-            && in_array( wp_get_environment_type(), [ 'local', 'development' ], true );
+        return function_exists('wp_get_environment_type')
+            && in_array(wp_get_environment_type(), [ 'local', 'development' ], true);
     }
 
     // ============================================================
     // GOOGLE TAG MANAGER
     // ============================================================
 
-    public function inject_consent_mode() {
-        if ( $this->is_tracking_disabled() ) return;
+    public function inject_consent_mode()
+    {
+        if ($this->is_tracking_disabled()) {
+            return;
+        }
         ?>
         <!-- NH Consent Mode (deterministic default) -->
         <script>
@@ -225,8 +235,11 @@ class NH_Core_Tracking {
         <?php
     }
 
-    public function inject_gtm_head() {
-        if ( $this->is_tracking_disabled() ) return;
+    public function inject_gtm_head()
+    {
+        if ($this->is_tracking_disabled()) {
+            return;
+        }
         ?>
         <!-- Google Tag Manager -->
         <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
@@ -238,8 +251,11 @@ class NH_Core_Tracking {
         <?php
     }
 
-    public function inject_gtm_body() {
-        if ( $this->is_tracking_disabled() ) return;
+    public function inject_gtm_body()
+    {
+        if ($this->is_tracking_disabled()) {
+            return;
+        }
         ?>
         <!-- Google Tag Manager (noscript) -->
         <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-N5G49CWP"
@@ -252,31 +268,45 @@ class NH_Core_Tracking {
     // PAGE CONTEXT ENRICHMENT
     // ============================================================
 
-    public function inject_page_context() {
-        if ( $this->is_tracking_disabled() ) return;
+    public function inject_page_context()
+    {
+        if ($this->is_tracking_disabled()) {
+            return;
+        }
 
         $page_type = 'other';
-        if ( is_front_page() ) $page_type = 'home';
-        elseif ( is_product() ) $page_type = 'product';
-        elseif ( is_product_category() ) $page_type = 'product_category';
-        elseif ( is_product_tag() ) $page_type = 'product_tag';
-        elseif ( is_page( 'shop' ) || is_shop() ) $page_type = 'shop';
-        elseif ( is_checkout() ) $page_type = 'checkout';
-        elseif ( is_cart() ) $page_type = 'cart';
-        elseif ( is_order_received_page() ) $page_type = 'order_received';
-        elseif ( is_account_page() ) $page_type = 'account';
-        elseif ( is_singular() ) $page_type = 'page';
+        if (is_front_page()) {
+            $page_type = 'home';
+        } elseif (is_product()) {
+            $page_type = 'product';
+        } elseif (is_product_category()) {
+            $page_type = 'product_category';
+        } elseif (is_product_tag()) {
+            $page_type = 'product_tag';
+        } elseif (is_page('shop') || is_shop()) {
+            $page_type = 'shop';
+        } elseif (is_checkout()) {
+            $page_type = 'checkout';
+        } elseif (is_cart()) {
+            $page_type = 'cart';
+        } elseif (is_order_received_page()) {
+            $page_type = 'order_received';
+        } elseif (is_account_page()) {
+            $page_type = 'account';
+        } elseif (is_singular()) {
+            $page_type = 'page';
+        }
 
         $user_status = 'guest';
-        if ( is_user_logged_in() ) {
+        if (is_user_logged_in()) {
             $current_user = wp_get_current_user();
-            $user_status = in_array( 'customer', (array) $current_user->roles ) ? 'customer' : 'admin';
+            $user_status = in_array('customer', (array) $current_user->roles) ? 'customer' : 'admin';
         }
 
         $product_category = '';
-        if ( is_product() || is_product_category() ) {
-            $terms = get_the_terms( get_the_ID(), 'product_cat' );
-            if ( $terms && ! is_wp_error( $terms ) ) {
+        if (is_product() || is_product_category()) {
+            $terms = get_the_terms(get_the_ID(), 'product_cat');
+            if ($terms && ! is_wp_error($terms)) {
                 $product_category = $terms[0]->name;
             }
         }
@@ -284,9 +314,9 @@ class NH_Core_Tracking {
         <script>
         window.dataLayer = window.dataLayer || [];
         window.dataLayer.push({
-            'page_type': '<?php echo esc_js( $page_type ); ?>',
-            'user_login_status': '<?php echo esc_js( $user_status ); ?>',
-            'product_category': '<?php echo esc_js( $product_category ); ?>',
+            'page_type': '<?php echo esc_js($page_type); ?>',
+            'user_login_status': '<?php echo esc_js($user_status); ?>',
+            'product_category': '<?php echo esc_js($product_category); ?>',
             'currency': 'COP'
         });
         </script>
@@ -302,19 +332,20 @@ class NH_Core_Tracking {
      * These are inert HTML data attributes; they do not fire tracking by themselves.
      * MUST be injected regardless of tracking state so the frontend JS can read them.
      */
-    public function inject_tracking_data_attributes( $args, $product ) {
-        if ( ! is_a( $product, 'WC_Product' ) ) {
+    public function inject_tracking_data_attributes($args, $product)
+    {
+        if (! is_a($product, 'WC_Product')) {
             return $args;
         }
 
-        $terms = get_the_terms( $product->get_id(), 'product_cat' );
-        $category = ( $terms && ! is_wp_error( $terms ) ) ? $terms[0]->name : '';
+        $terms = get_the_terms($product->get_id(), 'product_cat');
+        $category = ( $terms && ! is_wp_error($terms) ) ? $terms[0]->name : '';
 
         $args['data-nh-product-id']   = (string) $product->get_id();
-        $args['data-nh-product-name'] = sanitize_text_field( $product->get_name() );
+        $args['data-nh-product-name'] = sanitize_text_field($product->get_name());
         $args['data-nh-product-price'] = (string) $product->get_price();
         $args['data-nh-currency']     = 'COP';
-        $args['data-nh-category']     = sanitize_text_field( $category );
+        $args['data-nh-category']     = sanitize_text_field($category);
 
         return $args;
     }
@@ -323,20 +354,25 @@ class NH_Core_Tracking {
     // VIEW ITEM (Product Page)
     // ============================================================
 
-    public function datalayer_ver_producto() {
-        if ( $this->is_tracking_disabled() || ! is_product() ) return;
+    public function datalayer_ver_producto()
+    {
+        if ($this->is_tracking_disabled() || ! is_product()) {
+            return;
+        }
 
-        $product = wc_get_product( get_the_ID() );
-        if ( ! is_a( $product, 'WC_Product' ) ) return;
+        $product = wc_get_product(get_the_ID());
+        if (! is_a($product, 'WC_Product')) {
+            return;
+        }
 
         $id       = (string) $product->get_id();
-        $name     = sanitize_text_field( $product->get_name() );
+        $name     = sanitize_text_field($product->get_name());
         $price    = $product->get_price();
         $category = '';
 
-        $terms = get_the_terms( $product->get_id(), 'product_cat' );
-        if ( $terms && ! is_wp_error( $terms ) ) {
-            $category = sanitize_text_field( $terms[0]->name );
+        $terms = get_the_terms($product->get_id(), 'product_cat');
+        if ($terms && ! is_wp_error($terms)) {
+            $category = sanitize_text_field($terms[0]->name);
         }
         ?>
         <script>
@@ -346,13 +382,13 @@ class NH_Core_Tracking {
             'event': 'view_item',
             'ecommerce': {
                 'currency': 'COP',
-                'value': <?php echo esc_js( $price ); ?>,
+                'value': <?php echo esc_js($price); ?>,
                 'items': [{
-                    'item_id': '<?php echo esc_js( $id ); ?>',
-                    'item_name': '<?php echo esc_js( $name ); ?>',
-                    'price': <?php echo esc_js( $price ); ?>,
+                    'item_id': '<?php echo esc_js($id); ?>',
+                    'item_name': '<?php echo esc_js($name); ?>',
+                    'price': <?php echo esc_js($price); ?>,
                     'quantity': 1,
-                    'item_category': '<?php echo esc_js( $category ); ?>'
+                    'item_category': '<?php echo esc_js($category); ?>'
                 }]
             }
         });
@@ -365,29 +401,36 @@ class NH_Core_Tracking {
     // VIEW CART
     // ============================================================
 
-    public function datalayer_ver_carrito() {
-        if ( $this->is_tracking_disabled() || ! is_cart() ) return;
+    public function datalayer_ver_carrito()
+    {
+        if ($this->is_tracking_disabled() || ! is_cart()) {
+            return;
+        }
 
         $cart = WC()->cart;
-        if ( ! $cart ) return;
+        if (! $cart) {
+            return;
+        }
 
         $total = $cart->get_cart_contents_total();
         $items = [];
 
-        foreach ( $cart->get_cart() as $cart_item_key => $cart_item ) {
-            $_product = apply_filters( 'woocommerce_cart_item_product', $cart_item['data'], $cart_item, $cart_item_key );
-            if ( ! $_product ) continue;
+        foreach ($cart->get_cart() as $cart_item_key => $cart_item) {
+            $_product = apply_filters('woocommerce_cart_item_product', $cart_item['data'], $cart_item, $cart_item_key);
+            if (! $_product) {
+                continue;
+            }
 
             $item = [
                 'item_id'   => (string) $_product->get_id(),
-                'item_name' => sanitize_text_field( $_product->get_name() ),
+                'item_name' => sanitize_text_field($_product->get_name()),
                 'price'     => $_product->get_price(),
                 'quantity'  => $cart_item['quantity'],
             ];
 
-            if ( $_product->is_type( 'variation' ) ) {
-                $variant_str = $this->get_clean_variation_string( $_product, $cart_item['variation'] );
-                if ( $variant_str ) {
+            if ($_product->is_type('variation')) {
+                $variant_str = $this->get_clean_variation_string($_product, $cart_item['variation']);
+                if ($variant_str) {
                     $item['item_variant'] = $variant_str;
                 }
             }
@@ -402,9 +445,9 @@ class NH_Core_Tracking {
         window.dataLayer.push({
             'event': 'view_cart',
             'ecommerce': {
-                'currency': '<?php echo esc_js( get_woocommerce_currency() ); ?>',
-                'value': <?php echo esc_js( $total ); ?>,
-                'items': <?php echo wp_json_encode( $items ); ?>
+                'currency': '<?php echo esc_js(get_woocommerce_currency()); ?>',
+                'value': <?php echo esc_js($total); ?>,
+                'items': <?php echo wp_json_encode($items); ?>
             }
         });
         // Meta Pixel: ViewCart — fired via GTM
@@ -416,8 +459,11 @@ class NH_Core_Tracking {
     // CART SCRIPT (Frontend JS for add_to_cart)
     // ============================================================
 
-    public function enqueue_datalayer_cart_script() {
-        if ( $this->is_tracking_disabled() ) return;
+    public function enqueue_datalayer_cart_script()
+    {
+        if ($this->is_tracking_disabled()) {
+            return;
+        }
 
         wp_enqueue_script(
             'nh-datalayer-cart',
@@ -428,11 +474,11 @@ class NH_Core_Tracking {
         );
 
         // Non-AJAX fallback: emit events from session if present
-        if ( isset( WC()->session ) ) {
+        if (isset(WC()->session)) {
             // add_to_cart fallback
-            $added_event = WC()->session->get( 'nh_added_to_cart_event' );
-            if ( ! empty( $added_event ) ) {
-                WC()->session->set( 'nh_added_to_cart_event', null );
+            $added_event = WC()->session->get('nh_added_to_cart_event');
+            if (! empty($added_event)) {
+                WC()->session->set('nh_added_to_cart_event', null);
                 $ga4_event = [
                     'event'      => 'add_to_cart',
                     'ecommerce'  => [
@@ -449,15 +495,15 @@ class NH_Core_Tracking {
                 ];
                 wp_add_inline_script(
                     'nh-datalayer-cart',
-                    'window.dataLayer = window.dataLayer || []; window.dataLayer.push(' . wp_json_encode( $ga4_event ) . ');',
+                    'window.dataLayer = window.dataLayer || []; window.dataLayer.push(' . wp_json_encode($ga4_event) . ');',
                     'before'
                 );
             }
 
             // remove_from_cart fallback
-            $removed_event = WC()->session->get( 'nh_removed_from_cart_event' );
-            if ( ! empty( $removed_event ) ) {
-                WC()->session->set( 'nh_removed_from_cart_event', null );
+            $removed_event = WC()->session->get('nh_removed_from_cart_event');
+            if (! empty($removed_event)) {
+                WC()->session->set('nh_removed_from_cart_event', null);
                 $ga4_remove = [
                     'event'      => 'remove_from_cart',
                     'ecommerce'  => [
@@ -473,15 +519,18 @@ class NH_Core_Tracking {
                 ];
                 wp_add_inline_script(
                     'nh-datalayer-cart',
-                    'window.dataLayer.push(' . wp_json_encode( $ga4_remove ) . ');',
+                    'window.dataLayer.push(' . wp_json_encode($ga4_remove) . ');',
                     'before'
                 );
             }
         }
     }
 
-    public function inject_tracking_js_inline() {
-        if ( $this->is_tracking_disabled() ) return;
+    public function inject_tracking_js_inline()
+    {
+        if ($this->is_tracking_disabled()) {
+            return;
+        }
         ?>
         <!-- NH Tracking (Odoo task #18 — dedup Meta / event_id) -->
         <script>
@@ -523,16 +572,17 @@ class NH_Core_Tracking {
      * Capture add-to-cart for non-AJAX requests (form submit fallback).
      * Stores a minimal event in session; the frontend script emits it on next page load.
      */
-    public function capture_add_to_cart_in_session( $cart_item_key, $product_id, $quantity, $variation_id, $variation, $cart_item_data ) {
-        if ( $this->is_tracking_disabled() || wp_doing_ajax() || isset( $_REQUEST['wc-ajax'] ) ) {
+    public function capture_add_to_cart_in_session($cart_item_key, $product_id, $quantity, $variation_id, $variation, $cart_item_data)
+    {
+        if ($this->is_tracking_disabled() || wp_doing_ajax() || isset($_REQUEST['wc-ajax'])) {
             return;
         }
 
         $product_id_to_track = $variation_id ? (string) $variation_id : (string) $product_id;
         $is_variant          = (bool) $variation_id;
 
-        $product = wc_get_product( $variation_id ?: $product_id );
-        $name    = $product ? sanitize_text_field( $product->get_name() ) : '';
+        $product = wc_get_product($variation_id ?: $product_id);
+        $name    = $product ? sanitize_text_field($product->get_name()) : '';
         $price   = $product ? $product->get_price() : 0;
 
         $event_data = [
@@ -544,18 +594,18 @@ class NH_Core_Tracking {
             'item_is_variant' => $is_variant,
         ];
 
-        if ( $variation_id && ! empty( $variation ) ) {
-            $variant_product = wc_get_product( $variation_id );
-            if ( $variant_product ) {
-                $variant_str = $this->get_clean_variation_string( $variant_product, $variation );
-                if ( $variant_str ) {
+        if ($variation_id && ! empty($variation)) {
+            $variant_product = wc_get_product($variation_id);
+            if ($variant_product) {
+                $variant_str = $this->get_clean_variation_string($variant_product, $variation);
+                if ($variant_str) {
                     $event_data['item_variant'] = $variant_str;
                 }
             }
         }
 
-        if ( isset( WC()->session ) ) {
-            WC()->session->set( 'nh_added_to_cart_event', $event_data );
+        if (isset(WC()->session)) {
+            WC()->session->set('nh_added_to_cart_event', $event_data);
         }
     }
 
@@ -564,46 +614,49 @@ class NH_Core_Tracking {
      * Stores event in session for frontend emission on next page load (non-AJAX).
      * For AJAX removals (side cart), the frontend JS handles it directly.
      */
-    public function capture_remove_from_cart( $cart_item_key, $cart ) {
-        if ( $this->is_tracking_disabled() ) {
+    public function capture_remove_from_cart($cart_item_key, $cart)
+    {
+        if ($this->is_tracking_disabled()) {
             return;
         }
 
         $removed_items = $cart->get_removed_cart_contents();
         $cart_item = $removed_items[ $cart_item_key ] ?? null;
-        if ( ! $cart_item ) {
+        if (! $cart_item) {
             return;
         }
 
         $product_id   = $cart_item['variation_id'] ?: $cart_item['product_id'];
         $parent_id    = $cart_item['product_id'];
-        $product      = wc_get_product( $product_id );
-        if ( ! $product ) return;
+        $product      = wc_get_product($product_id);
+        if (! $product) {
+            return;
+        }
 
         $event_data = [
             'event'      => 'remove_from_cart',
             'product_id' => (string) $parent_id,
-            'item_name'  => sanitize_text_field( $product->get_name() ),
-            'price'      => floatval( $product->get_price() ),
-            'quantity'   => intval( $cart_item['quantity'] ),
+            'item_name'  => sanitize_text_field($product->get_name()),
+            'price'      => floatval($product->get_price()),
+            'quantity'   => intval($cart_item['quantity']),
         ];
 
-        if ( $cart_item['variation_id'] ) {
-            $variant_str = $this->get_clean_variation_string( $product, $cart_item['variation'] ?? [] );
-            if ( $variant_str ) {
+        if ($cart_item['variation_id']) {
+            $variant_str = $this->get_clean_variation_string($product, $cart_item['variation'] ?? []);
+            if ($variant_str) {
                 $event_data['item_variant'] = $variant_str;
             }
         }
 
         // AJAX: emitir inline (el JS listener de removed_from_cart también lo maneja)
-        if ( wp_doing_ajax() || isset( $_REQUEST['wc-ajax'] ) ) {
+        if (wp_doing_ajax() || isset($_REQUEST['wc-ajax'])) {
             // No store in session for AJAX — the JS handler fires removed_from_cart directly
             return;
         }
 
         // Non-AJAX: store in session for emission on next page load
-        if ( isset( WC()->session ) ) {
-            WC()->session->set( 'nh_removed_from_cart_event', $event_data );
+        if (isset(WC()->session)) {
+            WC()->session->set('nh_removed_from_cart_event', $event_data);
         }
     }
 
@@ -611,29 +664,36 @@ class NH_Core_Tracking {
     // BEGIN CHECKOUT
     // ============================================================
 
-    public function datalayer_iniciar_pago() {
-        if ( $this->is_tracking_disabled() || ! is_checkout() || is_order_received_page() ) return;
+    public function datalayer_iniciar_pago()
+    {
+        if ($this->is_tracking_disabled() || ! is_checkout() || is_order_received_page()) {
+            return;
+        }
 
         $cart = WC()->cart;
-        if ( ! $cart ) return;
+        if (! $cart) {
+            return;
+        }
 
         $total = $cart->get_cart_contents_total();
         $items = [];
 
-        foreach ( $cart->get_cart() as $cart_item_key => $cart_item ) {
-            $_product = apply_filters( 'woocommerce_cart_item_product', $cart_item['data'], $cart_item, $cart_item_key );
-            if ( ! $_product ) continue;
+        foreach ($cart->get_cart() as $cart_item_key => $cart_item) {
+            $_product = apply_filters('woocommerce_cart_item_product', $cart_item['data'], $cart_item, $cart_item_key);
+            if (! $_product) {
+                continue;
+            }
 
             $item = [
                 'item_id'   => (string) $_product->get_id(),
-                'item_name' => sanitize_text_field( $_product->get_name() ),
+                'item_name' => sanitize_text_field($_product->get_name()),
                 'price'     => $_product->get_price(),
                 'quantity'  => $cart_item['quantity'],
             ];
 
-            if ( $_product->is_type( 'variation' ) ) {
-                $variant_str = $this->get_clean_variation_string( $_product, $cart_item['variation'] );
-                if ( $variant_str ) {
+            if ($_product->is_type('variation')) {
+                $variant_str = $this->get_clean_variation_string($_product, $cart_item['variation']);
+                if ($variant_str) {
                     $item['item_variant'] = $variant_str;
                 }
             }
@@ -642,15 +702,15 @@ class NH_Core_Tracking {
         }
 
         $coupon_codes = $cart->get_applied_coupons();
-        $item_ids     = wp_list_pluck( $items, 'item_id' );
+        $item_ids     = wp_list_pluck($items, 'item_id');
 
         // Deterministic event_id based on cart hash (stable across browser/server)
-        $checkout_event_id = 'begin_checkout_' . md5( $cart->get_cart_hash() );
+        $checkout_event_id = 'begin_checkout_' . md5($cart->get_cart_hash());
 
         // Aggregate item names for Meta Pixel content_name
-        $item_names   = wp_list_pluck( $items, 'item_name' );
-        $content_name = implode( ', ', array_slice( $item_names, 0, 3 ) );
-        if ( count( $item_names ) > 3 ) {
+        $item_names   = wp_list_pluck($items, 'item_name');
+        $content_name = implode(', ', array_slice($item_names, 0, 3));
+        if (count($item_names) > 3) {
             $content_name .= ' ...';
         }
         ?>
@@ -659,12 +719,12 @@ class NH_Core_Tracking {
         // GA4 Standard Event: begin_checkout
         window.dataLayer.push({
             'event': 'begin_checkout',
-            'event_id': '<?php echo esc_js( $checkout_event_id ); ?>',
+            'event_id': '<?php echo esc_js($checkout_event_id); ?>',
             'ecommerce': {
                 'currency': 'COP',
-                'value': <?php echo esc_js( $total ); ?>,
-                'coupon': '<?php echo esc_js( implode( ',', $coupon_codes ) ); ?>',
-                'items': <?php echo wp_json_encode( $items ); ?>
+                'value': <?php echo esc_js($total); ?>,
+                'coupon': '<?php echo esc_js(implode(',', $coupon_codes)); ?>',
+                'items': <?php echo wp_json_encode($items); ?>
             }
         });
         // Meta Pixel: InitiateCheckout — fired via GTM (tag 21)
@@ -676,15 +736,22 @@ class NH_Core_Tracking {
     // PURCHASE (Order Received)
     // ============================================================
 
-    public function datalayer_compra_exitosa() {
-        if ( $this->is_tracking_disabled() || ! is_order_received_page() ) return;
+    public function datalayer_compra_exitosa()
+    {
+        if ($this->is_tracking_disabled() || ! is_order_received_page()) {
+            return;
+        }
 
         global $wp;
-        $order_id = isset( $wp->query_vars['order-received'] ) ? intval( $wp->query_vars['order-received'] ) : 0;
-        if ( ! $order_id ) return;
+        $order_id = isset($wp->query_vars['order-received']) ? intval($wp->query_vars['order-received']) : 0;
+        if (! $order_id) {
+            return;
+        }
 
-        $order = wc_get_order( $order_id );
-        if ( ! $order || $order->get_meta( '_nh_tracked_purchase' ) ) return;
+        $order = wc_get_order($order_id);
+        if (! $order || $order->get_meta('_nh_tracked_purchase')) {
+            return;
+        }
 
         $total        = $order->get_total();
         $currency     = $order->get_currency();
@@ -692,20 +759,22 @@ class NH_Core_Tracking {
         $items        = [];
         $item_ids     = [];
 
-        foreach ( $order->get_items() as $item_id => $item ) {
+        foreach ($order->get_items() as $item_id => $item) {
             $product = $item->get_product();
-            if ( ! $product ) continue;
+            if (! $product) {
+                continue;
+            }
 
             $item_data = [
                 'item_id'   => (string) $product->get_id(),
-                'item_name' => sanitize_text_field( $product->get_name() ),
+                'item_name' => sanitize_text_field($product->get_name()),
                 'price'     => $product->get_price(),
                 'quantity'  => $item->get_quantity(),
             ];
 
-            if ( $product->is_type( 'variation' ) ) {
-                $variant_str = $this->get_clean_variation_string( $product );
-                if ( $variant_str ) {
+            if ($product->is_type('variation')) {
+                $variant_str = $this->get_clean_variation_string($product);
+                if ($variant_str) {
                     $item_data['item_variant'] = $variant_str;
                 }
             }
@@ -724,15 +793,15 @@ class NH_Core_Tracking {
         // GA4 Standard Event: purchase
         window.dataLayer.push({
             'event': 'purchase',
-            'event_id': '<?php echo esc_js( $event_id ); ?>',
+            'event_id': '<?php echo esc_js($event_id); ?>',
             'ecommerce': {
-                'transaction_id': '<?php echo esc_js( $order_id ); ?>',
-                'currency': '<?php echo esc_js( $currency ); ?>',
-                'value': <?php echo esc_js( $total ); ?>,
-                'tax': <?php echo esc_js( $tax ); ?>,
-                'shipping': <?php echo esc_js( $shipping ); ?>,
-                'coupon': '<?php echo esc_js( implode( ',', $coupon_codes ) ); ?>',
-                'items': <?php echo wp_json_encode( $items ); ?>
+                'transaction_id': '<?php echo esc_js($order_id); ?>',
+                'currency': '<?php echo esc_js($currency); ?>',
+                'value': <?php echo esc_js($total); ?>,
+                'tax': <?php echo esc_js($tax); ?>,
+                'shipping': <?php echo esc_js($shipping); ?>,
+                'coupon': '<?php echo esc_js(implode(',', $coupon_codes)); ?>',
+                'items': <?php echo wp_json_encode($items); ?>
             }
         });
         // Meta Pixel: Purchase — fired via GTM (tag 22)
@@ -740,7 +809,7 @@ class NH_Core_Tracking {
         <?php
         // Mark AFTER script output — if JS is disabled, mark is never set,
         // so event retries on next page load (correct behavior).
-        $order->update_meta_data( '_nh_tracked_purchase', 'yes' );
+        $order->update_meta_data('_nh_tracked_purchase', 'yes');
         $order->save();
     }
 
@@ -766,7 +835,8 @@ class NH_Core_Tracking {
      *    jQuery: jQuery(document).on('submit_success', ...). WP Rocket JS
      *    delay may postpone jQuery, so the bind retries until it exists.
      */
-    public function datalayer_form_bienvenida() {
+    public function datalayer_form_bienvenida()
+    {
         $tracking_disabled = $this->is_tracking_disabled();
         ?>
         <script>
@@ -828,7 +898,7 @@ class NH_Core_Tracking {
                 }
             }, true);
 
-            <?php if ( ! $tracking_disabled ) : ?>
+            <?php if (! $tracking_disabled) : ?>
             // PUSH — submit_success is a jQuery custom event: delegation must
             // be jQuery on document. WP Rocket delay may postpone jQuery.
             (function bindPush() {
@@ -860,8 +930,11 @@ class NH_Core_Tracking {
     // META PIXEL — DOMAIN VERIFICATION
     // ============================================================
 
-    public function fb_domain_verification() {
-        if ( $this->is_tracking_disabled() ) return;
+    public function fb_domain_verification()
+    {
+        if ($this->is_tracking_disabled()) {
+            return;
+        }
         ?>
         <meta name="facebook-domain-verification" content="8z17ny54fvdte6y0uep5fkbxcnbww1" />
         <?php
@@ -878,28 +951,32 @@ class NH_Core_Tracking {
      * @param array      $variation_attrs    Optional variation attributes from cart item.
      * @return string                        Clean variation string, e.g. "Color: Negro / Talla: M".
      */
-    private function get_clean_variation_string( $product, $variation_attrs = [] ) {
-        if ( ! $product || ! $product->is_type( 'variation' ) ) {
+    private function get_clean_variation_string($product, $variation_attrs = [])
+    {
+        if (! $product || ! $product->is_type('variation')) {
             return '';
         }
 
-        $attributes = ! empty( $variation_attrs ) ? $variation_attrs : $product->get_variation_attributes();
+        $attributes = ! empty($variation_attrs) ? $variation_attrs : $product->get_variation_attributes();
         $clean      = [];
 
-        foreach ( $attributes as $attribute_key => $attribute_value ) {
-            if ( empty( $attribute_value ) ) continue;
+        foreach ($attributes as $attribute_key => $attribute_value) {
+            if (empty($attribute_value)) {
+                continue;
+            }
 
-            $label = str_replace( 'pa_', '', wc_attribute_label( $attribute_key, $product ) );
-            $label = sanitize_text_field( html_entity_decode( $label ) );
-            $value = sanitize_text_field( html_entity_decode( $attribute_value ) );
+            $label = str_replace('pa_', '', wc_attribute_label($attribute_key, $product));
+            $label = sanitize_text_field(html_entity_decode($label));
+            $value = sanitize_text_field(html_entity_decode($attribute_value));
 
             $clean[] = $label . ': ' . $value;
         }
 
-        return implode( ' / ', $clean );
+        return implode(' / ', $clean);
     }
 
-    public function exclude_gtm_from_delay_js( $exclusions ) {
+    public function exclude_gtm_from_delay_js($exclusions)
+    {
         $exclusions[] = 'gtm.js';
         $exclusions[] = 'googletagmanager.com/gtm.js';
         $exclusions[] = 'googletagmanager.com/gtag/js';

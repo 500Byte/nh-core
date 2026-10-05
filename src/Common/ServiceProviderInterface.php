@@ -1,11 +1,12 @@
 <?php
 namespace NormaHana\Core\Common;
 
-if ( ! defined( 'ABSPATH' ) ) {
+if (! defined('ABSPATH')) {
     exit;
 }
 
-interface ServiceProviderInterface {
+interface ServiceProviderInterface
+{
     /**
      * Registra servicios y engancha acciones/filtros del módulo.
      */

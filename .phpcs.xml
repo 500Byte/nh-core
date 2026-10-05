@@ -1,0 +1,22 @@
+<?xml version="1.0"?>
+<ruleset name="NormaHanaCore">
+    <description>Estándar de Codificación para Norma Hana Core</description>
+
+    <!-- Archivos a verificar -->
+    <file>src</file>
+    <file>inc</file>
+
+    <!-- Excluir directorio vendor -->
+    <exclude-pattern>*/vendor/*</exclude-pattern>
+    <exclude-pattern>*/tests/*</exclude-pattern>
+
+    <!-- Opciones del CLI -->
+    <arg name="colors"/>
+    <arg value="sp"/>
+    <arg name="extensions" value="php"/>
+
+    <!-- Reglas de estilización PSR-12 para PSR-4 modern PHP -->
+    <rule ref="PSR12">
+        <exclude name="PSR12.Files.FileHeader.SpacingAfterBlock"/>
+    </rule>
+</ruleset>

@@ -1,26 +1,29 @@
 <?php
-if ( ! defined( 'ABSPATH' ) ) {
+if (! defined('ABSPATH')) {
     exit;
 }
 
-if ( ! class_exists( 'NH_Core_Icons' ) ) {
+if (! class_exists('NH_Core_Icons')) {
 
-    class NH_Core_Icons {
-
+    class NH_Core_Icons
+    {
         private static $instance = null;
 
-        public static function get_instance() {
-            if ( null === self::$instance ) {
+        public static function get_instance()
+        {
+            if (null === self::$instance) {
                 self::$instance = new self();
             }
             return self::$instance;
         }
 
-        private function __construct() {
-            add_filter( 'elementor/icons_manager/additional_tabs', [ $this, 'register_phosphor_tabs' ] );
+        private function __construct()
+        {
+            add_filter('elementor/icons_manager/additional_tabs', [ $this, 'register_phosphor_tabs' ]);
         }
 
-        public function register_phosphor_tabs( $tabs = [] ) {
+        public function register_phosphor_tabs($tabs = [])
+        {
 
             $weights = [
                 'thin'    => 'Phosphor Thin',
@@ -31,13 +34,13 @@ if ( ! class_exists( 'NH_Core_Icons' ) ) {
                 'duotone' => 'Phosphor Duotone',
             ];
 
-            foreach ( $weights as $weight => $label ) {
+            foreach ($weights as $weight => $label) {
                 $is_regular = ( 'regular' === $weight );
                 $css_file   = $is_regular ? 'phosphor.css' : "phosphor-$weight.css";
 
                 $tabs[ "phosphor-$weight" ] = [
                     'name'          => "phosphor-$weight",
-                    'label'         => esc_html( $label, 'nh-core' ),
+                    'label'         => esc_html($label, 'nh-core'),
                     'labelIcon'     => $is_regular ? 'ph ph-acorn' : "ph-$weight ph-acorn",
                     'prefix'        => $is_regular ? 'ph ' : "ph-$weight ph-",
                     'url'           => NH_CORE_URL . "assets/phosphor/$css_file",

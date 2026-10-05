@@ -1,5 +1,5 @@
 <?php
-if ( ! defined( 'ABSPATH' ) ) {
+if (! defined('ABSPATH')) {
     exit;
 }
 
@@ -13,8 +13,8 @@ if ( ! defined( 'ABSPATH' ) ) {
  * wp-config.php) enviado en el header X-NH-Testing. Defensa en profundidad:
  * ambas condiciones deben cumplirse.
  */
-class NH_Core_CLI {
-
+class NH_Core_CLI
+{
     /**
      * Activa la ventana de testing por N minutos (por defecto 15, máx 60).
      * Mientras esté activa Y el request incluya el token real, el bypass de
@@ -36,24 +36,25 @@ class NH_Core_CLI {
      * @when after_wp_load
      * @subcommand enable-test-mode
      */
-    public function enable_test_mode( $args, $assoc_args ) {
-        $minutes = isset( $assoc_args['minutes'] ) ? (int) $assoc_args['minutes'] : 15;
-        $minutes = max( 1, min( 60, $minutes ) );
+    public function enable_test_mode($args, $assoc_args)
+    {
+        $minutes = isset($assoc_args['minutes']) ? (int) $assoc_args['minutes'] : 15;
+        $minutes = max(1, min(60, $minutes));
         $expires = time() + ( $minutes * 60 );
 
-        update_option( NH_CORE_TEST_MODE_OPTION, $expires, false );
+        update_option(NH_CORE_TEST_MODE_OPTION, $expires, false);
 
-        error_log( sprintf(
+        error_log(sprintf(
             '[NH_CORE_TEST_MODE] Ventana ARMADA por %d min, expira %s UTC.',
             $minutes,
-            gmdate( 'Y-m-d H:i:s', $expires )
-        ) );
+            gmdate('Y-m-d H:i:s', $expires)
+        ));
 
-        WP_CLI::success( sprintf(
+        WP_CLI::success(sprintf(
             'Ventana de testing armada por %d minuto(s). Expira: %s UTC.',
             $minutes,
-            gmdate( 'Y-m-d H:i:s', $expires )
-        ) );
+            gmdate('Y-m-d H:i:s', $expires)
+        ));
     }
 
     /**
@@ -66,10 +67,11 @@ class NH_Core_CLI {
      * @when after_wp_load
      * @subcommand disable-test-mode
      */
-    public function disable_test_mode( $args, $assoc_args ) {
-        delete_option( NH_CORE_TEST_MODE_OPTION );
-        error_log( '[NH_CORE_TEST_MODE] Ventana DESARMADA manualmente.' );
-        WP_CLI::success( 'Ventana de testing desarmada.' );
+    public function disable_test_mode($args, $assoc_args)
+    {
+        delete_option(NH_CORE_TEST_MODE_OPTION);
+        error_log('[NH_CORE_TEST_MODE] Ventana DESARMADA manualmente.');
+        WP_CLI::success('Ventana de testing desarmada.');
     }
 
     /**
@@ -82,18 +84,19 @@ class NH_Core_CLI {
      * @when after_wp_load
      * @subcommand test-mode-status
      */
-    public function test_mode_status( $args, $assoc_args ) {
-        if ( nh_core_test_mode_is_active() ) {
-            $expires = (int) get_option( NH_CORE_TEST_MODE_OPTION, 0 );
-            WP_CLI::success( sprintf(
+    public function test_mode_status($args, $assoc_args)
+    {
+        if (nh_core_test_mode_is_active()) {
+            $expires = (int) get_option(NH_CORE_TEST_MODE_OPTION, 0);
+            WP_CLI::success(sprintf(
                 'ACTIVA — expira en %d segundo(s) (%s UTC).',
                 $expires - time(),
-                gmdate( 'Y-m-d H:i:s', $expires )
-            ) );
+                gmdate('Y-m-d H:i:s', $expires)
+            ));
         } else {
-            WP_CLI::log( 'INACTIVA.' );
+            WP_CLI::log('INACTIVA.');
         }
     }
 }
 
-WP_CLI::add_command( 'nh-core', 'NH_Core_CLI' );
+WP_CLI::add_command('nh-core', 'NH_Core_CLI');

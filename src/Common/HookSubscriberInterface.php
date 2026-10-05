@@ -1,11 +1,12 @@
 <?php
 namespace NormaHana\Core\Common;
 
-if ( ! defined( 'ABSPATH' ) ) {
+if (! defined('ABSPATH')) {
     exit;
 }
 
-interface HookSubscriberInterface {
+interface HookSubscriberInterface
+{
     /**
      * Registra las acciones y filtros de WordPress para esta clase.
      */

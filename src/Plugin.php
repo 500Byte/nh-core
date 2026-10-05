@@ -1,45 +1,52 @@
 <?php
 namespace NormaHana\Core;
 
-if ( ! defined( 'ABSPATH' ) ) {
+if (! defined('ABSPATH')) {
     exit;
 }
 
-class Plugin {
-
+class Plugin
+{
     private static ?self $instance = null;
+    /**
+     * @var array<string, Common\ServiceProviderInterface>
+     */
     private array $services = [];
 
-    public static function get_instance(): self {
+    public static function get_instance(): self
+    {
         return self::$instance ??= new self();
     }
 
-    public function boot(): void {
+    public function boot(): void
+    {
         $this->define_constants();
         $this->register_services();
     }
 
-    private function define_constants(): void {
-        if ( ! defined( 'NH_CORE_VERSION' ) ) {
-            define( 'NH_CORE_VERSION', '2.0.0' );
+    private function define_constants(): void
+    {
+        if (! defined('NH_CORE_VERSION')) {
+            define('NH_CORE_VERSION', '2.0.0');
         }
-        if ( ! defined( 'NH_CORE_PATH' ) ) {
-            define( 'NH_CORE_PATH', plugin_dir_path( dirname( __FILE__ ) ) );
+        if (! defined('NH_CORE_PATH')) {
+            define('NH_CORE_PATH', plugin_dir_path(dirname(__FILE__)));
         }
-        if ( ! defined( 'NH_CORE_URL' ) ) {
-            define( 'NH_CORE_URL', plugin_dir_url( dirname( __FILE__ ) ) );
+        if (! defined('NH_CORE_URL')) {
+            define('NH_CORE_URL', plugin_dir_url(dirname(__FILE__)));
         }
     }
 
-    private function register_services(): void {
+    private function register_services(): void
+    {
         $providers = [
             Modules\Preferences\PreferencesServiceProvider::class,
         ];
 
-        foreach ( $providers as $provider_class ) {
-            if ( class_exists( $provider_class ) ) {
+        foreach ($providers as $provider_class) {
+            if (class_exists($provider_class)) {
                 $provider = new $provider_class();
-                if ( method_exists( $provider, 'register' ) ) {
+                if (method_exists($provider, 'register')) {
                     $provider->register();
                     $this->services[ $provider_class ] = $provider;
                 }
@@ -47,7 +54,8 @@ class Plugin {
         }
     }
 
-    public function get_service( string $class_name ) {
+    public function get_service(string $class_name): ?Common\ServiceProviderInterface
+    {
         return $this->services[ $class_name ] ?? null;
     }
 }

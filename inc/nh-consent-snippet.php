@@ -5,12 +5,13 @@
  * garantizando atribución limpia en Meta Pixel + CAPI y GA4 (gcd=13r).
  */
 
-if ( ! defined( 'ABSPATH' ) ) {
+if (! defined('ABSPATH')) {
     exit;
 }
 
-add_action( 'wp_head', 'nh_inject_auto_consent_mode', -10002 );
-function nh_inject_auto_consent_mode() {
+add_action('wp_head', 'nh_inject_auto_consent_mode', -10002);
+function nh_inject_auto_consent_mode()
+{
     ?>
     <!-- NH Auto-Consent Mode (Global Granted) -->
     <script>
