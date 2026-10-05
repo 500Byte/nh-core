@@ -21,8 +21,12 @@ class NH_Core_Loader {
     }
 
     private function define_constants() {
-        define( 'NH_CORE_PATH', plugin_dir_path( dirname( __FILE__ ) ) );
-        define( 'NH_CORE_URL', plugin_dir_url( dirname( __FILE__ ) ) );
+        if ( ! defined( 'NH_CORE_PATH' ) ) {
+            define( 'NH_CORE_PATH', plugin_dir_path( dirname( __FILE__ ) ) );
+        }
+        if ( ! defined( 'NH_CORE_URL' ) ) {
+            define( 'NH_CORE_URL', plugin_dir_url( dirname( __FILE__ ) ) );
+        }
     }
 
     private function load_dependencies() {

@@ -1,0 +1,14 @@
+{
+    "name": "normahana/nh-core",
+    "description": "Plugin central de Norma Hana (E-Commerce, Preferencias, Tracking, Integraciones)",
+    "type": "wordpress-plugin",
+    "license": "GPL-2.0-or-later",
+    "autoload": {
+        "psr-4": {
+            "NormaHana\\Core\\": "src/"
+        }
+    },
+    "require": {
+        "php": ">=7.4"
+    }
+}

@@ -3,7 +3,7 @@
  * Plugin Name: NH Core
  * Plugin URI: https://www.normahana.com
  * Description: Plugin site-specific que centraliza la lógica de negocio, tracking y widgets custom de Elementor para Norma Hana.
- * Version: 1.6.9
+ * Version: 2.0.0
  * Author: Diego Navarro
  * Text Domain: nh-core
  * Requires at least: 6.0
@@ -15,24 +15,41 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 // Plugin version constant
-define( 'NH_CORE_VERSION', '1.6.9' );
+define( 'NH_CORE_VERSION', '2.0.0' );
 
 // Option key que respalda la ventana temporal de testing (ver inc/class-nh-core-cli.php
 // y NH_Core_Woocommerce::restrict_test_coupons()).
 define( 'NH_CORE_TEST_MODE_OPTION', 'nh_core_test_mode_expires' );
 
 /**
- * ¿Está activa la ventana temporal que habilita el bypass de cupones de testing
- * (freetesting / freetesting-noemail) fuera de entornos locales?
- * Se arma manualmente con `wp nh-core enable-test-mode --minutes=<n>` antes de
- * correr el E2E suite contra producción; expira sola.
+ * Autoloader Nativo PSR-4 para el namespace NormaHana\Core\
+ */
+spl_autoload_register( function ( $class ) {
+    $prefix   = 'NormaHana\\Core\\';
+    $base_dir = plugin_dir_path( __FILE__ ) . 'src/';
+    $len      = strlen( $prefix );
+
+    if ( strncmp( $prefix, $class, $len ) !== 0 ) {
+        return;
+    }
+
+    $relative_class = substr( $class, $len );
+    $file           = $base_dir . str_replace( '\\', '/', $relative_class ) . '.php';
+
+    if ( file_exists( $file ) ) {
+        require_once $file;
+    }
+} );
+
+/**
+ * ¿Está activa la ventana temporal que habilita el bypass de cupones de testing?
  */
 function nh_core_test_mode_is_active() {
     $expires = (int) get_option( NH_CORE_TEST_MODE_OPTION, 0 );
     return $expires > time();
 }
 
-// Cargar orquestador modular del plugin
+// Cargar orquestador modular legacy (mientras concluye la migración completa)
 require_once plugin_dir_path( __FILE__ ) . 'inc/class-nh-core-loader.php';
 
 // Initialize updater (admin + WP-CLI contexts)
@@ -50,8 +67,8 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
 require_once plugin_dir_path( __FILE__ ) . 'includes/class-nh-seo-performance.php';
 add_action( 'plugins_loaded', [ 'NH_SEO_Performance', 'init' ] );
 
-// Inicializar orquestador
+// Inicializar Kernel PSR-4 Modular y Loader Legacy
 add_action( 'plugins_loaded', function() {
+    \NormaHana\Core\Plugin::get_instance()->boot();
     \NH_Core_Loader::get_instance();
 } );
-
