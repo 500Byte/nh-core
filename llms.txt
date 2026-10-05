@@ -1,0 +1,25 @@
+# Norma Hana Core (nh-core)
+
+> Site-specific WordPress plugin for Norma Hana Slow Fashion Atelier (Santa Marta, Colombia).
+> Namespace: NormaHana\Core\ (PSR-4)
+
+## Key Specs
+- PHP: >= 8.0
+- Architecture: PSR-4 Modular, Service Providers, Repositories, Hook Subscribers.
+- Core Table: `wp_nh_communication_preferences` (Customer Preferences & Habeas Data Ley 1581).
+- REST API: `GET|POST /wp-json/nh/v1/preferences` (Header: `X-NH-API-Key: nh_telegram_bot_sec_2026_x871a`).
+- Security: HMAC-SHA256 tokens (`hash_hmac`), constant-time validation (`hash_equals`).
+- Analytics: Google Consent Mode v2 `granted` default (`-10002` priority in `wp_head`).
+- E-Commerce: WooCommerce HPOS (`wp_wc_orders`), CartFlows email interceptor.
+- VPS Deploy: `rsync -avz --exclude '.git' ./ root@2.25.85.177:/docker/normahana/html/wp-content/plugins/nh-core/`
+- OPcache Flush: `docker exec normahana-php-1 wp eval 'opcache_reset();' --allow-root`
+
+## File Map
+- `nh-core.php`: Plugin entry point & PSR-4 autoloader.
+- `src/Plugin.php`: Kernel bootstrapper singleton.
+- `src/Common/`: Interfaces (`ServiceProviderInterface`, `HookSubscriberInterface`).
+- `src/Modules/Preferences/`: Database repository, token service, REST controller, frontend hooks, service provider.
+- `src/Modules/Tracking/`: Consent mode v2, dataLayer events.
+- `src/Modules/ECommerce/`: HPOS order helper, CartFlows interceptor.
+- `src/Modules/Integrations/`: n8n webhooks, Phosphor icons.
+- `AGENTS.md`: Full technical specifications and guardrails.
